@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ title }}</title>
+    <link rel="icon" type="image/png" href="/console/media/favicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/console/styles/global_style.css">
+    <!-- Auth helpers load in <head> so page-level inline <script> can use
+         window.consoleAuth as soon as the parser reaches them. -->
+    <script src="/console/scripts/console_auth.js"></script>
+</head>
+<body class="page-bg min-h-screen text-[#2C2825]">
+
+    <!-- Shared infra container for things like toast / alerts.
+         Pages don't need to add this themselves; just push into it from JS. -->
+    <div id="alerts-root" class="fixed top-4 right-4 z-[100] flex flex-col gap-2 pointer-events-none"></div>
+
+    {{ content | safe }}
+
+</body>
+</html>

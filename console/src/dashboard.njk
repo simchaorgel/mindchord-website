@@ -1,0 +1,129 @@
+---
+layout: sidebar.njk
+title: Mindchord Console — Dashboard
+nav: dashboard
+---
+<style>
+    /* ── Stat bubbles ──────────────────────────────────────────────────
+       Squircle pills with gradient backgrounds for depth. */
+    .stat-bubble {
+        width: 148px;
+        height: 108px;
+        border-radius: 28px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+    }
+    .bubble-sage  { background: linear-gradient(160deg, rgba(122, 143, 126, 0.42) 0%, rgba(122, 143, 126, 0.18) 100%); }
+    .bubble-coral { background: linear-gradient(160deg, rgba(196, 112, 75, 0.42) 0%, rgba(196, 112, 75, 0.18) 100%); }
+    .bubble-gold  { background: linear-gradient(160deg, rgba(184, 148, 63, 0.46) 0%, rgba(184, 148, 63, 0.20) 100%); }
+    .stat-bubble .num {
+        font-family: 'TeX Gyre Pagella', Georgia, serif;
+        font-size: 34px;
+        line-height: 1;
+        color: #2C2825;
+        letter-spacing: -0.01em;
+    }
+    .stat-bubble .lbl {
+        font-family: 'TeX Gyre Pagella', Georgia, serif;
+        font-size: 11px;
+        color: #2C2825;
+        opacity: 0.72;
+        text-transform: uppercase;
+        letter-spacing: 0.10em;
+        margin-top: 8px;
+        padding: 0 14px;
+        line-height: 1.2;
+    }
+</style>
+
+<!-- Heading row: org + welcome on the left, bubbles on the right -->
+<div class="flex items-center justify-between gap-12 flex-wrap">
+    <div>
+        <h1 id="org-name" class="wordmark text-4xl md:text-5xl tracking-tight">
+            <span class="inline-block h-9 w-48 rounded bg-[#6B635A]/10 animate-pulse align-middle"></span>
+        </h1>
+        <p id="welcome-line" class="wordmark mt-3 text-lg text-[#6B635A]">
+            <span class="inline-block h-5 w-40 rounded bg-[#6B635A]/10 animate-pulse align-middle"></span>
+        </p>
+    </div>
+
+    <!-- Stat bubbles — squircle pills, one palette colour each. -->
+    <div class="flex items-center gap-4 flex-nowrap">
+        <div class="stat-bubble bubble-sage">
+            <div id="stat-clients" class="num">
+                <span class="inline-block h-8 w-8 rounded bg-[#2C2825]/10 animate-pulse"></span>
+            </div>
+            <div class="lbl">Clients</div>
+        </div>
+        <div class="stat-bubble bubble-coral">
+            <div id="stat-sessions-week" class="num">
+                <span class="inline-block h-8 w-8 rounded bg-[#2C2825]/10 animate-pulse"></span>
+            </div>
+            <div class="lbl">Sessions this week</div>
+        </div>
+        <div class="stat-bubble bubble-gold">
+            <div id="stat-clinicians" class="num">
+                <span class="inline-block h-8 w-8 rounded bg-[#2C2825]/10 animate-pulse"></span>
+            </div>
+            <div class="lbl">Clinicians</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Layout already calls requireSession() — this re-await just gives us the
+    // session object so we can read user.id without an extra round-trip.
+    (async () => {
+        const session = await window.consoleAuth.getSession();
+        if (!session) return;
+        await Promise.all([loadHeading(session), loadStats()]);
+    })();
+
+    async function loadHeading(session) {
+        const sb = window.consoleAuth.sb;
+        const userId = session.user?.id;
+
+        const [orgRes, profileRes] = await Promise.all([
+            sb.from('organizations').select('name').maybeSingle(),
+            userId ? sb.from('profiles').select('display_name').eq('id', userId).maybeSingle() : Promise.resolve({ data: null }),
+        ]);
+
+        document.getElementById('org-name').textContent = orgRes.data?.name || '';
+        const first = profileRes.data?.display_name;
+        document.getElementById('welcome-line').textContent = first ? `Welcome, ${first}.` : '';
+    }
+
+    // Counts fetched in parallel with count-only queries (head: true, no row
+    // data transferred). RLS scopes everything to the calling clinician's org.
+    async function loadStats() {
+        const sb = window.consoleAuth.sb;
+        const weekStart = startOfWeekISO();
+
+        const [clients, clinicians, sessions] = await Promise.all([
+            sb.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'client'),
+            sb.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'clinician'),
+            sb.from('sessions').select('*', { count: 'exact', head: true }).gte('started_at', weekStart),
+        ]);
+
+        setStat('stat-clients', clients);
+        setStat('stat-sessions-week', sessions);
+        setStat('stat-clinicians', clinicians);
+    }
+
+    function setStat(id, result) {
+        const el = document.getElementById(id);
+        el.textContent = result.error ? '—' : (result.count ?? 0);
+    }
+
+    // ISO week starts Monday.
+    function startOfWeekISO() {
+        const d = new Date();
+        const daysSinceMonday = (d.getDay() + 6) % 7;
+        d.setHours(0, 0, 0, 0);
+        d.setDate(d.getDate() - daysSinceMonday);
+        return d.toISOString();
+    }
+</script>

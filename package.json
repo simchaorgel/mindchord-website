@@ -1,0 +1,19 @@
+{
+  "name": "mindchord_website",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "build:site": "eleventy --config=site/.eleventy.js",
+    "build:console": "eleventy --config=console/.eleventy.js",
+    "build": "npm run build:site && npm run build:console",
+    "dev:site": "eleventy --config=site/.eleventy.js --serve",
+    "dev:console": "eleventy --config=console/.eleventy.js --serve --port=8081"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@11ty/eleventy": "^3.1.5"
+  }
+}

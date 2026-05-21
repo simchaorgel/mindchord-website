@@ -1,0 +1,68 @@
+---
+layout: base.njk
+---
+<style>
+    .sidebar { border-right: 1px solid rgba(107, 99, 90, 0.18); }
+    .side-link {
+        display: flex; align-items: center; gap: 12px;
+        padding: 10px 0;
+        color: #2C2825; opacity: 0.60;
+        font-family: 'TeX Gyre Pagella', Georgia, serif;
+        font-size: 17px; letter-spacing: -0.01em;
+        transition: opacity 180ms ease, color 180ms ease;
+    }
+    .side-link:hover { opacity: 0.95; }
+    .side-link.is-active { opacity: 1; color: #C4704B; font-weight: 700; }
+    .side-link svg { width: 18px; height: 18px; flex-shrink: 0; }
+    .meta-label {
+        font-family: 'TeX Gyre Pagella', Georgia, serif;
+        font-size: 11px; color: #6B635A;
+        text-transform: uppercase; letter-spacing: 0.12em;
+    }
+</style>
+
+<div class="flex min-h-screen">
+    <aside class="sidebar w-56 shrink-0 flex flex-col px-6 sticky top-0 h-screen">
+        <a href="/" class="flex items-center gap-2.5 h-16 shrink-0">
+            <img src="/console/media/favicon.png" alt="" class="h-8 w-auto object-contain">
+            <span class="wordmark text-xl">Mindchord</span>
+        </a>
+
+        <nav class="mt-8 flex flex-col">
+            <a href="/console/dashboard/" class="side-link {% if nav == 'dashboard' %}is-active{% endif %}">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor"><path d="M160-200v-360q0-19 8.5-36t23.5-28l240-180q21-16 48-16t48 16l240 180q15 11 23.5 28t8.5 36v360q0 33-23.5 56.5T720-120H600q-17 0-28.5-11.5T560-160v-200q0-17-11.5-28.5T520-400h-80q-17 0-28.5 11.5T400-360v200q0 17-11.5 28.5T360-120H240q-33 0-56.5-23.5T160-200Z"/></svg>
+                Dashboard
+            </a>
+            <a href="/console/clients/" class="side-link {% if nav == 'clients' %}is-active{% endif %}">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor"><path d="M367-527q-47-47-47-113t47-113q47-47 113-47t113 47q47 47 47 113t-47 113q-47 47-113 47t-113-47ZM160-240v-32q0-34 17.5-62.5T224-378q62-31 126-46.5T480-440q66 0 130 15.5T736-378q29 15 46.5 43.5T800-272v32q0 33-23.5 56.5T720-160H240q-33 0-56.5-23.5T160-240Z"/></svg>
+                Clients
+            </a>
+            <a href="/console/organization/" class="side-link {% if nav == 'organization' %}is-active{% endif %}">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor"><path d="M160-120q-33 0-56.5-23.5T80-200v-440q0-33 23.5-56.5T160-720h160v-80q0-33 23.5-56.5T400-880h160q33 0 56.5 23.5T640-800v80h160q33 0 56.5 23.5T880-640v440q0 33-23.5 56.5T800-120H160Zm240-600h160v-80H400v80Z"/></svg>
+                Organization
+            </a>
+            <a href="/console/settings/" class="side-link {% if nav == 'settings' %}is-active{% endif %}">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor"><path d="M433-80q-27 0-46.5-18T363-142l-9-66q-13-5-24.5-12T307-235l-62 26q-25 11-50 2t-39-32l-47-82q-14-23-8-49t27-43l53-40q-1-7-1-13.5v-27q0-6.5 1-13.5l-53-40q-21-17-27-43t8-49l47-82q14-23 39-32t50 2l62 26q11-8 23-15t24-12l9-66q4-26 23.5-44t46.5-18h94q27 0 46.5 18t23.5 44l9 66q13 5 24.5 12t22.5 15l62-26q25-11 50-2t39 32l47 82q14 23 8 49t-27 43l-53 40q1 7 1 13.5v27q0 6.5-2 13.5l53 40q21 17 27 43t-8 49l-48 82q-14 23-39 32t-50-2l-60-26q-11 8-23 15t-24 12l-9 66q-4 26-23.5 44T527-80h-94Zm49-260q58 0 99-41t41-99q0-58-41-99t-99-41q-59 0-99.5 41T342-480q0 58 40.5 99t99.5 41Z"/></svg>
+                Settings
+            </a>
+        </nav>
+
+        <div class="mt-auto pb-5">
+            <button type="button" id="sign-out-btn" onclick="window.consoleAuth.signOut()" class="side-link w-full text-left">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor"><path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h240q17 0 28.5 11.5T480-800q0 17-11.5 28.5T440-760H200v560h240q17 0 28.5 11.5T480-160q0 17-11.5 28.5T440-120H200Zm487-320H400q-17 0-28.5-11.5T360-480q0-17 11.5-28.5T400-520h287l-75-75q-11-11-11-27t11-28q11-12 28-12.5t29 11.5l143 143q12 12 12 28t-12 28L669-309q-12 12-28.5 11.5T612-310q-11-12-10.5-28.5T613-366l74-74Z"/></svg>
+                Sign out
+            </button>
+            <div class="wordmark mt-3 text-xs text-[#6B635A]">Mindchord Console · beta</div>
+        </div>
+    </aside>
+
+    <main class="flex-1 px-10 md:px-16 py-12">
+        {{ content | safe }}
+    </main>
+</div>
+
+<script>
+    // Every sidebar-using page is gated. Page-specific scripts can still call
+    // getSession() / requireSession() to get the session object.
+    window.consoleAuth.requireSession();
+</script>

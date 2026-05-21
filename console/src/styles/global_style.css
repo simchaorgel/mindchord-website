@@ -1,0 +1,101 @@
+/* Posttrain marketing site — shared styles across all pages.
+   Page-specific styles live in each page's own <style> block. */
+
+/* ── Fonts ──────────────────────────────────────────────────────────── */
+@font-face {
+    font-family: 'TeX Gyre Pagella';
+    src: url('/console/media/tex-gyre-pagella/texgyrepagella-regular.otf') format('opentype');
+    font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+    font-family: 'TeX Gyre Pagella';
+    src: url('/console/media/tex-gyre-pagella/texgyrepagella-italic.otf') format('opentype');
+    font-weight: 400; font-style: italic; font-display: swap;
+}
+@font-face {
+    font-family: 'TeX Gyre Pagella';
+    src: url('/console/media/tex-gyre-pagella/texgyrepagella-bold.otf') format('opentype');
+    font-weight: 700; font-style: normal; font-display: swap;
+}
+@font-face {
+    font-family: 'TeX Gyre Pagella';
+    src: url('/console/media/tex-gyre-pagella/texgyrepagella-bolditalic.otf') format('opentype');
+    font-weight: 700; font-style: italic; font-display: swap;
+}
+
+/* ── Document defaults ──────────────────────────────────────────────── */
+/* `overflow-x: clip` (not `hidden`) — clip doesn't create a scroll
+   container, so sticky positioning on descendants keeps working. */
+html { scroll-behavior: smooth; overflow-x: clip; background: #F5F0EB; }
+body { font-family: 'Inter', system-ui, sans-serif; }
+/* Sage-tinted text selection — picks up the brand palette */
+::selection { background: rgba(122, 143, 126, 0.35); color: #2C2825; }
+.wordmark { font-family: 'TeX Gyre Pagella', Georgia, serif; letter-spacing: -0.01em; }
+
+/* ── Page backdrop ──────────────────────────────────────────────────── */
+.page-bg { background: #F5F0EB; position: relative; overflow-x: clip; }
+
+/* ── Header (glass, sticky) ─────────────────────────────────────────── */
+.glass {
+    background: linear-gradient(180deg, rgba(245, 240, 235, 0.72) 0%, rgba(234, 227, 218, 0.58) 100%);
+    backdrop-filter: blur(18px) saturate(140%);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    border-bottom: 1px solid rgba(44, 40, 37, 0.08);
+}
+
+/* ── Nav links: muted by default, animated coral underline on hover,
+       heavier weight on the active page (`.is-active` is set per page).
+   NOTE: do NOT add `position` to `#about-toc` itself — its ID specificity
+   would override Tailwind's `.sticky` class and silently break stickiness. */
+.nav-link {
+    position: relative;
+    color: #2C2825;
+    opacity: 0.78;
+    font-family: 'TeX Gyre Pagella', Georgia, serif;
+    transition: opacity 180ms ease, color 180ms ease;
+}
+.nav-link::after {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; bottom: -6px;
+    height: 1.5px;
+    background: #C4704B;
+    transform: scaleX(0);
+    transform-origin: center;
+    transition: transform 220ms ease;
+}
+.nav-link:hover { opacity: 1; color: #2C2825; }
+.nav-link:hover::after { transform: scaleX(1); }
+nav a.is-active { font-weight: 700; opacity: 1; }
+
+/* ── Console CTA: warm sage-gradient pill ───────────────────────────── */
+.console-btn {
+    position: relative;
+    isolation: isolate;
+    color: #F5F0EB;
+    font-family: 'TeX Gyre Pagella', Georgia, serif;
+    background: linear-gradient(180deg, #869C8A 0%, #6A7F6E 100%);
+    transition: transform 180ms ease, filter 180ms ease;
+}
+.console-btn:hover { filter: brightness(1.05); }
+.console-btn:active { transform: scale(0.97); }
+
+/* ── Mobile menu open / scroll-lock states ─────────────────────────── */
+#mobile-menu.is-open { opacity: 1; pointer-events: auto; }
+body.menu-open { overflow: hidden; }
+
+/* ── Decorative warm blobs (base shape only) ────────────────────────── */
+/* Each page chooses `position: absolute` (long pages — anchored to body)
+   or `position: fixed` (short pages — anchored to viewport so the blobs
+   don't contribute to scroll height) plus per-blob top/left/right. */
+.blob {
+    width: 280px;
+    height: 280px;
+    border-radius: 50%;
+    filter: blur(60px);
+    opacity: 0.55;
+    pointer-events: none;
+}
+@media (min-width: 768px) {
+    .blob { width: 520px; height: 520px; filter: blur(80px); }
+}

@@ -1,0 +1,170 @@
+---
+layout: base.njk
+title: Mindchord
+nav: home
+---
+
+{% block head %}
+    <link rel="stylesheet" href="/styles/index_style.css">
+{% endblock %}
+
+<!-- Hero -->
+<section class="px-6 md:px-24 pt-16 md:pt-24 pb-10 relative z-10">
+    <div class="max-w-3xl mx-auto text-center">
+        <h1 class="wordmark text-[40px] md:text-[64px] leading-[1.05] tracking-tight">
+            Neurofeedback at home.
+        </h1>
+        <p class="wordmark mt-5 md:mt-6 text-lg md:text-xl text-[#6B635A] leading-relaxed max-w-2xl mx-auto">
+            Mindchord is a take-home neurofeedback app that connects to portable EEG headsets to complete straightforward neurofeedback sessions set by your provider.
+        </p>
+
+        <div class="mt-8 md:mt-10 flex justify-center">
+            <a href="#about"
+                class="relative isolate inline-flex items-center gap-2 px-8 py-4 text-[16px] text-[#F5F0EB] wordmark rounded-full ring-4 ring-transparent hover:ring-[#7A8F7E]/30 active:scale-95 transition-all duration-200 before:content-[''] before:absolute before:inset-0 before:-z-10 before:rounded-full before:bg-gradient-to-b before:from-[#869C8A] before:to-[#6A7F6E] before:transition-all before:duration-200 hover:before:brightness-90">
+                Find out more
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4">
+                    <path d="M5.3 10.8a1 1 0 0 1 0-1.4 1 1 0 0 1 1.42 0L12 14.68l5.28-5.28a1 1 0 1 1 1.42 1.42l-5.83 5.83a1.25 1.25 0 0 1-1.77 0L5.3 10.8Z"/>
+                </svg>
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- EEG visualisation canvas -->
+<div class="w-full -mt-16 md:-mt-24 relative z-0">
+    <canvas id="eeg-canvas" class="block w-full eeg-canvas-h"></canvas>
+</div>
+
+<!-- About -->
+<!-- Layout: sticky left rail TOC + right content column. Subsections are -->
+<!-- anchored so the rail can scroll-spy and clicks deep-link cleanly. -->
+<section class="px-6 md:px-24 pt-24 md:pt-40 pb-20 md:pb-32">
+    <h2 id="about" class="wordmark text-4xl md:text-5xl tracking-tight scroll-mt-28">About</h2>
+
+    <div class="mt-12 md:mt-16 grid grid-cols-1 md:grid-cols-[200px_1fr] gap-10 md:gap-16">
+        <!-- Sticky table of contents -->
+        <aside class="hidden md:block">
+            <nav id="about-toc" class="sticky top-24 wordmark text-[15px]">
+                <ul class="space-y-3 border-l border-[#6B635A]/20 pl-5">
+                    <li><a href="#about-neurofeedback" class="toc-link" data-target="about-neurofeedback">What is neurofeedback?</a></li>
+                    <li><a href="#about-posttrain" class="toc-link" data-target="about-posttrain">What is Mindchord?</a></li>
+                    <li><a href="#about-app" class="toc-link" data-target="about-app">The App - Images</a></li>
+                    <li><a href="#about-feedback" class="toc-link" data-target="about-feedback">Technical feedback info</a></li>
+                    <li><a href="#about-console" class="toc-link" data-target="about-console">Provider Console</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- Right column: subsection content. Narrow column = comfortable read line length. -->
+        <div class="max-w-3xl space-y-24">
+
+            <!-- What is neurofeedback? -->
+            <article id="about-neurofeedback" class="about-subsection scroll-mt-28">
+                <h3 class="wordmark text-3xl tracking-tight">What is neurofeedback?</h3>
+                <div class="wordmark mt-6 space-y-5 text-[17px] leading-[1.75] text-[#2C2825]/85">
+                    <p>
+                        Neurofeedback is a form of biofeedback that uses real-time measurements of brain activity — usually EEG — to help a person learn to shift their own brain state. Sensors placed on the scalp pick up the electrical activity of the cortex underneath. That activity is processed into something the person can perceive: a sound that gets louder, a video that plays more clearly, a visual that brightens when the activity moves in a target direction.
+                    </p>
+                    <p>
+                        The mechanism is operant conditioning. When the brain produces more of the desired pattern — say, a steadier rhythm in a certain frequency band — the feedback rewards it. Over time, that pattern becomes easier to produce. The person isn't told <em>how</em> to change their brain activity, and they usually can't describe what they're doing; the learning happens below the level of conscious strategy.
+                    </p>
+                    <p>
+                        Clinicians use neurofeedback as part of a broader treatment plan for conditions where brain-state regulation plays a role — attention, anxiety, sleep, and others. It is not a substitute for medical care, and outcomes depend on protocol design, session frequency, and the clinician's judgement. What Posttrain provides is the <em>delivery mechanism</em>: the same protocol the clinician would run in their office, available to the client at home, with the data flowing back.
+                    </p>
+                </div>
+            </article>
+
+            <!-- Posttrain -->
+            <article id="about-posttrain" class="about-subsection scroll-mt-28">
+                <h3 class="wordmark text-3xl tracking-tight">What is Mindchord?</h3>
+                <div class="wordmark mt-6 space-y-5 text-[17px] leading-[1.75] text-[#2C2825]/85">
+                    <p>
+                        Mindchord is a lightweight neurofeedback app designed for clients to complete neurofeedback sessions set by providers. The app comes in two parts: The neurofeedback app, which clients take home to complete sessions using portable EEG headsets, and the provider console, which provides use to set protocols and monitor clients. Provides set protocols based on what the client wants to address and any readings or examinations they perform (see <a href="#about-feedback">Technical Feedback Info</a> for more details about what settings can be configured by providers).
+                        The neurofeedback app offeres a variety of feedback types, including preset video feedback, YouTube video feedback, and interactive games and visualisations.
+                    </p>
+                    <p>
+                        Mindchord is still in closed beta, so updates are being made regularly. If you are interested in joining as a client or provider, please don't hesitate to <a href="/contact" class="text-[#C4704B] underline decoration-[#C4704B]/40 underline-offset-4 hover:decoration-[#C4704B] transition">reach out to us</a> - we would love to gain more users and hear your feedback.
+                    </p>
+                </div>
+            </article>
+
+            <!-- The App — screenshot gallery. Uses hero-1/hero-2 as the first two
+                    for now; remaining slots are placeholder cards. Drop in app-3.png,
+                    app-4.png, etc. as they become available. -->
+            <article id="about-app" class="about-subsection scroll-mt-28">
+                <h3 class="wordmark text-3xl tracking-tight">The App - Images</h3>
+
+                <div class="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <img src="/media/hero-1.png" alt="" class="w-full h-auto rounded-xl block">
+                    <img src="/media/hero-2.png" alt="" class="w-full h-auto rounded-xl block">
+
+                    <!-- Placeholders — replace with real screenshots -->
+                    <div class="aspect-[4/3] rounded-xl border border-dashed border-[#6B635A]/30 flex items-center justify-center wordmark text-sm text-[#6B635A]/70">
+                        Screenshot
+                    </div>
+                    <div class="aspect-[4/3] rounded-xl border border-dashed border-[#6B635A]/30 flex items-center justify-center wordmark text-sm text-[#6B635A]/70">
+                        Screenshot
+                    </div>
+                </div>
+            </article>
+
+            <!-- Technical feedback info -->
+            <article id="about-feedback" class="about-subsection scroll-mt-28">
+                <h3 class="wordmark text-3xl tracking-tight">Technical feedback info</h3>
+                <div class="wordmark mt-6 space-y-5 text-[17px] leading-[1.75] text-[#2C2825]/85">
+                    <p>
+                        Each session begins with a short calibration period in which Posttrain records your brain's natural activity in the target frequency bands to establish a personal baseline. Once calibrated, the app continuously measures your live brainwave power — using Welch's method to estimate the spectral density of the EEG signal, with artifact rejection to discard moments contaminated by blinks, jaw movement, or electrode noise — and compares it against your own baseline as a z-score (how many standard deviations above or below your resting state you are right now).
+                    </p>
+                    <p>
+                        Feedback runs throughout the session, reflecting whether you are currently above or below the protocol's threshold: the longer you stay above, the more the feedback intensifies, and the longer you stay below, the more it fades — reinforcing sustained self-regulation rather than fleeting peaks.
+                    </p>
+                    <p>
+                        Protocols can combine up to two bands at once (for example, increasing one frequency while decreasing another), and clinicians can configure which electrode drives the feedback — any of the Muse headband's standard channels (TP9, AF7, AF8, TP10) or the optional AUX electrode plugged into the headband — along with an optional reference channel for software re-referencing to better isolate the region of interest.
+                    </p>
+                </div>
+            </article>
+
+            <!-- Clinician Console -->
+            <article id="about-console" class="about-subsection scroll-mt-28">
+                <h3 class="wordmark text-3xl tracking-tight">Provider Console</h3>
+                <p class="wordmark mt-6 text-[17px] leading-[1.75] text-[#2C2825]/85">
+                    The Mindchord Provider Console is the web companion to the desktop app. Providers use it to manage their clients, design and assign session protocols, and review session-level data — adherence, time-in-zone, signal quality, and streaks — as it flows back from each at-home session.
+                </p>
+
+                <!-- Screenshot gallery — drop in console-1.png, console-2.png, etc. -->
+                <div class="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <div class="aspect-[4/3] rounded-xl border border-dashed border-[#6B635A]/30 flex items-center justify-center wordmark text-sm text-[#6B635A]/70">
+                        Screenshot
+                    </div>
+                    <div class="aspect-[4/3] rounded-xl border border-dashed border-[#6B635A]/30 flex items-center justify-center wordmark text-sm text-[#6B635A]/70">
+                        Screenshot
+                    </div>
+                </div>
+            </article>
+        </div>
+    </div>
+</section>
+
+<!-- Contact CTA — warm tinted band, single soft blob, single primary action -->
+<section id="contact" class="relative overflow-hidden bg-[#EAE3DA] px-6 md:px-24 py-24 md:py-32 scroll-mt-28">
+    <!-- Soft warm blob for atmosphere -->
+    <div class="cta-blob"></div>
+
+    <div class="relative max-w-2xl mx-auto text-center">
+        <h2 class="wordmark text-4xl md:text-5xl tracking-tight">Get in touch</h2>
+        <p class="wordmark mt-5 text-lg md:text-xl text-[#6B635A] leading-relaxed">
+            Mindchord is in beta. Whether you're a clinic looking to offer it to your clients, a clinician evaluating it for your practice, or someone interested in trying neurofeedback yourself, we'd love to hear from you.
+        </p>
+        <div class="mt-9 flex justify-center">
+            <a href="/contact"
+                class="relative isolate inline-flex items-center gap-2 px-7 py-3 text-[15px] text-[#F5F0EB] wordmark rounded-full ring-4 ring-transparent hover:ring-[#7A8F7E]/30 active:scale-95 transition-all duration-200 before:content-[''] before:absolute before:inset-0 before:-z-10 before:rounded-full before:bg-gradient-to-b before:from-[#869C8A] before:to-[#6A7F6E] before:transition-all before:duration-200 hover:before:brightness-90">
+                Reach out
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4">
+                    <path d="M13.2 5.3a1 1 0 0 1 1.4 0l5.8 5.8a1.25 1.25 0 0 1 0 1.77l-5.8 5.83a1 1 0 0 1-1.42-1.41L17.18 13H4.75a1 1 0 1 1 0-2h12.43l-3.98-3.98a1 1 0 0 1 0-1.42Z"/>
+                </svg>
+            </a>
+        </div>
+    </div>
+</section>
+
+<script src="/scripts/index_script.js"></script>

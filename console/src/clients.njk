@@ -1,0 +1,155 @@
+---
+layout: sidebar.njk
+title: Mindchord Console — Clients
+nav: clients
+---
+<style>
+    /* List panel — barely-there glass. Visible enough to read as a panel
+       but doesn't compete with the list content. */
+    .list-panel {
+        background: rgba(255, 255, 255, 0.22);
+        border: 1px solid rgba(107, 99, 90, 0.10);
+        border-radius: 14px;
+    }
+</style>
+
+<div class="flex items-end justify-between gap-6">
+    <div>
+        <h1 class="wordmark text-4xl md:text-5xl tracking-tight">Clients</h1>
+        <p class="wordmark mt-3 text-[#6B635A] text-base max-w-xl">
+            Select a client to review their sessions and protocols.
+        </p>
+    </div>
+
+    <button id="add-client-btn" type="button"
+            class="wordmark shrink-0 relative isolate inline-flex items-center gap-2 px-5 h-11 text-[15px] text-[#F5F0EB] rounded-full ring-4 ring-transparent hover:ring-[#7A8F7E]/30 active:scale-95 transition-all duration-200 before:content-[''] before:absolute before:inset-0 before:-z-10 before:rounded-full before:bg-gradient-to-b before:from-[#869C8A] before:to-[#6A7F6E] before:transition-all before:duration-200 hover:before:brightness-90">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4">
+            <path d="M11 11V5a1 1 0 1 1 2 0v6h6a1 1 0 1 1 0 2h-6v6a1 1 0 1 1-2 0v-6H5a1 1 0 1 1 0-2h6Z"/>
+        </svg>
+        Add client
+    </button>
+</div>
+
+<!-- Skeleton rows render immediately; real rows replace them once the
+     supabase query resolves. -->
+<section class="mt-10 list-panel px-6 md:px-8">
+    <ul id="clients-loading" class="divide-y divide-[#6B635A]/15">
+        <li class="py-5 flex items-center gap-6"><span class="h-5 w-44 rounded bg-[#6B635A]/10 animate-pulse"></span><span class="h-3 w-32 rounded bg-[#6B635A]/10 animate-pulse"></span></li>
+        <li class="py-5 flex items-center gap-6"><span class="h-5 w-52 rounded bg-[#6B635A]/10 animate-pulse"></span><span class="h-3 w-28 rounded bg-[#6B635A]/10 animate-pulse"></span></li>
+        <li class="py-5 flex items-center gap-6"><span class="h-5 w-36 rounded bg-[#6B635A]/10 animate-pulse"></span><span class="h-3 w-36 rounded bg-[#6B635A]/10 animate-pulse"></span></li>
+        <li class="py-5 flex items-center gap-6"><span class="h-5 w-48 rounded bg-[#6B635A]/10 animate-pulse"></span><span class="h-3 w-24 rounded bg-[#6B635A]/10 animate-pulse"></span></li>
+    </ul>
+    <div id="clients-empty" class="hidden py-10 text-center wordmark text-[#6B635A]">
+        No clients yet. Add your first client to get started.
+    </div>
+    <ul id="clients-list" class="hidden divide-y divide-[#6B635A]/15"></ul>
+</section>
+
+<script>
+    loadPeople('client', {
+        loadingId: 'clients-loading',
+        emptyId: 'clients-empty',
+        listId: 'clients-list',
+    });
+
+    // Loads profiles for a given role. RLS scopes rows to the calling
+    // clinician's org. Sessions are fetched separately and joined in JS
+    // (profiles ↔ sessions share auth.users as the FK target, not each
+    // other), so embedding would not work without a schema change.
+    async function loadPeople(role, ids) {
+        const loading = document.getElementById(ids.loadingId);
+        const empty = document.getElementById(ids.emptyId);
+        const list = document.getElementById(ids.listId);
+
+        const { data: people, error } = await window.consoleAuth.sb
+            .from('profiles')
+            .select('id, display_name, surname')
+            .eq('role', role)
+            .order('surname')
+            .order('display_name');
+
+        loading.classList.add('hidden');
+
+        if (error || !people) {
+            empty.textContent = 'Could not load.';
+            empty.classList.remove('hidden');
+            return;
+        }
+        if (people.length === 0) {
+            empty.classList.remove('hidden');
+            return;
+        }
+
+        const statsByUser = await fetchSessionStats(people.map(p => p.id));
+
+        list.innerHTML = people.map(p => {
+            const stats = statsByUser.get(p.id);
+            const count = stats?.count ?? 0;
+            const last = stats?.last;
+            const countLabel = count + ' session' + (count === 1 ? '' : 's');
+            const subline = count === 0
+                ? 'No sessions yet'
+                : countLabel + ' · last ' + formatRelativeDate(last);
+            return `
+            <li>
+                <a href="/console/client/?id=${encodeURIComponent(p.id)}"
+                   class="flex items-center justify-between py-5 group">
+                    <div class="flex items-baseline gap-6 min-w-0">
+                        <span class="wordmark text-xl text-[#2C2825] group-hover:text-[#C4704B] transition truncate">${escapeHtml(fullName(p))}</span>
+                        <span class="wordmark text-sm text-[#6B635A] truncate">${subline}</span>
+                    </div>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+                         class="w-4 h-4 shrink-0 text-[#6B635A] group-hover:text-[#C4704B] transition">
+                        <path d="M9.3 6.3a1 1 0 0 1 1.4 0l5.3 5.3a.5.5 0 0 1 0 .8l-5.3 5.3a1 1 0 1 1-1.4-1.42L13.18 12 9.3 8.12a1 1 0 0 1 0-1.42Z"/>
+                    </svg>
+                </a>
+            </li>`;
+        }).join('');
+        list.classList.remove('hidden');
+    }
+
+    // Returns Map<user_id, {count, last: Date}> from completed sessions.
+    async function fetchSessionStats(userIds) {
+        const map = new Map();
+        if (userIds.length === 0) return map;
+        const { data, error } = await window.consoleAuth.sb
+            .from('sessions')
+            .select('user_id, ended_at')
+            .in('user_id', userIds)
+            .not('ended_at', 'is', null);
+        if (error || !data) return map;
+        for (const row of data) {
+            const d = new Date(row.ended_at);
+            const cur = map.get(row.user_id);
+            if (!cur) {
+                map.set(row.user_id, { count: 1, last: d });
+            } else {
+                cur.count += 1;
+                if (d > cur.last) cur.last = d;
+            }
+        }
+        return map;
+    }
+
+    function formatRelativeDate(d) {
+        const now = new Date();
+        const diffMs = now - d;
+        const day = 24 * 60 * 60 * 1000;
+        if (diffMs < day && now.getDate() === d.getDate()) return 'today';
+        if (diffMs < 2 * day) return 'yesterday';
+        const days = Math.floor(diffMs / day);
+        if (days < 7) return days + ' days ago';
+        return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+    }
+
+    function fullName(p) {
+        const parts = [p.display_name, p.surname].filter(Boolean);
+        return parts.length ? parts.join(' ') : '(unnamed)';
+    }
+
+    function escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, c => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        }[c]));
+    }
+</script>

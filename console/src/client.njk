@@ -1,0 +1,346 @@
+---
+layout: sidebar.njk
+title: Mindchord Console — Client
+nav: clients
+---
+<style>
+    /* Protocol card — soft glass tile to keep the page calm. */
+    .protocol-card {
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.45) 0%, rgba(245, 240, 235, 0.30) 100%);
+        backdrop-filter: blur(14px) saturate(140%);
+        -webkit-backdrop-filter: blur(14px) saturate(140%);
+        border: 1px solid rgba(44, 40, 37, 0.08);
+        border-radius: 14px;
+    }
+
+    /* Band chip — small inline pill with a coloured dot for direction. */
+    .band-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 4px 10px 4px 8px;
+        border-radius: 999px;
+        background: rgba(107, 99, 90, 0.08);
+        font-family: 'TeX Gyre Pagella', Georgia, serif;
+        font-size: 13px;
+        color: #2C2825;
+    }
+    .band-chip .dot {
+        width: 7px; height: 7px; border-radius: 999px;
+        background: #6B635A;
+    }
+    .band-chip.reward .dot { background: #6A8E5B; }
+    .band-chip.punish .dot { background: #B85042; }
+</style>
+
+<!-- Breadcrumb back to the client list -->
+<a href="/console/clients/"
+    class="wordmark inline-flex items-center gap-1.5 text-sm text-[#6B635A] hover:text-[#2C2825] transition">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4">
+        <path d="M14.7 17.7a1 1 0 0 1-1.4 0L8 12.4a.5.5 0 0 1 0-.8l5.3-5.3a1 1 0 1 1 1.4 1.42L10.82 12l3.88 3.88a1 1 0 0 1 0 1.42Z"/>
+    </svg>
+    All clients
+</a>
+
+<h1 id="client-name" class="wordmark mt-4 text-4xl md:text-5xl tracking-tight">
+    <span class="inline-block h-10 w-72 rounded bg-[#6B635A]/10 animate-pulse"></span>
+</h1>
+<p id="client-sub" class="wordmark mt-3 text-[#6B635A] text-base"></p>
+
+<!-- ── Protocols ───────────────────────────────────────────── -->
+<section class="mt-12">
+    <div class="flex items-end justify-between gap-6">
+        <h2 class="wordmark text-2xl tracking-tight">Protocols</h2>
+        <button id="add-protocol-btn" type="button"
+                class="wordmark relative isolate inline-flex items-center gap-2 px-4 h-10 text-sm text-[#F5F0EB] rounded-full ring-4 ring-transparent hover:ring-[#7A8F7E]/30 active:scale-95 transition-all duration-200 before:content-[''] before:absolute before:inset-0 before:-z-10 before:rounded-full before:bg-gradient-to-b before:from-[#869C8A] before:to-[#6A7F6E] before:transition-all before:duration-200 hover:before:brightness-90">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4">
+                <path d="M11 11V5a1 1 0 1 1 2 0v6h6a1 1 0 1 1 0 2h-6v6a1 1 0 1 1-2 0v-6H5a1 1 0 1 1 0-2h6Z"/>
+            </svg>
+            New protocol
+        </button>
+    </div>
+
+    <div id="protocols-loading" class="mt-6 flex flex-col gap-4">
+        <div class="protocol-card p-6 h-36 animate-pulse"></div>
+        <div class="protocol-card p-6 h-36 animate-pulse"></div>
+        <div class="protocol-card p-6 h-36 animate-pulse"></div>
+    </div>
+
+    <div id="protocols-empty" class="hidden mt-6 rounded-xl border border-dashed border-[#6B635A]/30 p-10 text-center wordmark text-[#6B635A]">
+        No protocols assigned yet.
+    </div>
+
+    <div id="protocols-grid" class="hidden mt-6 flex flex-col gap-4"></div>
+</section>
+
+<!-- ── Sessions ────────────────────────────────────────────── -->
+<section class="mt-14">
+    <h2 class="wordmark text-2xl tracking-tight">Sessions</h2>
+
+    <ul id="sessions-loading" class="mt-6 divide-y divide-[#6B635A]/15">
+        <li class="py-5 flex items-center gap-6"><span class="h-4 w-40 rounded bg-[#6B635A]/10 animate-pulse"></span><span class="h-3 w-24 rounded bg-[#6B635A]/10 animate-pulse"></span></li>
+        <li class="py-5 flex items-center gap-6"><span class="h-4 w-36 rounded bg-[#6B635A]/10 animate-pulse"></span><span class="h-3 w-28 rounded bg-[#6B635A]/10 animate-pulse"></span></li>
+        <li class="py-5 flex items-center gap-6"><span class="h-4 w-44 rounded bg-[#6B635A]/10 animate-pulse"></span><span class="h-3 w-20 rounded bg-[#6B635A]/10 animate-pulse"></span></li>
+    </ul>
+
+    <div id="sessions-empty" class="hidden mt-6 rounded-xl border border-dashed border-[#6B635A]/30 p-10 text-center wordmark text-[#6B635A]">
+        No sessions yet.
+    </div>
+
+    <ul id="sessions-list" class="hidden mt-2 divide-y divide-[#6B635A]/15"></ul>
+</section>
+
+<script>
+    const clientId = new URLSearchParams(location.search).get('id');
+
+    (async () => {
+        if (!clientId) {
+            document.getElementById('client-name').textContent = 'No client selected';
+            document.getElementById('protocols-loading').classList.add('hidden');
+            document.getElementById('protocols-empty').classList.remove('hidden');
+            return;
+        }
+        await Promise.all([loadClient(), loadProtocols(), loadSessions()]);
+    })();
+
+    async function loadClient() {
+        const [profileRes, countRes] = await Promise.all([
+            window.consoleAuth.sb
+                .from('profiles')
+                .select('display_name, surname, role')
+                .eq('id', clientId)
+                .maybeSingle(),
+            window.consoleAuth.sb
+                .from('sessions')
+                .select('id', { count: 'exact', head: true })
+                .eq('user_id', clientId)
+                .not('ended_at', 'is', null),
+        ]);
+
+        const heading = document.getElementById('client-name');
+        const sub = document.getElementById('client-sub');
+        if (profileRes.error || !profileRes.data) {
+            heading.textContent = 'Client not found';
+            return;
+        }
+        const data = profileRes.data;
+        heading.textContent = fullName(data);
+
+        const parts = [];
+        if (data.role) parts.push(data.role.charAt(0).toUpperCase() + data.role.slice(1));
+        const total = countRes.count ?? 0;
+        parts.push(`${total} session${total === 1 ? '' : 's'} completed`);
+        sub.textContent = parts.join(' · ');
+    }
+
+    // Protocols == active rows in `assigned_sessions` for this client.
+    // RLS already scopes by org; we just filter the one client + skip
+    // archived rows (soft-deleted prescriptions are kept for history).
+    async function loadProtocols() {
+        const [protocolsRes, countsMap] = await Promise.all([
+            window.consoleAuth.sb
+                .from('assigned_sessions')
+                .select('id, name, description, bands, channels, duration_seconds, created_at')
+                .eq('client_id', clientId)
+                .is('archived_at', null)
+                .order('created_at', { ascending: false }),
+            fetchSessionCountsByProtocol(),
+        ]);
+        const { data, error } = protocolsRes;
+
+        const loading = document.getElementById('protocols-loading');
+        const empty = document.getElementById('protocols-empty');
+        const grid = document.getElementById('protocols-grid');
+
+        loading.classList.add('hidden');
+
+        if (error || !data) {
+            empty.textContent = 'Could not load protocols.';
+            empty.classList.remove('hidden');
+            return;
+        }
+        if (data.length === 0) {
+            empty.classList.remove('hidden');
+            return;
+        }
+
+        grid.innerHTML = data.map(p => renderProtocol(p, countsMap.get(p.id) || 0)).join('');
+        grid.classList.remove('hidden');
+    }
+
+    // Map<assigned_session_id, count> — only completed sessions count.
+    async function fetchSessionCountsByProtocol() {
+        const map = new Map();
+        const { data, error } = await window.consoleAuth.sb
+            .from('sessions')
+            .select('assigned_session_id')
+            .eq('user_id', clientId)
+            .not('assigned_session_id', 'is', null)
+            .not('ended_at', 'is', null);
+        if (error || !data) return map;
+        for (const row of data) {
+            map.set(row.assigned_session_id, (map.get(row.assigned_session_id) || 0) + 1);
+        }
+        return map;
+    }
+
+    function renderProtocol(p, sessionCount) {
+        const bands = Array.isArray(p.bands) ? p.bands.slice(0, 2) : [];
+        const channels = p.channels || {};
+        return `
+            <article class="protocol-card p-6 md:p-7">
+                <div class="flex items-start justify-between gap-6">
+                    <div class="min-w-0">
+                        <h3 class="wordmark text-xl tracking-tight">${escapeHtml(p.name || 'Untitled')}</h3>
+                        ${p.description ? `<p class="wordmark mt-1 text-sm text-[#6B635A] leading-relaxed">${escapeHtml(p.description)}</p>` : ''}
+                    </div>
+                    <div class="shrink-0 wordmark text-xs text-[#6B635A] whitespace-nowrap text-right">
+                        <div>${sessionCount} session${sessionCount === 1 ? '' : 's'} completed</div>
+                        <div class="mt-0.5">Created ${formatDate(p.created_at)}</div>
+                    </div>
+                </div>
+
+                <div class="mt-5 flex flex-wrap items-start gap-x-10 gap-y-4">
+                    <div>
+                        <div class="meta-label">Bands</div>
+                        <div class="mt-1.5 flex flex-col items-start gap-2">
+                            ${bands.length ? bands.map(renderBand).join('') : '<span class="wordmark text-sm text-[#6B635A]/70">—</span>'}
+                        </div>
+                    </div>
+                    <div>
+                        <div class="meta-label">Channels</div>
+                        <div class="wordmark mt-1.5 text-sm text-[#2C2825]">${renderChannels(channels)}</div>
+                    </div>
+                    <div>
+                        <div class="meta-label">Duration</div>
+                        <div class="wordmark mt-1.5 text-sm text-[#2C2825]">${formatDuration(p.duration_seconds)}</div>
+                    </div>
+
+                    <div class="ml-auto self-end flex items-center gap-3">
+                        <button type="button" data-action="edit" data-id="${escapeHtml(p.id)}"
+                                class="wordmark relative isolate inline-flex items-center px-4 h-9 text-[13px] text-[#F5F0EB] rounded-full ring-4 ring-transparent hover:ring-[#7A8F7E]/30 active:scale-95 transition-all duration-200 before:content-[''] before:absolute before:inset-0 before:-z-10 before:rounded-full before:bg-gradient-to-b before:from-[#869C8A] before:to-[#6A7F6E] before:transition-all before:duration-200 hover:before:brightness-90">
+                            Edit
+                        </button>
+                        <button type="button" data-action="remove" data-id="${escapeHtml(p.id)}"
+                                class="wordmark relative isolate inline-flex items-center px-4 h-9 text-[13px] text-[#F5F0EB] rounded-full ring-4 ring-transparent hover:ring-[#B85042]/30 active:scale-95 transition-all duration-200 before:content-[''] before:absolute before:inset-0 before:-z-10 before:rounded-full before:bg-gradient-to-b before:from-[#C26352] before:to-[#A04638] before:transition-all before:duration-200 hover:before:brightness-95">
+                            Remove
+                        </button>
+                    </div>
+                </div>
+            </article>
+        `;
+    }
+
+    async function loadSessions() {
+        const { data, error } = await window.consoleAuth.sb
+            .from('sessions')
+            .select('id, started_at, ended_at, summary, assigned_session_id, assigned_sessions(name)')
+            .eq('user_id', clientId)
+            .order('started_at', { ascending: false });
+
+        const loading = document.getElementById('sessions-loading');
+        const empty = document.getElementById('sessions-empty');
+        const list = document.getElementById('sessions-list');
+
+        loading.classList.add('hidden');
+
+        if (error || !data) {
+            empty.textContent = 'Could not load sessions.';
+            empty.classList.remove('hidden');
+            return;
+        }
+        if (data.length === 0) {
+            empty.classList.remove('hidden');
+            return;
+        }
+
+        list.innerHTML = data.map(renderSession).join('');
+        list.classList.remove('hidden');
+    }
+
+    function renderSession(s) {
+        const summary = s.summary || {};
+        const duration = summary.duration_s ?? (s.ended_at && s.started_at
+            ? (new Date(s.ended_at) - new Date(s.started_at)) / 1000 : null);
+        const pct = summary.pct_above != null ? Math.round(summary.pct_above * 100) + '%' : '—';
+        const streak = summary.max_streak_s != null ? formatDuration(summary.max_streak_s) : '—';
+        const protocol = s.assigned_sessions?.name || 'Ad-hoc session';
+        const when = formatDateTime(s.started_at);
+
+        return `
+            <li class="py-4 flex items-center justify-between gap-6">
+                <div class="min-w-0">
+                    <div class="wordmark text-base text-[#2C2825] truncate">${escapeHtml(protocol)}</div>
+                    <div class="wordmark text-sm text-[#6B635A]">${when}</div>
+                </div>
+                <div class="shrink-0 flex items-center gap-8 wordmark text-sm">
+                    <div class="text-right">
+                        <div class="meta-label">Duration</div>
+                        <div class="mt-0.5 text-[#2C2825]">${formatDuration(duration)}</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="meta-label">Above</div>
+                        <div class="mt-0.5 text-[#2C2825]">${pct}</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="meta-label">Best streak</div>
+                        <div class="mt-0.5 text-[#2C2825]">${streak}</div>
+                    </div>
+                </div>
+            </li>`;
+    }
+
+    function formatDateTime(iso) {
+        if (!iso) return '—';
+        const d = new Date(iso);
+        return d.toLocaleString(undefined, { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
+
+    function renderBand(b) {
+        const dir = (b.direction || '').toLowerCase();
+        const cls = dir === 'reward' ? 'reward' : dir === 'punish' ? 'punish' : '';
+        const dirLabel = dir ? dir.charAt(0).toUpperCase() + dir.slice(1) : '';
+        const z = b.threshold_z == null ? 'Z auto' : `Z ${(+b.threshold_z).toFixed(2)}`;
+        return `<span class="band-chip ${cls}"><span class="dot"></span>${b.lo}–${b.hi} Hz${dirLabel ? ' · ' + dirLabel : ''} · ${z}</span>`;
+    }
+
+    function renderChannels(ch) {
+        const fb = ch.feedback || '—';
+        const refs = Array.isArray(ch.reference) && ch.reference.length ? ch.reference.join(', ') : 'none';
+        const dot = '<span class="text-[#6B635A]"> · </span>';
+        let out = `${escapeHtml(fb)}${dot}ref ${escapeHtml(refs)}`;
+        if (ch.feedback === 'AUX' && ch.aux_position) {
+            out += `${dot}${escapeHtml(ch.aux_position.toUpperCase())}`;
+        }
+        return out;
+    }
+
+    // 75 → "1 min 15 s", 1200 → "20 min", 5400 → "1 h 30 min"
+    function formatDuration(s) {
+        if (s == null) return '—';
+        s = Math.round(s);
+        const h = Math.floor(s / 3600);
+        const m = Math.floor((s % 3600) / 60);
+        const sec = s % 60;
+        if (h) return m ? `${h} h ${m} min` : `${h} h`;
+        if (m) return sec && m < 5 ? `${m} min ${sec} s` : `${m} min`;
+        return `${sec} s`;
+    }
+
+    function formatDate(iso) {
+        if (!iso) return '—';
+        const d = new Date(iso);
+        return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+
+    function fullName(p) {
+        const parts = [p.display_name, p.surname].filter(Boolean);
+        return parts.length ? parts.join(' ') : '(unnamed)';
+    }
+
+    function escapeHtml(s) {
+        return String(s ?? '').replace(/[&<>"']/g, c => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        }[c]));
+    }
+</script>
