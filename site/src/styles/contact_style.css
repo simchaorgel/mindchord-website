@@ -25,30 +25,83 @@
 .field-textarea,
 .field-select {
     width: 100%;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.55) 0%, rgba(245, 240, 235, 0.40) 100%);
-    backdrop-filter: blur(14px) saturate(140%);
-    -webkit-backdrop-filter: blur(14px) saturate(140%);
-    border: 1px solid rgba(44, 40, 37, 0.10);
-    box-shadow:
-        0 1px 0 rgba(255, 255, 255, 0.45) inset,
-        0 1px 2px rgba(44, 40, 37, 0.04);
-    border-radius: 10px;
-    padding: 12px 14px;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(44, 40, 37, 0.25);
+    border-radius: 0;
+    padding: 8px 2px;
     font-family: 'Inter', system-ui, sans-serif;
     font-size: 15px;
     color: #2C2825;
-    transition: border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
+    transition: border-color 180ms ease;
 }
 .field-textarea { min-height: 160px; resize: vertical; }
+
+/* Tall textarea for the message-led contact layout — fills the right column. */
+.field-textarea-tall {
+    min-height: 320px;
+    resize: vertical;
+    font-family: 'Inter', system-ui, sans-serif;
+    line-height: 1.6;
+}
+@media (min-width: 768px) {
+    .field-textarea-tall { min-height: 100%; }
+}
+
+/* Edge-bleed textarea — flush to viewport right & bottom, no rounding on those corners. */
+.field-textarea-bleed {
+    border-radius: 0;
+    resize: none;
+}
+
+/* Floating message textarea — absolutely positioned, jumps to wherever the user clicks.
+   `field-sizing: content` makes the textarea grow to fit its own content (or placeholder)
+   so any whitespace around it is part of <main> and stays clickable. */
+.field-textarea-floating {
+    position: absolute;
+    field-sizing: content;
+    background: transparent;
+    border: none;
+    outline: none;
+    resize: none;
+    padding: 0;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 17px;
+    line-height: 1.7;
+    color: #2C2825;
+    caret-color: #C4704B;
+    min-width: 12ch;
+    min-height: 1.7em;
+}
+.field-textarea-floating::placeholder {
+    color: rgba(107, 99, 90, 0.45);
+    font-style: italic;
+}
+.field-textarea-floating:focus { outline: none; }
+
+/* Phones: drop the click-anywhere whimsy and use a normal stacked form.
+   Textarea becomes a regular block input with the same bottom-border treatment as
+   name/email. The JS handler is also gated by viewport width so it doesn't run here. */
+@media (max-width: 767px) {
+    .field-textarea-floating {
+        position: static;
+        field-sizing: auto;
+        width: 100%;
+        max-width: none !important;
+        max-height: none !important;
+        min-height: 180px;
+        border-bottom: 1px solid rgba(44, 40, 37, 0.25);
+        padding: 8px 2px;
+        transition: border-color 180ms ease;
+    }
+    .field-textarea-floating:focus { border-bottom-color: #7A8F7E; }
+    #contact-main { cursor: auto; }
+}
 .field-input:focus,
 .field-textarea:focus,
 .field-select:focus {
     outline: none;
-    border-color: rgba(122, 143, 126, 0.6);
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.75) 0%, rgba(245, 240, 235, 0.60) 100%);
-    box-shadow:
-        0 1px 0 rgba(255, 255, 255, 0.55) inset,
-        0 0 0 4px rgba(122, 143, 126, 0.18);
+    border-bottom-color: #7A8F7E;
 }
 .field-input::placeholder,
 .field-textarea::placeholder { color: rgba(107, 99, 90, 0.55); }
