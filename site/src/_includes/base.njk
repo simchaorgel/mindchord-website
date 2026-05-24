@@ -8,6 +8,23 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="/styles/global_style.css">
     {% block head %}{% endblock %}
+
+    <!-- In-app embed: if loaded with ?inapp=true, hide the marketing-site chrome
+         (header, mobile menu, footer) so the page can be iframed inside the app. -->
+    <style>
+        html.inapp > body > header,
+        html.inapp > body > footer,
+        html.inapp > body > #mobile-menu { display: none !important; }
+    </style>
+    <script>
+        (function () {
+            try {
+                if (new URLSearchParams(location.search).get('inapp') === 'true') {
+                    document.documentElement.classList.add('inapp');
+                }
+            } catch (e) {}
+        })();
+    </script>
 </head>
 
 <body class="page-bg min-h-screen text-[#2C2825] flex flex-col">
