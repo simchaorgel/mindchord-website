@@ -2,3 +2,12 @@
     # Netlify runs `npm install` automatically before this command.
     command = "npm run build"
     publish = "dist"
+
+# CORS for app-facing JSON endpoints — the Mindchord app fetches these from a
+# different origin and would otherwise be blocked by the browser.
+[[headers]]
+    for = "/api/*"
+    [headers.values]
+        Access-Control-Allow-Origin = "*"
+        Access-Control-Allow-Methods = "GET, OPTIONS"
+        Cache-Control = "public, max-age=300"
