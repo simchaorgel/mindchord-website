@@ -37,6 +37,7 @@ exports.handler = async (event) => {
     catch { return json(400, { error: 'Invalid request body.' }); }
     const email = String(payload.email || '').trim().toLowerCase();
     const displayName = String(payload.display_name || '').trim();
+    const surname = String(payload.surname || '').trim();
     if (!EMAIL_RE.test(email)) return json(400, { error: 'A valid email address is required.' });
 
     const admin = createClient(SUPABASE_URL, SECRET_KEY, { auth: { persistSession: false } });
@@ -74,11 +75,12 @@ exports.handler = async (event) => {
     // 4. Create the user. handle_new_user reads this metadata and populates the
     //    profile atomically; the limit trigger rolls the whole insert back if
     //    the cap is hit (e.g. a race after the pre-check) — no orphan user.
+    // Create the auth user. handle_new_user makes a blank profile row; we fill
+    // it in below. We can't pass org via metadata — Supabase writes app_metadata
+    // AFTER the insert trigger runs, so it isn't visible inside handle_new_user.
     const { data: created, error: createErr } = await admin.auth.admin.createUser({
         email,
         email_confirm: true,
-        app_metadata: { org_id: orgId, role: 'client' },
-        user_metadata: displayName ? { display_name: displayName } : {},
     });
 
     if (createErr) {
@@ -86,11 +88,33 @@ exports.handler = async (event) => {
         if (msg.includes('already') || msg.includes('registered') || msg.includes('exist')) {
             return json(409, { error: 'A user with that email already exists.' });
         }
-        if (msg.includes('limit')) {
-            return json(409, { error: 'Client limit reached.' });
-        }
         return json(500, { error: 'Could not create the client. Please try again.' });
     }
 
-    return json(200, { id: created.user.id, email });
+    const newId = created.user.id;
+
+    // Attach the new user to the clinician's org and set their name. The limit
+    // trigger fires on this UPDATE (org_id null -> org); if the cap was hit in a
+    // race after the pre-check, the update fails and we delete the just-created
+    // user so no org-less orphan is left behind.
+    const { error: updateErr } = await admin
+        .from('profiles')
+        .update({
+            org_id: orgId,
+            role: 'client',
+            display_name: displayName || null,
+            surname: surname || null,
+        })
+        .eq('id', newId)
+        .select('id')
+        .single();
+
+    if (updateErr) {
+        await admin.auth.admin.deleteUser(newId);
+        const msg = (updateErr.message || '').toLowerCase();
+        if (msg.includes('limit')) return json(409, { error: 'Client limit reached.' });
+        return json(500, { error: 'Could not finish creating the client. Please try again.' });
+    }
+
+    return json(200, { id: newId, email });
 };

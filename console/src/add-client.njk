@@ -20,11 +20,18 @@ nav: clients
 </p>
 
 <form id="add-client-form" class="mt-10 card p-6 md:p-8 max-w-xl" novalidate>
-    <label class="block">
-        <span class="wordmark text-sm text-[#2C2825]">Full name <span class="text-[#6B635A]">(optional)</span></span>
-        <input id="ac-name" type="text" autocomplete="name" placeholder="Jane Doe"
-            class="wordmark mt-2 w-full h-12 px-4 bg-[#F7F5F2] rounded-lg border border-[#2C2825]/10 focus:outline-none focus:ring-2 focus:ring-[#7A8F7E]">
-    </label>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <label class="block">
+            <span class="wordmark text-sm text-[#2C2825]">First name</span>
+            <input id="ac-firstname" type="text" autocomplete="given-name" placeholder="Jane"
+                class="wordmark mt-2 w-full h-12 px-4 bg-[#F7F5F2] rounded-lg border border-[#2C2825]/10 focus:outline-none focus:ring-2 focus:ring-[#7A8F7E]">
+        </label>
+        <label class="block">
+            <span class="wordmark text-sm text-[#2C2825]">Surname</span>
+            <input id="ac-surname" type="text" autocomplete="family-name" placeholder="Doe"
+                class="wordmark mt-2 w-full h-12 px-4 bg-[#F7F5F2] rounded-lg border border-[#2C2825]/10 focus:outline-none focus:ring-2 focus:ring-[#7A8F7E]">
+        </label>
+    </div>
 
     <label class="block mt-5">
         <span class="wordmark text-sm text-[#2C2825]">Email address</span>
@@ -50,7 +57,8 @@ nav: clients
 
 <script>
     const form = document.getElementById('add-client-form');
-    const nameInput = document.getElementById('ac-name');
+    const firstNameInput = document.getElementById('ac-firstname');
+    const surnameInput = document.getElementById('ac-surname');
     const emailInput = document.getElementById('ac-email');
     const errorEl = document.getElementById('ac-error');
     const successEl = document.getElementById('ac-success');
@@ -75,7 +83,8 @@ nav: clients
         successEl.classList.add('hidden');
 
         const email = emailInput.value.trim();
-        const display_name = nameInput.value.trim();
+        const display_name = firstNameInput.value.trim();
+        const surname = surnameInput.value.trim();
         if (!email) { showError('Please enter an email address.'); emailInput.focus(); return; }
 
         const session = await window.consoleAuth.getSession();
@@ -89,7 +98,7 @@ nav: clients
                     'Content-Type': 'application/json',
                     'Authorization': 'Bearer ' + session.access_token,
                 },
-                body: JSON.stringify({ email, display_name }),
+                body: JSON.stringify({ email, display_name, surname }),
             });
             const data = await res.json().catch(() => ({}));
 
