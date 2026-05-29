@@ -3,16 +3,6 @@ layout: sidebar.njk
 title: Mindchord Console — Clients
 nav: clients
 ---
-<style>
-    /* List panel — barely-there glass. Visible enough to read as a panel
-       but doesn't compete with the list content. */
-    .list-panel {
-        background: rgba(255, 255, 255, 0.22);
-        border: 1px solid rgba(107, 99, 90, 0.10);
-        border-radius: 14px;
-    }
-</style>
-
 <div class="flex items-end justify-between gap-6">
     <div>
         <h1 class="wordmark text-4xl md:text-5xl tracking-tight">Clients</h1>
@@ -21,18 +11,18 @@ nav: clients
         </p>
     </div>
 
-    <button id="add-client-btn" type="button"
+    <a href="/console/add-client/"
             class="wordmark shrink-0 relative isolate inline-flex items-center gap-2 px-5 h-11 text-[15px] text-[#F5F0EB] rounded-full ring-4 ring-transparent hover:ring-[#7A8F7E]/30 active:scale-95 transition-all duration-200 before:content-[''] before:absolute before:inset-0 before:-z-10 before:rounded-full before:bg-gradient-to-b before:from-[#869C8A] before:to-[#6A7F6E] before:transition-all before:duration-200 hover:before:brightness-90">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4">
             <path d="M11 11V5a1 1 0 1 1 2 0v6h6a1 1 0 1 1 0 2h-6v6a1 1 0 1 1-2 0v-6H5a1 1 0 1 1 0-2h6Z"/>
         </svg>
         Add client
-    </button>
+    </a>
 </div>
 
 <!-- Skeleton rows render immediately; real rows replace them once the
      supabase query resolves. -->
-<section class="mt-10 list-panel px-6 md:px-8">
+<section class="mt-10 card px-6 md:px-8">
     <ul id="clients-loading" class="divide-y divide-[#6B635A]/15">
         <li class="py-5 flex items-center gap-6"><span class="h-5 w-44 rounded bg-[#6B635A]/10 animate-pulse"></span><span class="h-3 w-32 rounded bg-[#6B635A]/10 animate-pulse"></span></li>
         <li class="py-5 flex items-center gap-6"><span class="h-5 w-52 rounded bg-[#6B635A]/10 animate-pulse"></span><span class="h-3 w-28 rounded bg-[#6B635A]/10 animate-pulse"></span></li>

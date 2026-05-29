@@ -3,43 +3,7 @@ layout: sidebar.njk
 title: Mindchord Console — Dashboard
 nav: dashboard
 ---
-<style>
-    /* ── Stat bubbles ──────────────────────────────────────────────────
-       Squircle pills with gradient backgrounds for depth. */
-    .stat-bubble {
-        width: 148px;
-        height: 108px;
-        border-radius: 28px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-    }
-    .bubble-sage  { background: linear-gradient(160deg, rgba(122, 143, 126, 0.42) 0%, rgba(122, 143, 126, 0.18) 100%); }
-    .bubble-coral { background: linear-gradient(160deg, rgba(196, 112, 75, 0.42) 0%, rgba(196, 112, 75, 0.18) 100%); }
-    .bubble-gold  { background: linear-gradient(160deg, rgba(184, 148, 63, 0.46) 0%, rgba(184, 148, 63, 0.20) 100%); }
-    .stat-bubble .num {
-        font-family: 'TeX Gyre Pagella', Georgia, serif;
-        font-size: 34px;
-        line-height: 1;
-        color: #2C2825;
-        letter-spacing: -0.01em;
-    }
-    .stat-bubble .lbl {
-        font-family: 'TeX Gyre Pagella', Georgia, serif;
-        font-size: 11px;
-        color: #2C2825;
-        opacity: 0.72;
-        text-transform: uppercase;
-        letter-spacing: 0.10em;
-        margin-top: 8px;
-        padding: 0 14px;
-        line-height: 1.2;
-    }
-</style>
-
-<!-- Heading row: org + welcome on the left, bubbles on the right -->
+<!-- Heading row: org + welcome on the left, stat cards on the right -->
 <div class="flex items-center justify-between gap-12 flex-wrap">
     <div>
         <h1 id="org-name" class="wordmark text-4xl md:text-5xl tracking-tight">
@@ -50,28 +14,63 @@ nav: dashboard
         </p>
     </div>
 
-    <!-- Stat bubbles — squircle pills, one palette colour each. -->
-    <div class="flex items-center gap-4 flex-nowrap">
-        <div class="stat-bubble bubble-sage">
+    <!-- Stat cards — one palette accent each. -->
+    <div class="flex items-center gap-4 flex-wrap">
+        <div class="stat-card">
+            <div class="stat-head"><span class="dot dot-sage"></span><span class="lbl">Clients</span></div>
             <div id="stat-clients" class="num">
-                <span class="inline-block h-8 w-8 rounded bg-[#2C2825]/10 animate-pulse"></span>
+                <span class="inline-block h-8 w-10 rounded bg-[#2C2825]/10 animate-pulse"></span>
             </div>
-            <div class="lbl">Clients</div>
         </div>
-        <div class="stat-bubble bubble-coral">
+        <div class="stat-card">
+            <div class="stat-head"><span class="dot dot-coral"></span><span class="lbl">Sessions this week</span></div>
             <div id="stat-sessions-week" class="num">
-                <span class="inline-block h-8 w-8 rounded bg-[#2C2825]/10 animate-pulse"></span>
+                <span class="inline-block h-8 w-10 rounded bg-[#2C2825]/10 animate-pulse"></span>
             </div>
-            <div class="lbl">Sessions this week</div>
         </div>
-        <div class="stat-bubble bubble-gold">
+        <div class="stat-card">
+            <div class="stat-head"><span class="dot dot-gold"></span><span class="lbl">Clinicians</span></div>
             <div id="stat-clinicians" class="num">
-                <span class="inline-block h-8 w-8 rounded bg-[#2C2825]/10 animate-pulse"></span>
+                <span class="inline-block h-8 w-10 rounded bg-[#2C2825]/10 animate-pulse"></span>
             </div>
-            <div class="lbl">Clinicians</div>
         </div>
     </div>
 </div>
+
+<!-- Quick actions -->
+<div class="mt-8 flex flex-wrap gap-3">
+    <a href="/console/add-client/"
+       class="wordmark inline-flex items-center gap-2 px-5 h-11 text-[15px] text-[#F5F0EB] relative isolate rounded-full ring-4 ring-transparent hover:ring-[#7A8F7E]/30 active:scale-95 transition-all duration-200 before:content-[''] before:absolute before:inset-0 before:-z-10 before:rounded-full before:bg-gradient-to-b before:from-[#869C8A] before:to-[#6A7F6E] before:transition-all before:duration-200 hover:before:brightness-90">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4"><path d="M11 11V5a1 1 0 1 1 2 0v6h6a1 1 0 1 1 0 2h-6v6a1 1 0 1 1-2 0v-6H5a1 1 0 1 1 0-2h6Z"/></svg>
+        Add client
+    </a>
+    <a href="/console/organization/"
+       class="wordmark inline-flex items-center gap-2 px-5 h-11 text-[15px] text-[#2C2825] rounded-full border border-[#2C2825]/15 bg-white hover:border-[#2C2825]/30 hover:bg-[#F7F5F2] active:scale-95 transition-all duration-200">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4"><path d="M11 11V5a1 1 0 1 1 2 0v6h6a1 1 0 1 1 0 2h-6v6a1 1 0 1 1-2 0v-6H5a1 1 0 1 1 0-2h6Z"/></svg>
+        Add clinician
+    </a>
+</div>
+
+<!-- Sessions over time -->
+<section class="mt-10 card p-6 md:p-7">
+    <div class="flex items-baseline justify-between gap-4">
+        <h2 class="wordmark text-2xl tracking-tight">Sessions</h2>
+        <span class="wordmark text-sm text-[#6B635A]">Last 14 days</span>
+    </div>
+
+    <div id="sessions-chart" class="mt-6 h-44 flex items-end gap-1.5">
+        <!-- Skeleton bars until the query resolves -->
+        <div class="flex-1 rounded-t bg-[#6B635A]/10 animate-pulse" style="height:40%"></div>
+        <div class="flex-1 rounded-t bg-[#6B635A]/10 animate-pulse" style="height:65%"></div>
+        <div class="flex-1 rounded-t bg-[#6B635A]/10 animate-pulse" style="height:30%"></div>
+        <div class="flex-1 rounded-t bg-[#6B635A]/10 animate-pulse" style="height:80%"></div>
+        <div class="flex-1 rounded-t bg-[#6B635A]/10 animate-pulse" style="height:55%"></div>
+        <div class="flex-1 rounded-t bg-[#6B635A]/10 animate-pulse" style="height:45%"></div>
+        <div class="flex-1 rounded-t bg-[#6B635A]/10 animate-pulse" style="height:70%"></div>
+    </div>
+
+    <div id="sessions-chart-axis" class="mt-2 flex justify-between wordmark text-xs text-[#6B635A]"></div>
+</section>
 
 <script>
     // Layout already calls requireSession() — this re-await just gives us the
@@ -79,7 +78,7 @@ nav: dashboard
     (async () => {
         const session = await window.consoleAuth.getSession();
         if (!session) return;
-        await Promise.all([loadHeading(session), loadStats()]);
+        await Promise.all([loadHeading(session), loadStats(), loadSessionsChart()]);
     })();
 
     async function loadHeading(session) {
@@ -116,6 +115,60 @@ nav: dashboard
     function setStat(id, result) {
         const el = document.getElementById(id);
         el.textContent = result.error ? '—' : (result.count ?? 0);
+    }
+
+    // Daily session counts for the last 14 days, rendered as flexbox bars.
+    // RLS scopes rows to the calling clinician's org.
+    async function loadSessionsChart() {
+        const DAYS = 14;
+        const chart = document.getElementById('sessions-chart');
+        const axis = document.getElementById('sessions-chart-axis');
+
+        const start = new Date();
+        start.setHours(0, 0, 0, 0);
+        start.setDate(start.getDate() - (DAYS - 1));
+
+        const { data, error } = await window.consoleAuth.sb
+            .from('sessions')
+            .select('started_at')
+            .gte('started_at', start.toISOString());
+
+        // Bucket by day index from `start`.
+        const buckets = new Array(DAYS).fill(0);
+        if (!error && data) {
+            for (const row of data) {
+                if (!row.started_at) continue;
+                const d = new Date(row.started_at);
+                d.setHours(0, 0, 0, 0);
+                const idx = Math.round((d - start) / 86400000);
+                if (idx >= 0 && idx < DAYS) buckets[idx]++;
+            }
+        }
+
+        const total = buckets.reduce((a, b) => a + b, 0);
+        if (error || total === 0) {
+            chart.classList.remove('items-end');
+            chart.classList.add('items-center', 'justify-center');
+            chart.innerHTML = `<span class="wordmark text-sm text-[#6B635A]">${error ? 'Could not load sessions.' : 'No sessions in the last 14 days.'}</span>`;
+            return;
+        }
+
+        const max = Math.max(...buckets);
+        chart.innerHTML = buckets.map((count, i) => {
+            const d = new Date(start);
+            d.setDate(start.getDate() + i);
+            const label = d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+            const pct = count === 0 ? 2 : Math.max(6, Math.round((count / max) * 100));
+            const tip = `${count} session${count === 1 ? '' : 's'} · ${label}`;
+            return `<div class="flex-1 rounded-t bg-gradient-to-b from-[#869C8A] to-[#6A7F6E] hover:brightness-95 transition"
+                         style="height:${pct}%" title="${tip}"></div>`;
+        }).join('');
+
+        const first = new Date(start);
+        const last = new Date(start);
+        last.setDate(start.getDate() + DAYS - 1);
+        const fmt = (d) => d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+        axis.innerHTML = `<span>${fmt(first)}</span><span>Today</span>`;
     }
 
     // ISO week starts Monday.

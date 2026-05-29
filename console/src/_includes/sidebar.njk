@@ -2,7 +2,7 @@
 layout: base.njk
 ---
 <style>
-    .sidebar { border-right: 1px solid rgba(107, 99, 90, 0.18); }
+    .sidebar { background: #F7F5F2; border-right: 1px solid rgba(107, 99, 90, 0.12); }
     .side-link {
         display: flex; align-items: center; gap: 12px;
         padding: 10px 0;
@@ -56,8 +56,10 @@ layout: base.njk
         </div>
     </aside>
 
-    <main class="flex-1 px-10 md:px-16 py-12">
-        {{ content | safe }}
+    <main class="flex-1 px-8 md:px-14 py-12">
+        <div class="mx-auto w-full max-w-6xl">
+            {{ content | safe }}
+        </div>
     </main>
 </div>
 

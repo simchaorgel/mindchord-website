@@ -26,14 +26,14 @@
 /* ── Document defaults ──────────────────────────────────────────────── */
 /* `overflow-x: clip` (not `hidden`) — clip doesn't create a scroll
    container, so sticky positioning on descendants keeps working. */
-html { scroll-behavior: smooth; overflow-x: clip; background: #F5F0EB; }
+html { scroll-behavior: smooth; overflow-x: clip; background: #FCFBFA; }
 body { font-family: 'Inter', system-ui, sans-serif; }
 /* Sage-tinted text selection — picks up the brand palette */
 ::selection { background: rgba(122, 143, 126, 0.35); color: #2C2825; }
 .wordmark { font-family: 'TeX Gyre Pagella', Georgia, serif; letter-spacing: -0.01em; }
 
 /* ── Page backdrop ──────────────────────────────────────────────────── */
-.page-bg { background: #F5F0EB; position: relative; overflow-x: clip; }
+.page-bg { background: #FCFBFA; position: relative; overflow-x: clip; }
 
 /* ── Header (glass, sticky) ─────────────────────────────────────────── */
 .glass {
@@ -79,6 +79,48 @@ nav a.is-active { font-weight: 700; opacity: 1; }
 }
 .console-btn:hover { filter: brightness(1.05); }
 .console-btn:active { transform: scale(0.97); }
+
+/* ── Surfaces ───────────────────────────────────────────────────────── */
+/* Shared card surface for console panels. A white fill lifts off the
+   near-white page background via a hairline border + soft shadow, so
+   panels read as intentional surfaces rather than washed-out glass. */
+.card {
+    background: #FFFFFF;
+    border: 1px solid rgba(44, 40, 37, 0.08);
+    border-radius: 16px;
+    box-shadow: 0 1px 2px rgba(44, 40, 37, 0.04), 0 4px 14px rgba(44, 40, 37, 0.04);
+}
+
+/* ── Stat cards ─────────────────────────────────────────────────────── */
+/* Replaces the old gradient squircle "bubbles". Cleaner, card-aligned
+   metric tiles: small dotted label on top, large serif number below.
+   Colour comes from the dot accent only — keeps the brand warmth without
+   a heavy gradient block. */
+.stat-card {
+    min-width: 156px;
+    padding: 16px 20px;
+    border-radius: 16px;
+    background: #FFFFFF;
+    border: 1px solid rgba(44, 40, 37, 0.08);
+    box-shadow: 0 1px 2px rgba(44, 40, 37, 0.04), 0 4px 14px rgba(44, 40, 37, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.stat-card .stat-head { display: flex; align-items: center; gap: 8px; }
+.stat-card .dot { width: 9px; height: 9px; border-radius: 999px; flex-shrink: 0; }
+.stat-card .dot-sage  { background: #7A8F7E; }
+.stat-card .dot-coral { background: #C4704B; }
+.stat-card .dot-gold  { background: #B8943F; }
+.stat-card .lbl {
+    font-family: 'TeX Gyre Pagella', Georgia, serif;
+    font-size: 11px; color: #6B635A;
+    text-transform: uppercase; letter-spacing: 0.10em; line-height: 1.2;
+}
+.stat-card .num {
+    font-family: 'TeX Gyre Pagella', Georgia, serif;
+    font-size: 36px; line-height: 1; color: #2C2825; letter-spacing: -0.01em;
+}
 
 /* ── Mobile menu open / scroll-lock states ─────────────────────────── */
 #mobile-menu.is-open { opacity: 1; pointer-events: auto; }

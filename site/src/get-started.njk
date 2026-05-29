@@ -12,26 +12,47 @@ nav: get started
 </style>
 
 <main class="flex-1 relative px-6 md:px-10 pt-20 md:pt-28 pb-24">
-    <div class="max-w-2xl mx-auto text-center">
+    <div class="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-14 items-center">
 
-        <h1 class="wordmark text-4xl md:text-5xl tracking-tight">Get started</h1>
+        <!-- Intro copy (left on desktop) -->
+        <div class="text-center md:text-left">
+            <h1 class="wordmark text-4xl md:text-5xl tracking-tight">Get started</h1>
 
-        <p class="wordmark mt-6 text-lg md:text-xl text-[#6B635A] leading-relaxed">
-            Minchord is in closed beta and is not yet publically available. We would love to hear from you if you are interested in joining either as a user or as a provider, so please don't hesitate to reach out and enquire.
-        </p>
+            <p class="wordmark mt-6 text-lg md:text-xl text-[#6B635A] leading-relaxed">
+                Minchord is in closed beta and is not yet publically available. If you would like to join as a user or as a provider, please <a href="/contact" class="text-[#C4704B] underline decoration-[#C4704B]/40 underline-offset-4 hover:decoration-[#C4704B] transition">reach out to us</a> and we will be happy to answer any questions you have.
+            </p>
 
-        <p class="wordmark mt-5 text-[17px] text-[#2C2825]/85 leading-relaxed">
-            Whether you run a clinic and want to offer Mindchord to your clients, or you're curious about trying neurofeedback yourself, feel free to get in touch
-        </p>
+            <p class="wordmark mt-5 text-[17px] text-[#2C2825]/85 leading-relaxed">
+                Whether you run a clinic and want to offer Mindchord to your clients, or you're curious about trying neurofeedback yourself, you can download the app or get in touch.
+            </p>
+        </div>
 
-        <div class="mt-10 flex justify-center">
-            <a href="/contact"
-                class="relative isolate inline-flex items-center gap-2 px-7 py-3 text-[15px] text-[#F5F0EB] wordmark rounded-full ring-4 ring-transparent hover:ring-[#7A8F7E]/30 active:scale-95 transition-all duration-200 before:content-[''] before:absolute before:inset-0 before:-z-10 before:rounded-full before:bg-gradient-to-b before:from-[#869C8A] before:to-[#6A7F6E] before:transition-all before:duration-200 hover:before:brightness-90">
-                Get in touch
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4">
-                    <path d="M13.2 5.3a1 1 0 0 1 1.4 0l5.8 5.8a1.25 1.25 0 0 1 0 1.77l-5.8 5.83a1 1 0 0 1-1.42-1.41L17.18 13H4.75a1 1 0 1 1 0-2h12.43l-3.98-3.98a1 1 0 0 1 0-1.42Z"/>
-                </svg>
-            </a>
+        <!-- Download card (right on desktop) -->
+        <div class="rounded-2xl bg-white/40 backdrop-blur ring-1 ring-[#2C2825]/10 shadow-sm px-8 py-10 text-center">
+            <img src="/media/favicon.png" alt="" class="mx-auto w-14 h-14 rounded-xl">
+
+            <h2 class="wordmark mt-5 text-2xl tracking-tight">Download Mindchord</h2>
+
+            <p class="wordmark mt-2 inline-flex items-center gap-2 text-[13px] text-[#6B635A]">
+                <span class="inline-block rounded-full bg-[#7A8F7E]/15 text-[#5E7363] px-2.5 py-0.5">v1.0.0</span>
+                <span>·</span>
+                <span>Windows 10 / 11</span>
+            </p>
+
+            <div class="mt-7 flex justify-center">
+                <a href="/media/Mindchord-Setup-1.0.0.exe" download
+                    class="relative isolate inline-flex items-center gap-2 px-7 py-3 text-[15px] text-[#F5F0EB] wordmark rounded-full ring-4 ring-transparent hover:ring-[#7A8F7E]/30 active:scale-95 transition-all duration-200 before:content-[''] before:absolute before:inset-0 before:-z-10 before:rounded-full before:bg-gradient-to-b before:from-[#869C8A] before:to-[#6A7F6E] before:transition-all before:duration-200 hover:before:brightness-90">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4">
+                        <path d="M12 3a1 1 0 0 1 1 1v9.59l3.3-3.3a1 1 0 0 1 1.4 1.42l-5 5a1 1 0 0 1-1.4 0l-5-5a1 1 0 1 1 1.4-1.42l3.3 3.3V4a1 1 0 0 1 1-1Z"/>
+                        <path d="M4 19a1 1 0 0 1 1-1h14a1 1 0 1 1 0 2H5a1 1 0 0 1-1-1Z"/>
+                    </svg>
+                    Download for Windows
+                </a>
+            </div>
+
+            <p class="wordmark mt-5 text-[12.5px] text-[#6B635A]/80 leading-relaxed">
+                Only beta-testers can login.
+            </p>
         </div>
     </div>
 </main>

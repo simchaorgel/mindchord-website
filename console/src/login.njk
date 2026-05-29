@@ -2,40 +2,13 @@
 layout: base.njk
 title: Mindchord Console — Sign in
 ---
-<style>
-    /* Blobs fixed to the viewport — single-screen page, no scrolling. */
-    .blob { position: fixed; z-index: 0; }
-    .blob-1 { top: -100px; left: 14%;  background: #C4704B; opacity: 0.24; }
-    .blob-2 { top: 40px;   right: 8%;  background: #7A8F7E; opacity: 0.32; }
-    .blob-3 { bottom: -120px; left: 40%; background: #B8943F; opacity: 0.20; }
-
-    /* EEG canvas band — centred on y-axis behind the panel. */
-    .eeg-canvas-h { height: 320px; }
-    @media (min-width: 768px) { .eeg-canvas-h { height: 420px; } }
-
-    /* Glass login panel */
-    .login-panel {
-        backdrop-filter: blur(20px) saturate(140%);
-        -webkit-backdrop-filter: blur(20px) saturate(140%);
-        border-radius: 18px;
-    }
-</style>
-
-<div class="blob blob-1"></div>
-<div class="blob blob-2"></div>
-<div class="blob blob-3"></div>
-
 <a href="/" class="absolute top-6 left-6 md:top-8 md:left-10 z-30 flex items-center gap-2.5">
     <img src="/console/media/favicon.png" alt="" class="h-8 md:h-9 w-auto object-contain">
     <span class="wordmark text-xl md:text-2xl">Mindchord</span>
 </a>
 
-<div class="absolute inset-x-0 top-1/2 -translate-y-1/2 z-0 pointer-events-none">
-    <canvas id="eeg-canvas" class="block w-full eeg-canvas-h"></canvas>
-</div>
-
 <main class="relative z-10 min-h-screen flex items-center justify-center px-6">
-    <section class="login-panel w-full max-w-lg p-8 md:p-10">
+    <section class="w-full max-w-lg p-8 md:p-10 bg-white border border-[#2C2825]/10 rounded-2xl shadow-sm">
         <div class="flex items-center justify-center gap-3">
             <img src="/console/media/favicon.png" alt="" class="h-8 md:h-9 w-auto object-contain">
             <h2 class="wordmark text-2xl md:text-[28px] tracking-tight">Mindchord Console</h2>
@@ -58,8 +31,12 @@ title: Mindchord Console — Sign in
                     class="wordmark flex-1 h-12 px-5 bg-[#F5F0EB] rounded-l-full focus:outline-none">
                 <button
                     type="submit"
-                    class="wordmark relative isolate px-6 h-12 min-w-[140px] flex items-center justify-center text-[#F5F0EB] font-medium rounded-r-full ring-4 ring-transparent hover:ring-[#7A8F7E]/30 transition-all duration-200 before:content-[''] before:absolute before:inset-0 before:-z-10 before:rounded-r-full before:bg-gradient-to-b before:from-[#869C8A] before:to-[#6A7F6E] before:transition-all before:duration-200 hover:before:brightness-90">
-                    Send code
+                    class="wordmark relative isolate px-6 h-12 min-w-[140px] flex items-center justify-center gap-2 text-[#F5F0EB] font-medium rounded-r-full ring-4 ring-transparent hover:ring-[#7A8F7E]/30 transition-all duration-200 disabled:opacity-90 disabled:cursor-not-allowed before:content-[''] before:absolute before:inset-0 before:-z-10 before:rounded-r-full before:bg-gradient-to-b before:from-[#869C8A] before:to-[#6A7F6E] before:transition-all before:duration-200 hover:before:brightness-90">
+                    <svg data-spinner class="hidden animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-90" fill="currentColor" d="M4 12a8 8 0 0 1 8-8V0C5.373 0 0 5.373 0 12h4Z"></path>
+                    </svg>
+                    <span data-btn-label>Send code</span>
                 </button>
             </div>
         </form>
@@ -100,70 +77,6 @@ title: Mindchord Console — Sign in
 </main>
 
 <script>
-    (function eegViz() {
-        const canvas = document.getElementById('eeg-canvas');
-        const ctx = canvas.getContext('2d');
-
-        const channels = [
-            { color: '#7A8F7E', phase: Math.random() * 1000, speed: 0.12 },
-            { color: '#C4704B', phase: Math.random() * 1000, speed: 0.14 },
-            { color: '#B8943F', phase: Math.random() * 1000, speed: 0.16 },
-            { color: '#6A8E5B', phase: Math.random() * 1000, speed: 0.10 },
-        ];
-        const LANE_PADDING = 8;
-
-        let W = 0, H = 0, DPR = 1;
-        function resize() {
-            DPR = window.devicePixelRatio || 1;
-            W = canvas.clientWidth;
-            H = canvas.clientHeight;
-            canvas.width = Math.floor(W * DPR);
-            canvas.height = Math.floor(H * DPR);
-            ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-        }
-        resize();
-        window.addEventListener('resize', resize);
-
-        function eegSample(t, seed) {
-            const slow = Math.sin(t * 0.55 + seed) * 0.42
-                       + Math.sin(t * 1.20 + seed * 1.7) * 0.22;
-            const fast = Math.sin(t * 12.0 + seed * 3.1) * 0.16
-                       + Math.sin(t * 21.0 + seed * 5.7) * 0.10
-                       + Math.sin(t * 34.0 + seed * 7.3) * 0.06;
-            let v = slow + fast;
-            if (v > 1) v = 1; else if (v < -1) v = -1;
-            return v;
-        }
-
-        const t0 = performance.now();
-        function draw(now) {
-            const elapsed = (now - t0) / 1000;
-            ctx.clearRect(0, 0, W, H);
-
-            const rowH = H / channels.length;
-            const laneAmp = (rowH / 2) - LANE_PADDING;
-            const step = 2;
-
-            channels.forEach((ch, i) => {
-                const midY = rowH * (i + 0.5);
-                ctx.beginPath();
-                ctx.lineWidth = 1.6;
-                ctx.strokeStyle = ch.color;
-                ctx.lineJoin = 'round';
-                ctx.lineCap = 'round';
-                for (let x = 0; x <= W; x += step) {
-                    const tx = elapsed * ch.speed + x * 0.018;
-                    const y = midY + eegSample(tx, ch.phase) * laneAmp;
-                    if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-                }
-                ctx.stroke();
-            });
-
-            requestAnimationFrame(draw);
-        }
-        requestAnimationFrame(draw);
-    })();
-
     // If already signed in, skip straight to the dashboard.
     window.consoleAuth.redirectIfSignedIn();
 
@@ -187,9 +100,15 @@ title: Mindchord Console — Sign in
         e.preventDefault();
         const email = emailInput.value.trim();
         const submitBtn = emailForm.querySelector('button[type="submit"]');
+        const spinner = submitBtn.querySelector('[data-spinner]');
+        const label = submitBtn.querySelector('[data-btn-label]');
         submitBtn.disabled = true;
+        spinner.classList.remove('hidden');
+        label.textContent = 'Sending…';
         const { error } = await window.consoleAuth.sendOtp(email);
         submitBtn.disabled = false;
+        spinner.classList.add('hidden');
+        label.textContent = 'Send code';
         if (error) {
             alert(error.message || 'Could not send code. Check the email and try again.');
             return;
