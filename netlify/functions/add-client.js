@@ -7,14 +7,14 @@
 //   2. confirms the caller is a clinician with an org,
 //   3. forces the new client into THAT org (never trusting client-supplied org).
 //
-// The secret key is read from the SUPABASE_SECRET_KEY env var (set in
+// The secret key is read from the SUPABASE_SERVICE_ROLE_KEY env var (set in
 // Netlify → Site settings → Environment variables). It must never reach the
 // browser bundle.
 
 const { createClient } = require('@supabase/supabase-js');
 
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://obxibvkhozpulnwnjhoh.supabase.co';
-const SECRET_KEY = process.env.SUPABASE_SECRET_KEY;
+const SECRET_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
