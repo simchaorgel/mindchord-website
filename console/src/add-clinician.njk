@@ -1,0 +1,130 @@
+---
+layout: sidebar.njk
+title: Mindchord Console | Add clinician
+nav: organization
+---
+
+<!-- Breadcrumb back to the organization page -->
+<a href="/console/organization/" class="btn-link text-caption">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4">
+        <path d="M14.7 17.7a1 1 0 0 1-1.4 0L8 12.4a.5.5 0 0 1 0-.8l5.3-5.3a1 1 0 1 1 1.4 1.42L10.82 12l3.88 3.88a1 1 0 0 1 0 1.42Z"/>
+    </svg>
+    Organization
+</a>
+
+<h1 class="text-display mt-4">Add clinician</h1>
+<p class="text-body text-muted mt-2 max-w-xl">
+    Clinicians can see every client in your organization, so accounts are created
+    by the Mindchord team after a quick review. Send the details below and we'll
+    set them up and be in touch.
+</p>
+
+<!-- Netlify Forms: the form is real static HTML (rendered at build time), so
+     Netlify detects it on deploy — no hidden decoy form needed. We submit via
+     AJAX (below) so the clinician stays in the console.
+     The triad Netlify needs: name + data-netlify + the hidden form-name input,
+     plus the honeypot. -->
+<form id="add-clinician-form"
+      name="add-clinician"
+      method="POST"
+      data-netlify="true"
+      data-netlify-honeypot="bot-field"
+      class="mt-8 card p-6 md:p-8 max-w-xl"
+      novalidate>
+    <input type="hidden" name="form-name" value="add-clinician" />
+    <p class="hidden"><label>Don't fill this out if you're human: <input name="bot-field" /></label></p>
+
+    <!-- Context auto-filled from the signed-in clinician's session, so the
+         notification email shows who requested it and for which org. -->
+    <input type="hidden" name="requested_by" id="acl-requested-by" value="" />
+    <input type="hidden" name="organization" id="acl-org" value="" />
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <label class="field">
+            <span class="label">First name</span>
+            <input name="first_name" class="input" type="text" autocomplete="given-name" placeholder="Jane">
+        </label>
+        <label class="field">
+            <span class="label">Surname</span>
+            <input name="surname" class="input" type="text" autocomplete="family-name" placeholder="Doe">
+        </label>
+    </div>
+
+    <label class="field block mt-5">
+        <span class="label">Email address</span>
+        <input name="email" id="acl-email" class="input" type="email" required autocomplete="off" placeholder="jane@clinic.com">
+    </label>
+
+    <p id="acl-error" class="text-caption text-danger mt-4 hidden"></p>
+    <p id="acl-success" class="text-body text-ok mt-4 hidden"></p>
+
+    <div class="mt-7 flex items-center gap-4">
+        <button type="submit" id="acl-submit" class="btn btn-primary min-w-[160px]">
+            <svg data-spinner class="hidden animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-90" fill="currentColor" d="M4 12a8 8 0 0 1 8-8V0C5.373 0 0 5.373 0 12h4Z"></path>
+            </svg>
+            <span data-label>Send request</span>
+        </button>
+        <a href="/console/organization/" class="btn-link text-caption">Cancel</a>
+    </div>
+</form>
+
+<script>
+    const form = document.getElementById('add-clinician-form');
+    const emailInput = document.getElementById('acl-email');
+    const errorEl = document.getElementById('acl-error');
+    const successEl = document.getElementById('acl-success');
+    const submitBtn = document.getElementById('acl-submit');
+    const spinner = submitBtn.querySelector('[data-spinner]');
+    const label = submitBtn.querySelector('[data-label]');
+
+    // Fill the hidden context fields from the session + org so the email has
+    // who/which-org context. Best-effort — submission works regardless.
+    (async () => {
+        const session = await window.consoleAuth.getSession();
+        document.getElementById('acl-requested-by').value = session?.user?.email || '';
+        const { data } = await window.consoleAuth.sb
+            .from('organizations').select('name').maybeSingle();
+        document.getElementById('acl-org').value = data?.name || '';
+    })();
+
+    function showError(msg) {
+        successEl.classList.add('hidden');
+        errorEl.textContent = msg;
+        errorEl.classList.remove('hidden');
+    }
+    function setLoading(on) {
+        submitBtn.disabled = on;
+        spinner.classList.toggle('hidden', !on);
+        label.textContent = on ? 'Sending…' : 'Send request';
+    }
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        errorEl.classList.add('hidden');
+
+        if (!emailInput.value.trim()) { showError('Please enter an email address.'); emailInput.focus(); return; }
+
+        setLoading(true);
+        try {
+            // Netlify Forms AJAX: POST url-encoded form data to the site root.
+            const body = new URLSearchParams(new FormData(form)).toString();
+            const res = await fetch('/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body,
+            });
+            if (!res.ok) throw new Error('Request failed');
+
+            form.querySelectorAll('input, textarea, button').forEach(el => { el.disabled = true; });
+            successEl.textContent = 'Request sent. We’ll review it and set the clinician up shortly.';
+            successEl.classList.remove('hidden');
+            spinner.classList.add('hidden');
+            label.textContent = 'Sent';
+        } catch (err) {
+            showError('Could not send the request. Please try again, or email simcha@mindchord.net.');
+            setLoading(false);
+        }
+    });
+</script>
