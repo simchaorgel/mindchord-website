@@ -6,14 +6,52 @@
     <title>{{ title }}</title>
     <link rel="icon" type="image/png" href="/console/media/favicon.png">
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Map Tailwind utilities onto the design tokens defined in
+         global_style.css (:root). Colours read the CSS vars so re-theming the
+         accent is a one-line change there; the named type scale mirrors the
+         "Precise" scale (Display 40 / Title 26 / Section 18 / Data 17 /
+         Body 15 / Caption 13). -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        canvas: 'var(--bg)',
+                        surface: 'var(--surface)',
+                        'surface-2': 'var(--surface-2)',
+                        line: 'var(--border)',
+                        'line-strong': 'var(--border-strong)',
+                        ink: 'var(--ink)',
+                        muted: 'var(--text-muted)',
+                        accent: 'var(--accent)',
+                        'accent-hover': 'var(--accent-hover)',
+                        'accent-weak': 'var(--accent-weak)',
+                        'accent-ink': 'var(--accent-ink)',
+                        ok: 'var(--ok)', warn: 'var(--warn)', info: 'var(--info)', danger: 'var(--danger)',
+                    },
+                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+                    fontSize: {
+                        display: ['40px', { lineHeight: '1.05', letterSpacing: '-0.02em', fontWeight: '700' }],
+                        title:   ['26px', { lineHeight: '1.15', letterSpacing: '-0.015em', fontWeight: '600' }],
+                        section: ['18px', { lineHeight: '1.3',  letterSpacing: '-0.01em',  fontWeight: '600' }],
+                        data:    ['17px', { lineHeight: '1.25' }],
+                        body:    ['15px', { lineHeight: '1.55' }],
+                        caption: ['13px', { lineHeight: '1.4' }],
+                    },
+                    borderRadius: { card: '12px' },
+                    boxShadow: { card: 'var(--shadow)', tile: 'var(--shadow-sm)' },
+                },
+            },
+        };
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/console/styles/global_style.css">
     <!-- Auth helpers load in <head> so page-level inline <script> can use
          window.consoleAuth as soon as the parser reaches them. -->
     <script src="/console/scripts/console_auth.js"></script>
 </head>
-<body class="page-bg min-h-screen text-[#2C2825]">
+<body class="page-bg min-h-screen text-ink antialiased">
 
     <!-- Shared infra container for things like toast / alerts.
          Pages don't need to add this themselves; just push into it from JS. -->

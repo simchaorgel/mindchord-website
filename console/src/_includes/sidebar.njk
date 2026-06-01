@@ -1,34 +1,14 @@
 ---
 layout: base.njk
 ---
-<style>
-    .sidebar { background: #F7F5F2; border-right: 1px solid rgba(107, 99, 90, 0.12); }
-    .side-link {
-        display: flex; align-items: center; gap: 12px;
-        padding: 10px 0;
-        color: #2C2825; opacity: 0.60;
-        font-family: 'TeX Gyre Pagella', Georgia, serif;
-        font-size: 17px; letter-spacing: -0.01em;
-        transition: opacity 180ms ease, color 180ms ease;
-    }
-    .side-link:hover { opacity: 0.95; }
-    .side-link.is-active { opacity: 1; color: #C4704B; font-weight: 700; }
-    .side-link svg { width: 18px; height: 18px; flex-shrink: 0; }
-    .meta-label {
-        font-family: 'TeX Gyre Pagella', Georgia, serif;
-        font-size: 11px; color: #6B635A;
-        text-transform: uppercase; letter-spacing: 0.12em;
-    }
-</style>
-
 <div class="flex min-h-screen">
-    <aside class="sidebar w-56 shrink-0 flex flex-col px-6 sticky top-0 h-screen">
-        <a href="/" class="flex items-center gap-2.5 h-16 shrink-0">
-            <img src="/console/media/favicon.png" alt="" class="h-8 w-auto object-contain">
-            <span class="wordmark text-xl">Mindchord</span>
+    <aside class="sidebar w-60 shrink-0 flex flex-col px-4 py-5 sticky top-0 h-screen">
+        <a href="/" class="flex items-center gap-2.5 h-10 px-2 shrink-0">
+            <img src="/console/media/favicon.png" alt="" class="h-7 w-auto object-contain">
+            <span class="wordmark text-lg">Mindchord</span>
         </a>
 
-        <nav class="mt-8 flex flex-col">
+        <nav class="mt-6 flex flex-col gap-0.5">
             <a href="/console/dashboard/" class="side-link {% if nav == 'dashboard' %}is-active{% endif %}">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor"><path d="M160-200v-360q0-19 8.5-36t23.5-28l240-180q21-16 48-16t48 16l240 180q15 11 23.5 28t8.5 36v360q0 33-23.5 56.5T720-120H600q-17 0-28.5-11.5T560-160v-200q0-17-11.5-28.5T520-400h-80q-17 0-28.5 11.5T400-360v200q0 17-11.5 28.5T360-120H240q-33 0-56.5-23.5T160-200Z"/></svg>
                 Dashboard
@@ -47,24 +27,48 @@ layout: base.njk
             </a>
         </nav>
 
-        <div class="mt-auto pb-5">
-            <button type="button" id="sign-out-btn" onclick="window.consoleAuth.signOut()" class="side-link w-full text-left">
+        <div class="mt-auto">
+            <button type="button" id="sign-out-btn" class="side-link w-full text-left">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor"><path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h240q17 0 28.5 11.5T480-800q0 17-11.5 28.5T440-760H200v560h240q17 0 28.5 11.5T480-160q0 17-11.5 28.5T440-120H200Zm487-320H400q-17 0-28.5-11.5T360-480q0-17 11.5-28.5T400-520h287l-75-75q-11-11-11-27t11-28q11-12 28-12.5t29 11.5l143 143q12 12 12 28t-12 28L669-309q-12 12-28.5 11.5T612-310q-11-12-10.5-28.5T613-366l74-74Z"/></svg>
                 Sign out
             </button>
-            <div class="wordmark mt-3 text-xs text-[#6B635A]">Mindchord Console · beta</div>
         </div>
     </aside>
 
-    <main class="flex-1 px-8 md:px-14 py-12">
-        <div class="mx-auto w-full max-w-6xl">
+    <main class="flex-1 px-6 md:px-12 py-10">
+        <div class="mx-auto w-full max-w-6xl enter">
             {{ content | safe }}
         </div>
     </main>
+</div>
+
+<!-- Sign-out confirmation -->
+<div id="signout-modal" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="signout-title">
+    <div class="scrim" data-close></div>
+    <div class="dialog">
+        <h2 id="signout-title" class="text-section">Sign out?</h2>
+        <p class="text-body text-muted mt-2">Are you sure you would like to sign out?</p>
+        <div class="mt-6 flex items-center justify-end gap-3">
+            <button type="button" class="btn btn-secondary" data-close>Cancel</button>
+            <button type="button" id="signout-confirm" class="btn btn-danger">Sign out</button>
+        </div>
+    </div>
 </div>
 
 <script>
     // Every sidebar-using page is gated. Page-specific scripts can still call
     // getSession() / requireSession() to get the session object.
     window.consoleAuth.requireSession();
+
+    // Sign-out confirmation modal.
+    (function () {
+        const modal = document.getElementById('signout-modal');
+        const open = () => { modal.hidden = false; document.getElementById('signout-confirm').focus(); };
+        const close = () => { modal.hidden = true; };
+
+        document.getElementById('sign-out-btn').addEventListener('click', open);
+        document.getElementById('signout-confirm').addEventListener('click', () => window.consoleAuth.signOut());
+        modal.querySelectorAll('[data-close]').forEach(el => el.addEventListener('click', close));
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !modal.hidden) close(); });
+    })();
 </script>

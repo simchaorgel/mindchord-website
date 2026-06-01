@@ -1,0 +1,269 @@
+---
+layout: base.njk
+title: Mindchord Console — Design reference
+---
+<!-- Living style guide for the console redesign. Mirrors the "Precise" board:
+     type scale, tokens, components, and an in-context preview, all built on
+     the real design-system classes so this page IS the source of truth. -->
+<style>
+    .ref-section { display: grid; grid-template-columns: 120px 1fr; gap: 32px; padding: 40px 0; border-top: 1px solid var(--border); }
+    .ref-label { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); padding-top: 4px; }
+    .ref-row { display: grid; grid-template-columns: 80px 1fr; gap: 24px; align-items: baseline; }
+    .ref-row + .ref-row { margin-top: 18px; }
+    .ref-meta { font-size: 12px; color: var(--text-muted); padding-top: 6px; }
+    .swatch { height: 64px; border-radius: var(--r); border: 1px solid var(--border); }
+    @media (max-width: 720px) { .ref-section { grid-template-columns: 1fr; gap: 16px; } }
+</style>
+
+<div class="max-w-5xl mx-auto px-6 md:px-10 py-16">
+
+    <!-- Masthead -->
+    <header class="pb-10">
+        <div class="flex items-center gap-2.5">
+            <img src="/console/media/favicon.png" alt="" class="h-8 w-auto object-contain">
+            <span class="wordmark text-xl">Mindchord</span>
+        </div>
+        <h1 class="text-display mt-6">Precise</h1>
+        <p class="text-body text-muted mt-2 max-w-md">
+            Swiss-neutral structure, one warm coral accent, and playfulness that lives in
+            feel — quick, satisfying feedback rather than decoration.
+        </p>
+    </header>
+
+    <!-- Typography -->
+    <section class="ref-section">
+        <div class="ref-label">Type</div>
+        <div>
+            <div class="ref-row"><span class="ref-meta">Display / 40</span><span class="text-display">Client Console</span></div>
+            <div class="ref-row"><span class="ref-meta">Title / 26</span><span class="text-title">Session overview</span></div>
+            <div class="ref-row"><span class="ref-meta">Section / 18</span><span class="text-section">Recent activity</span></div>
+            <div class="ref-row"><span class="ref-meta">Body / 15</span><span class="text-body">Every client record gathers their description, active protocols, and full session history in one calm, legible place.</span></div>
+            <div class="ref-row"><span class="ref-meta">Caption / 13</span><span class="text-caption text-muted">Last updated 12 minutes ago · by Dr. Reyes</span></div>
+            <div class="ref-row"><span class="ref-meta">Data / 17</span><span class="text-data tnum">1,284 sessions · 98.6% attendance</span></div>
+        </div>
+    </section>
+
+    <!-- Color -->
+    <section class="ref-section">
+        <div class="ref-label">Color</div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div><div class="swatch" style="background:var(--bg)"></div><div class="text-caption font-medium mt-2">Canvas</div><div class="text-caption text-muted">--bg</div></div>
+            <div><div class="swatch" style="background:var(--surface)"></div><div class="text-caption font-medium mt-2">Surface</div><div class="text-caption text-muted">--surface</div></div>
+            <div><div class="swatch" style="background:var(--surface-2)"></div><div class="text-caption font-medium mt-2">Subtle</div><div class="text-caption text-muted">--surface-2</div></div>
+            <div><div class="swatch" style="background:var(--border-strong)"></div><div class="text-caption font-medium mt-2">Border</div><div class="text-caption text-muted">--border-strong</div></div>
+            <div><div class="swatch" style="background:var(--ink)"></div><div class="text-caption font-medium mt-2">Ink</div><div class="text-caption text-muted">--ink</div></div>
+            <div><div class="swatch" style="background:var(--text-muted)"></div><div class="text-caption font-medium mt-2">Muted</div><div class="text-caption text-muted">--text-muted</div></div>
+            <div><div class="swatch" style="background:var(--accent)"></div><div class="text-caption font-medium mt-2">Accent</div><div class="text-caption text-muted">--accent</div></div>
+            <div><div class="swatch" style="background:var(--accent-weak)"></div><div class="text-caption font-medium mt-2">Accent tint</div><div class="text-caption text-muted">--accent-weak</div></div>
+        </div>
+    </section>
+
+    <!-- Buttons -->
+    <section class="ref-section">
+        <div class="ref-label">Buttons</div>
+        <div>
+            <div class="flex flex-wrap items-center gap-3">
+                <button class="btn btn-primary">Save changes</button>
+                <button class="btn btn-secondary">Cancel</button>
+                <button class="btn btn-ghost">Ghost</button>
+                <a href="#" class="btn-link">View details</a>
+                <button class="btn btn-secondary btn-icon" aria-label="More">
+                    <svg viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+                </button>
+            </div>
+            <div class="flex flex-wrap items-center gap-3 mt-4">
+                <button class="btn btn-primary">
+                    <svg viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4"><path d="M11 11V5a1 1 0 1 1 2 0v6h6a1 1 0 1 1 0 2h-6v6a1 1 0 1 1-2 0v-6H5a1 1 0 1 1 0-2h6Z"/></svg>
+                    New client
+                </button>
+                <button class="btn btn-primary btn-sm">Small</button>
+                <button class="btn btn-secondary btn-sm">Small</button>
+                <button class="btn btn-danger btn-sm">Remove</button>
+                <button class="btn btn-primary" disabled>Disabled</button>
+            </div>
+            <p class="ref-meta mt-4">Press to feel the scale; tab to a control to see the focus ring.</p>
+        </div>
+    </section>
+
+    <!-- Inputs & controls -->
+    <section class="ref-section">
+        <div class="ref-label">Inputs</div>
+        <div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <label class="field">
+                    <span class="label">Client name</span>
+                    <input class="input" type="text" value="Mara Ellison">
+                    <span class="hint">As it appears on their record.</span>
+                </label>
+                <div class="field">
+                    <span class="label">Search</span>
+                    <div class="input-search">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+                        <input class="input" type="text" placeholder="Find a client or protocol…">
+                    </div>
+                    <span class="hint">Searches names, tags, and notes.</span>
+                </div>
+                <label class="field">
+                    <span class="label">Primary protocol</span>
+                    <select class="input">
+                        <option>Cognitive Behavioral · 12 wk</option>
+                        <option>Acceptance &amp; Commitment</option>
+                    </select>
+                </label>
+                <label class="field">
+                    <span class="label">Email</span>
+                    <input class="input" type="email" value="mara@hello.co">
+                    <span class="hint">Focus rings use the accent at low alpha.</span>
+                </label>
+            </div>
+
+            <label class="field block mt-5">
+                <span class="label">Session note</span>
+                <textarea class="input">Client reported improved sleep this week; continue current protocol and revisit goals next session.</textarea>
+            </label>
+
+            <div class="flex flex-wrap items-center gap-8 mt-6">
+                <label class="check">
+                    <input type="checkbox" checked>
+                    <span class="box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+                    Send reminder
+                </label>
+                <label class="check">
+                    <input type="checkbox">
+                    <span class="box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+                    Mark confidential
+                </label>
+                <label class="switch">
+                    <input type="checkbox" checked>
+                    <span class="track"><span class="thumb"></span></span>
+                    Active client
+                </label>
+            </div>
+        </div>
+    </section>
+
+    <!-- Status -->
+    <section class="ref-section">
+        <div class="ref-label">Status</div>
+        <div class="flex flex-wrap items-center gap-3">
+            <span class="chip chip-ok"><span class="dot"></span>Active</span>
+            <span class="chip chip-warn"><span class="dot"></span>On hold</span>
+            <span class="chip chip-info"><span class="dot"></span>Intake</span>
+            <span class="chip chip-neutral"><span class="dot"></span>Discharged</span>
+            <span class="chip chip-accent">Featured</span>
+            <span class="tag">CBT · 12 wk</span>
+            <span class="tag">Weekly</span>
+        </div>
+    </section>
+
+    <!-- Cards -->
+    <section class="ref-section">
+        <div class="ref-label">Cards</div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <article class="card card-hover p-5">
+                <div class="flex items-start justify-between gap-4">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <span class="w-10 h-10 rounded-full bg-accent-weak text-accent-ink grid place-items-center text-caption font-semibold shrink-0">ME</span>
+                        <div class="min-w-0">
+                            <div class="text-section">Mara Ellison</div>
+                            <div class="text-caption text-muted">CL-2048</div>
+                        </div>
+                    </div>
+                    <span class="chip chip-ok"><span class="dot"></span>Active</span>
+                </div>
+                <div class="flex items-center gap-2 mt-4">
+                    <span class="tag">CBT · 12 wk</span><span class="tag">Weekly</span>
+                </div>
+                <div class="flex items-center justify-between mt-5 pt-4 border-t border-line">
+                    <span class="text-caption text-muted">Last session · May 28</span>
+                    <a href="#" class="btn btn-secondary btn-sm">Open chart</a>
+                </div>
+            </article>
+
+            <article class="card card-hover p-5">
+                <div class="flex items-start justify-between gap-4">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <span class="w-10 h-10 rounded-full bg-surface-2 text-muted grid place-items-center text-caption font-semibold shrink-0">JT</span>
+                        <div class="min-w-0">
+                            <div class="text-section">Julian Tran</div>
+                            <div class="text-caption text-muted">CL-1990</div>
+                        </div>
+                    </div>
+                    <span class="chip chip-warn"><span class="dot"></span>On hold</span>
+                </div>
+                <div class="flex items-center gap-2 mt-4">
+                    <span class="tag">ACT</span><span class="tag">Biweekly</span>
+                </div>
+                <div class="flex items-center justify-between mt-5 pt-4 border-t border-line">
+                    <span class="text-caption text-muted">Last session · Apr 30</span>
+                    <a href="#" class="btn btn-secondary btn-sm">Open chart</a>
+                </div>
+            </article>
+        </div>
+    </section>
+
+    <!-- Session history table -->
+    <section class="ref-section">
+        <div class="ref-label">Table</div>
+        <div class="card overflow-hidden">
+            <table class="table">
+                <thead>
+                    <tr><th>Date</th><th>Session</th><th>Duration</th><th>Status</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td class="tnum">May 28</td><td>Individual</td><td class="tnum">50 min</td><td><span class="chip chip-ok"><span class="dot"></span>Completed</span></td></tr>
+                    <tr><td class="tnum">May 24</td><td>Group</td><td class="tnum">90 min</td><td><span class="chip chip-ok"><span class="dot"></span>Completed</span></td></tr>
+                    <tr><td class="tnum">May 19</td><td>Intake</td><td class="tnum">60 min</td><td><span class="chip chip-info"><span class="dot"></span>Logged</span></td></tr>
+                    <tr><td class="tnum">May 12</td><td>Individual</td><td class="tnum">50 min</td><td><span class="chip chip-warn"><span class="dot"></span>No-show</span></td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- In context -->
+    <section class="ref-section">
+        <div class="ref-label">In context</div>
+        <div class="card overflow-hidden">
+            <div class="flex min-h-[360px]">
+                <!-- Mini rail -->
+                <aside class="sidebar w-44 shrink-0 flex flex-col p-3">
+                    <div class="flex items-center gap-2 h-12 px-2">
+                        <img src="/console/media/favicon.png" alt="" class="h-6 w-auto object-contain">
+                        <span class="wordmark text-base">Mindchord</span>
+                    </div>
+                    <nav class="mt-3 flex flex-col gap-0.5">
+                        <a class="side-link is-active"><svg viewBox="0 -960 960 960" fill="currentColor"><path d="M160-200v-360q0-19 8.5-36t23.5-28l240-180q21-16 48-16t48 16l240 180q15 11 23.5 28t8.5 36v360q0 33-23.5 56.5T720-120H600q-17 0-28.5-11.5T560-160v-200q0-17-11.5-28.5T520-400h-80q-17 0-28.5 11.5T400-360v200q0 17-11.5 28.5T360-120H240q-33 0-56.5-23.5T160-200Z"/></svg>Dashboard</a>
+                        <a class="side-link"><svg viewBox="0 -960 960 960" fill="currentColor"><path d="M367-527q-47-47-47-113t47-113q47-47 113-47t113 47q47 47 47 113t-47 113q-47 47-113 47t-113-47ZM160-240v-32q0-34 17.5-62.5T224-378q62-31 126-46.5T480-440q66 0 130 15.5T736-378q29 15 46.5 43.5T800-272v32q0 33-23.5 56.5T720-160H240q-33 0-56.5-23.5T160-240Z"/></svg>Clients</a>
+                        <a class="side-link"><svg viewBox="0 -960 960 960" fill="currentColor"><path d="M160-120q-33 0-56.5-23.5T80-200v-440q0-33 23.5-56.5T160-720h160v-80q0-33 23.5-56.5T400-880h160q33 0 56.5 23.5T640-800v80h160q33 0 56.5 23.5T880-640v440q0 33-23.5 56.5T800-120H160Z"/></svg>Protocols</a>
+                        <a class="side-link"><svg viewBox="0 -960 960 960" fill="currentColor"><path d="M433-80q-27 0-46.5-18T363-142l-9-66q-13-5-24.5-12T307-235l-62 26q-25 11-50 2t-39-32l-47-82q-14-23-8-49t27-43l53-40q-1-7-1-13.5v-27q0-6.5 1-13.5l-53-40q-21-17-27-43t8-49l47-82q14-23 39-32t50 2l62 26q11-8 23-15t24-12l9-66q4-26 23.5-44t46.5-18h94q27 0 46.5 18t23.5 44l9 66q13 5 24.5 12t22.5 15l62-26q25-11 50-2t39 32l47 82q14 23 8 49t-27 43l-53 40q1 7 1 13.5v27q0 6.5-2 13.5l53 40q21 17 27 43t-8 49l-48 82q-14 23-39 32t-50-2l-60-26q-11 8-23 15t-24 12l-9 66q-4 26-23.5 44T527-80h-94Zm49-260q58 0 99-41t41-99q0-58-41-99t-99-41q-59 0-99.5 41T342-480q0 58 40.5 99t99.5 41Z"/></svg>Settings</a>
+                    </nav>
+                    <div class="mt-auto flex items-center gap-2 px-2 py-2">
+                        <span class="w-7 h-7 rounded-full bg-surface-2 text-muted grid place-items-center text-[11px] font-semibold">DR</span>
+                        <div class="leading-tight"><div class="text-caption font-medium">Dr. Reyes</div><div class="text-[11px] text-muted">Clinician</div></div>
+                    </div>
+                </aside>
+
+                <!-- Mini content -->
+                <div class="flex-1 p-6 bg-canvas">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-title">Dashboard</h3>
+                            <p class="text-caption text-muted">Wednesday, May 28</p>
+                        </div>
+                        <button class="btn btn-secondary btn-sm">Export</button>
+                    </div>
+                    <div class="grid grid-cols-3 gap-3 mt-5">
+                        <div class="stat"><div class="lbl">Active clients</div><div class="num">48</div></div>
+                        <div class="stat"><div class="lbl">This week</div><div class="num">26</div></div>
+                        <div class="stat"><div class="lbl">Protocols</div><div class="num">12</div></div>
+                    </div>
+                    <div class="card mt-4 divide-y divide-line">
+                        <div class="flex items-center justify-between px-4 py-3"><div class="flex items-center gap-3"><span class="text-caption tnum text-muted w-10">9:00</span><span class="text-body">Mara Ellison</span></div><div class="flex items-center gap-3"><span class="tag">Individual</span><a class="btn-link text-caption">Open</a></div></div>
+                        <div class="flex items-center justify-between px-4 py-3"><div class="flex items-center gap-3"><span class="text-caption tnum text-muted w-10">10:30</span><span class="text-body">Julian Tran</span></div><div class="flex items-center gap-3"><span class="tag">Intake</span><a class="btn-link text-caption">Open</a></div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</div>

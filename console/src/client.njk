@@ -4,54 +4,62 @@ title: Mindchord Console — Client
 nav: clients
 ---
 <style>
-    /* Protocol card — solid white surface, matching the shared .card look. */
-    .protocol-card {
-        background: #FFFFFF;
-        border: 1px solid rgba(44, 40, 37, 0.08);
-        border-radius: 16px;
-        box-shadow: 0 1px 2px rgba(44, 40, 37, 0.04), 0 4px 14px rgba(44, 40, 37, 0.04);
-    }
-
     /* Band chip — small inline pill with a coloured dot for direction. */
     .band-chip {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 4px 10px 4px 8px;
-        border-radius: 999px;
-        background: rgba(107, 99, 90, 0.08);
-        font-family: 'TeX Gyre Pagella', Georgia, serif;
-        font-size: 13px;
-        color: #2C2825;
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 3px 9px; border-radius: 999px;
+        background: var(--surface-2); font-size: 12.5px; color: var(--ink);
     }
-    .band-chip .dot {
-        width: 7px; height: 7px; border-radius: 999px;
-        background: #6B635A;
-    }
-    .band-chip.reward .dot { background: #6A8E5B; }
-    .band-chip.punish .dot { background: #B85042; }
+    .band-chip .dot { width: 6px; height: 6px; border-radius: 999px; background: var(--text-muted); }
+    .band-chip.reward .dot { background: var(--ok); }
+    .band-chip.punish .dot { background: var(--danger); }
 </style>
 
 <!-- Breadcrumb back to the client list -->
-<a href="/console/clients/"
-    class="wordmark inline-flex items-center gap-1.5 text-sm text-[#6B635A] hover:text-[#2C2825] transition">
+<a href="/console/clients/" class="btn-link text-caption">
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4">
         <path d="M14.7 17.7a1 1 0 0 1-1.4 0L8 12.4a.5.5 0 0 1 0-.8l5.3-5.3a1 1 0 1 1 1.4 1.42L10.82 12l3.88 3.88a1 1 0 0 1 0 1.42Z"/>
     </svg>
     All clients
 </a>
 
-<h1 id="client-name" class="wordmark mt-4 text-4xl md:text-5xl tracking-tight">
-    <span class="inline-block h-10 w-72 rounded bg-[#6B635A]/10 animate-pulse"></span>
-</h1>
-<p id="client-sub" class="wordmark mt-3 text-[#6B635A] text-base"></p>
+<div class="mt-4 flex items-start justify-between gap-6">
+    <div class="min-w-0">
+        <h1 id="client-name" class="text-display">
+            <span class="skeleton inline-block h-10 w-72 align-middle"></span>
+        </h1>
+        <p id="client-sub" class="text-body text-muted mt-2"></p>
+    </div>
+
+    <!-- Client-level actions. Hidden until the client loads (no actions on a
+         missing/unselected client). -->
+    <div id="client-actions" class="menu hidden shrink-0">
+        <button id="client-menu-btn" type="button" class="btn btn-secondary btn-icon" aria-haspopup="true" aria-expanded="false" aria-label="Client actions">
+            <svg viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+        </button>
+        <div id="client-menu" class="menu-panel" hidden role="menu">
+            <button type="button" class="menu-item" data-client-action="edit" role="menuitem">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                Edit details
+            </button>
+            <button type="button" class="menu-item" data-client-action="block" role="menuitem">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m5.6 5.6 12.8 12.8"/></svg>
+                Block access
+            </button>
+            <div class="menu-sep"></div>
+            <button type="button" class="menu-item danger" data-client-action="remove" role="menuitem">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M6 6v14a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V6"/></svg>
+                Remove client
+            </button>
+        </div>
+    </div>
+</div>
 
 <!-- ── Protocols ───────────────────────────────────────────── -->
-<section class="mt-12">
+<section class="mt-10">
     <div class="flex items-end justify-between gap-6">
-        <h2 class="wordmark text-2xl tracking-tight">Protocols</h2>
-        <button id="add-protocol-btn" type="button"
-                class="wordmark relative isolate inline-flex items-center gap-2 px-4 h-10 text-sm text-[#F5F0EB] rounded-full ring-4 ring-transparent hover:ring-[#7A8F7E]/30 active:scale-95 transition-all duration-200 before:content-[''] before:absolute before:inset-0 before:-z-10 before:rounded-full before:bg-gradient-to-b before:from-[#869C8A] before:to-[#6A7F6E] before:transition-all before:duration-200 hover:before:brightness-90">
+        <h2 class="text-section">Protocols</h2>
+        <button id="add-protocol-btn" type="button" class="btn btn-primary btn-sm">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4">
                 <path d="M11 11V5a1 1 0 1 1 2 0v6h6a1 1 0 1 1 0 2h-6v6a1 1 0 1 1-2 0v-6H5a1 1 0 1 1 0-2h6Z"/>
             </svg>
@@ -59,35 +67,74 @@ nav: clients
         </button>
     </div>
 
-    <div id="protocols-loading" class="mt-6 flex flex-col gap-4">
-        <div class="protocol-card p-6 h-36 animate-pulse"></div>
-        <div class="protocol-card p-6 h-36 animate-pulse"></div>
-        <div class="protocol-card p-6 h-36 animate-pulse"></div>
+    <div id="protocols-loading" class="mt-5 flex flex-col gap-4">
+        <div class="skeleton h-32 rounded-card"></div>
+        <div class="skeleton h-32 rounded-card"></div>
     </div>
 
-    <div id="protocols-empty" class="hidden mt-6 rounded-xl border border-dashed border-[#6B635A]/30 p-10 text-center wordmark text-[#6B635A]">
+    <div id="protocols-empty" class="hidden mt-5 rounded-card border border-dashed border-line-strong p-10 text-center text-muted text-body">
         No protocols assigned yet.
     </div>
 
-    <div id="protocols-grid" class="hidden mt-6 flex flex-col gap-4"></div>
+    <div id="protocols-grid" class="hidden mt-5 flex flex-col gap-4"></div>
 </section>
 
 <!-- ── Sessions ────────────────────────────────────────────── -->
-<section class="mt-14">
-    <h2 class="wordmark text-2xl tracking-tight">Sessions</h2>
+<section class="mt-12">
+    <h2 class="text-section">Sessions</h2>
 
-    <ul id="sessions-loading" class="mt-6 divide-y divide-[#6B635A]/15">
-        <li class="py-5 flex items-center gap-6"><span class="h-4 w-40 rounded bg-[#6B635A]/10 animate-pulse"></span><span class="h-3 w-24 rounded bg-[#6B635A]/10 animate-pulse"></span></li>
-        <li class="py-5 flex items-center gap-6"><span class="h-4 w-36 rounded bg-[#6B635A]/10 animate-pulse"></span><span class="h-3 w-28 rounded bg-[#6B635A]/10 animate-pulse"></span></li>
-        <li class="py-5 flex items-center gap-6"><span class="h-4 w-44 rounded bg-[#6B635A]/10 animate-pulse"></span><span class="h-3 w-20 rounded bg-[#6B635A]/10 animate-pulse"></span></li>
-    </ul>
+    <div class="mt-4 card overflow-hidden">
+        <div id="sessions-loading" class="divide-y divide-line">
+            <div class="px-5 py-4 flex items-center gap-6"><span class="skeleton h-4 w-40"></span><span class="skeleton h-3 w-24"></span></div>
+            <div class="px-5 py-4 flex items-center gap-6"><span class="skeleton h-4 w-36"></span><span class="skeleton h-3 w-28"></span></div>
+            <div class="px-5 py-4 flex items-center gap-6"><span class="skeleton h-4 w-44"></span><span class="skeleton h-3 w-20"></span></div>
+        </div>
 
-    <div id="sessions-empty" class="hidden mt-6 rounded-xl border border-dashed border-[#6B635A]/30 p-10 text-center wordmark text-[#6B635A]">
-        No sessions yet.
+        <div id="sessions-empty" class="hidden py-12 text-center text-muted text-body">No sessions yet.</div>
+
+        <table id="sessions-table" class="table hidden">
+            <thead>
+                <tr><th>Session</th><th>Date</th><th class="text-right">Duration</th><th class="text-right">Above</th><th class="text-right">Best streak</th></tr>
+            </thead>
+            <tbody id="sessions-list"></tbody>
+        </table>
+
+        <!-- Pagination — hidden until there's more than one page of sessions. -->
+        <div id="sessions-pager" class="hidden items-center justify-between gap-4 px-5 py-3 border-t border-line">
+            <span id="sessions-range" class="text-caption text-muted tnum"></span>
+            <div class="flex items-center gap-2">
+                <button id="sessions-prev" type="button" class="btn btn-secondary btn-sm">Previous</button>
+                <button id="sessions-next" type="button" class="btn btn-secondary btn-sm">Next</button>
+            </div>
+        </div>
     </div>
-
-    <ul id="sessions-list" class="hidden mt-2 divide-y divide-[#6B635A]/15"></ul>
 </section>
+
+<!-- Block access confirmation -->
+<div id="block-modal" class="modal" hidden data-action="block" role="dialog" aria-modal="true" aria-labelledby="block-title">
+    <div class="scrim" data-close></div>
+    <div class="dialog">
+        <h2 id="block-title" class="text-section">Block access?</h2>
+        <p class="text-body text-muted mt-2">This client will be signed out and unable to access the Mindchord app until you unblock them. Their data and history are kept.</p>
+        <div class="mt-6 flex items-center justify-end gap-3">
+            <button type="button" class="btn btn-secondary" data-close>Cancel</button>
+            <button type="button" class="btn btn-danger" data-confirm>Block access</button>
+        </div>
+    </div>
+</div>
+
+<!-- Remove client confirmation -->
+<div id="remove-modal" class="modal" hidden data-action="remove" role="dialog" aria-modal="true" aria-labelledby="remove-title">
+    <div class="scrim" data-close></div>
+    <div class="dialog">
+        <h2 id="remove-title" class="text-section">Remove client?</h2>
+        <p class="text-body text-muted mt-2">This permanently removes the client and their account. This action cannot be undone.</p>
+        <div class="mt-6 flex items-center justify-end gap-3">
+            <button type="button" class="btn btn-secondary" data-close>Cancel</button>
+            <button type="button" class="btn btn-danger" data-confirm>Remove client</button>
+        </div>
+    </div>
+</div>
 
 <script>
     const clientId = new URLSearchParams(location.search).get('id');
@@ -97,6 +144,8 @@ nav: clients
             document.getElementById('client-name').textContent = 'No client selected';
             document.getElementById('protocols-loading').classList.add('hidden');
             document.getElementById('protocols-empty').classList.remove('hidden');
+            document.getElementById('sessions-loading').classList.add('hidden');
+            document.getElementById('sessions-empty').classList.remove('hidden');
             return;
         }
         await Promise.all([loadClient(), loadProtocols(), loadSessions()]);
@@ -130,7 +179,62 @@ nav: clients
         const total = countRes.count ?? 0;
         parts.push(`${total} session${total === 1 ? '' : 's'} completed`);
         sub.textContent = parts.join(' · ');
+
+        // Client loaded successfully — surface the actions menu.
+        document.getElementById('client-actions').classList.remove('hidden');
     }
+
+    // ── Client actions menu ─────────────────────────────────────────────
+    // Handlers are stubbed for now (Edit / Block / Remove backends are not
+    // built yet); the menu open/close behaviour is wired so the UI is real.
+    (function () {
+        const wrap = document.getElementById('client-actions');
+        const btn = document.getElementById('client-menu-btn');
+        const panel = document.getElementById('client-menu');
+
+        const open = () => { panel.hidden = false; btn.setAttribute('aria-expanded', 'true'); };
+        const close = () => { panel.hidden = true; btn.setAttribute('aria-expanded', 'false'); };
+        const toggle = () => (panel.hidden ? open() : close());
+
+        btn.addEventListener('click', (e) => { e.stopPropagation(); toggle(); });
+        document.addEventListener('click', (e) => { if (!wrap.contains(e.target)) close(); });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+
+        panel.querySelectorAll('[data-client-action]').forEach(item => {
+            item.addEventListener('click', () => {
+                const action = item.dataset.clientAction;
+                close();
+                if (action === 'block') openModal('block-modal');
+                else if (action === 'remove') openModal('remove-modal');
+                // TODO: 'edit' opens an edit form once that flow exists.
+                else console.log('client action:', action, clientId);
+            });
+        });
+    })();
+
+    // ── Confirmation modals (Block / Remove) ────────────────────────────
+    // The confirm handlers are stubbed until the backends exist; the modal
+    // open/close + focus behaviour is fully wired.
+    function openModal(id) {
+        const m = document.getElementById(id);
+        m.hidden = false;
+        m.querySelector('[data-confirm]').focus();
+    }
+    function closeModal(m) { m.hidden = true; }
+
+    document.querySelectorAll('#block-modal, #remove-modal').forEach(m => {
+        m.querySelectorAll('[data-close]').forEach(el => el.addEventListener('click', () => closeModal(m)));
+        m.querySelector('[data-confirm]').addEventListener('click', () => {
+            const action = m.dataset.action;
+            closeModal(m);
+            // TODO: wire to backend. Placeholder until those flows exist.
+            console.log('confirmed:', action, clientId);
+        });
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return;
+        document.querySelectorAll('#block-modal, #remove-modal').forEach(m => { if (!m.hidden) closeModal(m); });
+    });
 
     // Protocols == active rows in `assigned_sessions` for this client.
     // RLS already scopes by org; we just filter the one client + skip
@@ -187,13 +291,13 @@ nav: clients
         const bands = Array.isArray(p.bands) ? p.bands.slice(0, 2) : [];
         const channels = p.channels || {};
         return `
-            <article class="protocol-card p-6 md:p-7">
+            <article class="card card-hover p-6">
                 <div class="flex items-start justify-between gap-6">
                     <div class="min-w-0">
-                        <h3 class="wordmark text-xl tracking-tight">${escapeHtml(p.name || 'Untitled')}</h3>
-                        ${p.description ? `<p class="wordmark mt-1 text-sm text-[#6B635A] leading-relaxed">${escapeHtml(p.description)}</p>` : ''}
+                        <h3 class="text-section">${escapeHtml(p.name || 'Untitled')}</h3>
+                        ${p.description ? `<p class="text-caption text-muted mt-1 leading-relaxed">${escapeHtml(p.description)}</p>` : ''}
                     </div>
-                    <div class="shrink-0 wordmark text-xs text-[#6B635A] whitespace-nowrap text-right">
+                    <div class="shrink-0 text-caption text-muted whitespace-nowrap text-right">
                         <div>${sessionCount} session${sessionCount === 1 ? '' : 's'} completed</div>
                         <div class="mt-0.5">Created ${formatDate(p.created_at)}</div>
                     </div>
@@ -202,28 +306,22 @@ nav: clients
                 <div class="mt-5 flex flex-wrap items-start gap-x-10 gap-y-4">
                     <div>
                         <div class="meta-label">Bands</div>
-                        <div class="mt-1.5 flex flex-col items-start gap-2">
-                            ${bands.length ? bands.map(renderBand).join('') : '<span class="wordmark text-sm text-[#6B635A]/70">—</span>'}
+                        <div class="mt-2 flex flex-col items-start gap-2">
+                            ${bands.length ? bands.map(renderBand).join('') : '<span class="text-caption text-muted">—</span>'}
                         </div>
                     </div>
                     <div>
                         <div class="meta-label">Channels</div>
-                        <div class="wordmark mt-1.5 text-sm text-[#2C2825]">${renderChannels(channels)}</div>
+                        <div class="text-caption text-ink mt-2">${renderChannels(channels)}</div>
                     </div>
                     <div>
                         <div class="meta-label">Duration</div>
-                        <div class="wordmark mt-1.5 text-sm text-[#2C2825]">${formatDuration(p.duration_seconds)}</div>
+                        <div class="text-caption text-ink mt-2">${formatDuration(p.duration_seconds)}</div>
                     </div>
 
-                    <div class="ml-auto self-end flex items-center gap-3">
-                        <button type="button" data-action="edit" data-id="${escapeHtml(p.id)}"
-                                class="wordmark relative isolate inline-flex items-center px-4 h-9 text-[13px] text-[#F5F0EB] rounded-full ring-4 ring-transparent hover:ring-[#7A8F7E]/30 active:scale-95 transition-all duration-200 before:content-[''] before:absolute before:inset-0 before:-z-10 before:rounded-full before:bg-gradient-to-b before:from-[#869C8A] before:to-[#6A7F6E] before:transition-all before:duration-200 hover:before:brightness-90">
-                            Edit
-                        </button>
-                        <button type="button" data-action="remove" data-id="${escapeHtml(p.id)}"
-                                class="wordmark relative isolate inline-flex items-center px-4 h-9 text-[13px] text-[#F5F0EB] rounded-full ring-4 ring-transparent hover:ring-[#B85042]/30 active:scale-95 transition-all duration-200 before:content-[''] before:absolute before:inset-0 before:-z-10 before:rounded-full before:bg-gradient-to-b before:from-[#C26352] before:to-[#A04638] before:transition-all before:duration-200 hover:before:brightness-95">
-                            Remove
-                        </button>
+                    <div class="ml-auto self-end flex items-center gap-2">
+                        <button type="button" data-action="edit" data-id="${escapeHtml(p.id)}" class="btn btn-secondary btn-sm">Edit</button>
+                        <button type="button" data-action="remove" data-id="${escapeHtml(p.id)}" class="btn btn-danger btn-sm">Remove</button>
                     </div>
                 </div>
             </article>
@@ -239,6 +337,7 @@ nav: clients
 
         const loading = document.getElementById('sessions-loading');
         const empty = document.getElementById('sessions-empty');
+        const table = document.getElementById('sessions-table');
         const list = document.getElementById('sessions-list');
 
         loading.classList.add('hidden');
@@ -253,9 +352,39 @@ nav: clients
             return;
         }
 
-        list.innerHTML = data.map(renderSession).join('');
-        list.classList.remove('hidden');
+        sessionRows = data;
+        table.classList.remove('hidden');
+        renderSessionsPage();
     }
+
+    // ── Client-side pagination ──────────────────────────────────────────
+    // All sessions are already in memory, so paging is pure slicing — no
+    // extra queries. The pager stays hidden when everything fits one page.
+    const SESSIONS_PER_PAGE = 10;
+    let sessionRows = [];
+    let sessionsPage = 0;
+
+    function renderSessionsPage() {
+        const totalPages = Math.ceil(sessionRows.length / SESSIONS_PER_PAGE);
+        sessionsPage = Math.min(Math.max(sessionsPage, 0), totalPages - 1);
+
+        const startIdx = sessionsPage * SESSIONS_PER_PAGE;
+        const pageRows = sessionRows.slice(startIdx, startIdx + SESSIONS_PER_PAGE);
+        document.getElementById('sessions-list').innerHTML = pageRows.map(renderSession).join('');
+
+        const pager = document.getElementById('sessions-pager');
+        if (totalPages <= 1) { pager.classList.add('hidden'); return; }
+        pager.classList.remove('hidden');
+        pager.classList.add('flex');
+
+        document.getElementById('sessions-range').textContent =
+            `${startIdx + 1}–${startIdx + pageRows.length} of ${sessionRows.length}`;
+        document.getElementById('sessions-prev').disabled = sessionsPage === 0;
+        document.getElementById('sessions-next').disabled = sessionsPage >= totalPages - 1;
+    }
+
+    document.getElementById('sessions-prev').addEventListener('click', () => { sessionsPage--; renderSessionsPage(); });
+    document.getElementById('sessions-next').addEventListener('click', () => { sessionsPage++; renderSessionsPage(); });
 
     function renderSession(s) {
         const summary = s.summary || {};
@@ -267,26 +396,13 @@ nav: clients
         const when = formatDateTime(s.started_at);
 
         return `
-            <li class="py-4 flex items-center justify-between gap-6">
-                <div class="min-w-0">
-                    <div class="wordmark text-base text-[#2C2825] truncate">${escapeHtml(protocol)}</div>
-                    <div class="wordmark text-sm text-[#6B635A]">${when}</div>
-                </div>
-                <div class="shrink-0 flex items-center gap-8 wordmark text-sm">
-                    <div class="text-right">
-                        <div class="meta-label">Duration</div>
-                        <div class="mt-0.5 text-[#2C2825]">${formatDuration(duration)}</div>
-                    </div>
-                    <div class="text-right">
-                        <div class="meta-label">Above</div>
-                        <div class="mt-0.5 text-[#2C2825]">${pct}</div>
-                    </div>
-                    <div class="text-right">
-                        <div class="meta-label">Best streak</div>
-                        <div class="mt-0.5 text-[#2C2825]">${streak}</div>
-                    </div>
-                </div>
-            </li>`;
+            <tr>
+                <td class="text-ink">${escapeHtml(protocol)}</td>
+                <td class="text-muted tnum">${when}</td>
+                <td class="text-right tnum">${formatDuration(duration)}</td>
+                <td class="text-right tnum">${pct}</td>
+                <td class="text-right tnum">${streak}</td>
+            </tr>`;
     }
 
     function formatDateTime(iso) {
@@ -306,7 +422,7 @@ nav: clients
     function renderChannels(ch) {
         const fb = ch.feedback || '—';
         const refs = Array.isArray(ch.reference) && ch.reference.length ? ch.reference.join(', ') : 'none';
-        const dot = '<span class="text-[#6B635A]"> · </span>';
+        const dot = '<span class="text-muted"> · </span>';
         let out = `${escapeHtml(fb)}${dot}ref ${escapeHtml(refs)}`;
         if (ch.feedback === 'AUX' && ch.aux_position) {
             out += `${dot}${escapeHtml(ch.aux_position.toUpperCase())}`;

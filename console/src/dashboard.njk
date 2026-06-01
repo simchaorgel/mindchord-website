@@ -3,73 +3,63 @@ layout: sidebar.njk
 title: Mindchord Console — Dashboard
 nav: dashboard
 ---
-<!-- Heading row: org + welcome on the left, stat cards on the right -->
-<div class="flex items-center justify-between gap-12 flex-wrap">
+<!-- Heading row: org + welcome left, metric tiles right -->
+<div class="flex items-start justify-between gap-10 flex-wrap">
     <div>
-        <h1 id="org-name" class="wordmark text-4xl md:text-5xl tracking-tight">
-            <span class="inline-block h-9 w-48 rounded bg-[#6B635A]/10 animate-pulse align-middle"></span>
+        <h1 id="org-name" class="text-display">
+            <span class="skeleton inline-block h-9 w-52 align-middle"></span>
         </h1>
-        <p id="welcome-line" class="wordmark mt-3 text-lg text-[#6B635A]">
-            <span class="inline-block h-5 w-40 rounded bg-[#6B635A]/10 animate-pulse align-middle"></span>
+        <p id="welcome-line" class="text-body text-muted mt-2">
+            <span class="skeleton inline-block h-4 w-40 align-middle"></span>
         </p>
     </div>
 
-    <!-- Stat cards — one palette accent each. -->
-    <div class="flex items-center gap-4 flex-wrap">
-        <div class="stat-card">
-            <div class="stat-head"><span class="dot dot-sage"></span><span class="lbl">Clients</span></div>
-            <div id="stat-clients" class="num">
-                <span class="inline-block h-8 w-10 rounded bg-[#2C2825]/10 animate-pulse"></span>
-            </div>
+    <div class="flex items-center gap-3 flex-wrap">
+        <div class="stat min-w-[150px]">
+            <div class="lbl">Clients</div>
+            <div id="stat-clients" class="num"><span class="skeleton inline-block h-7 w-10 align-middle"></span></div>
         </div>
-        <div class="stat-card">
-            <div class="stat-head"><span class="dot dot-coral"></span><span class="lbl">Sessions this week</span></div>
-            <div id="stat-sessions-week" class="num">
-                <span class="inline-block h-8 w-10 rounded bg-[#2C2825]/10 animate-pulse"></span>
-            </div>
+        <div class="stat min-w-[150px]">
+            <div class="lbl">Sessions this week</div>
+            <div id="stat-sessions-week" class="num"><span class="skeleton inline-block h-7 w-10 align-middle"></span></div>
         </div>
-        <div class="stat-card">
-            <div class="stat-head"><span class="dot dot-gold"></span><span class="lbl">Clinicians</span></div>
-            <div id="stat-clinicians" class="num">
-                <span class="inline-block h-8 w-10 rounded bg-[#2C2825]/10 animate-pulse"></span>
-            </div>
+        <div class="stat min-w-[150px]">
+            <div class="lbl">Clinicians</div>
+            <div id="stat-clinicians" class="num"><span class="skeleton inline-block h-7 w-10 align-middle"></span></div>
         </div>
     </div>
 </div>
 
 <!-- Quick actions -->
 <div class="mt-8 flex flex-wrap gap-3">
-    <a href="/console/add-client/"
-       class="wordmark inline-flex items-center gap-2 px-5 h-11 text-[15px] text-[#F5F0EB] relative isolate rounded-full ring-4 ring-transparent hover:ring-[#7A8F7E]/30 active:scale-95 transition-all duration-200 before:content-[''] before:absolute before:inset-0 before:-z-10 before:rounded-full before:bg-gradient-to-b before:from-[#869C8A] before:to-[#6A7F6E] before:transition-all before:duration-200 hover:before:brightness-90">
+    <a href="/console/add-client/" class="btn btn-primary">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4"><path d="M11 11V5a1 1 0 1 1 2 0v6h6a1 1 0 1 1 0 2h-6v6a1 1 0 1 1-2 0v-6H5a1 1 0 1 1 0-2h6Z"/></svg>
         Add client
     </a>
-    <a href="/console/organization/"
-       class="wordmark inline-flex items-center gap-2 px-5 h-11 text-[15px] text-[#2C2825] rounded-full border border-[#2C2825]/15 bg-white hover:border-[#2C2825]/30 hover:bg-[#F7F5F2] active:scale-95 transition-all duration-200">
+    <a href="/console/organization/" class="btn btn-secondary">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4"><path d="M11 11V5a1 1 0 1 1 2 0v6h6a1 1 0 1 1 0 2h-6v6a1 1 0 1 1-2 0v-6H5a1 1 0 1 1 0-2h6Z"/></svg>
         Add clinician
     </a>
 </div>
 
 <!-- Sessions over time -->
-<section class="mt-10 card p-6 md:p-7">
+<section class="mt-10 card p-6">
     <div class="flex items-baseline justify-between gap-4">
-        <h2 class="wordmark text-2xl tracking-tight">Sessions</h2>
-        <span class="wordmark text-sm text-[#6B635A]">Last 14 days</span>
+        <h2 class="text-section">Sessions</h2>
+        <span class="text-caption text-muted">Last 14 days</span>
     </div>
 
     <div id="sessions-chart" class="mt-6 h-44 flex items-end gap-1.5">
-        <!-- Skeleton bars until the query resolves -->
-        <div class="flex-1 rounded-t bg-[#6B635A]/10 animate-pulse" style="height:40%"></div>
-        <div class="flex-1 rounded-t bg-[#6B635A]/10 animate-pulse" style="height:65%"></div>
-        <div class="flex-1 rounded-t bg-[#6B635A]/10 animate-pulse" style="height:30%"></div>
-        <div class="flex-1 rounded-t bg-[#6B635A]/10 animate-pulse" style="height:80%"></div>
-        <div class="flex-1 rounded-t bg-[#6B635A]/10 animate-pulse" style="height:55%"></div>
-        <div class="flex-1 rounded-t bg-[#6B635A]/10 animate-pulse" style="height:45%"></div>
-        <div class="flex-1 rounded-t bg-[#6B635A]/10 animate-pulse" style="height:70%"></div>
+        <div class="flex-1 skeleton" style="height:40%"></div>
+        <div class="flex-1 skeleton" style="height:65%"></div>
+        <div class="flex-1 skeleton" style="height:30%"></div>
+        <div class="flex-1 skeleton" style="height:80%"></div>
+        <div class="flex-1 skeleton" style="height:55%"></div>
+        <div class="flex-1 skeleton" style="height:45%"></div>
+        <div class="flex-1 skeleton" style="height:70%"></div>
     </div>
 
-    <div id="sessions-chart-axis" class="mt-2 flex justify-between wordmark text-xs text-[#6B635A]"></div>
+    <div id="sessions-chart-axis" class="mt-2 flex justify-between text-caption text-muted"></div>
 </section>
 
 <script>
@@ -149,7 +139,7 @@ nav: dashboard
         if (error || total === 0) {
             chart.classList.remove('items-end');
             chart.classList.add('items-center', 'justify-center');
-            chart.innerHTML = `<span class="wordmark text-sm text-[#6B635A]">${error ? 'Could not load sessions.' : 'No sessions in the last 14 days.'}</span>`;
+            chart.innerHTML = `<span class="text-caption text-muted">${error ? 'Could not load sessions.' : 'No sessions in the last 14 days.'}</span>`;
             return;
         }
 
@@ -160,15 +150,12 @@ nav: dashboard
             const label = d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
             const pct = count === 0 ? 2 : Math.max(6, Math.round((count / max) * 100));
             const tip = `${count} session${count === 1 ? '' : 's'} · ${label}`;
-            return `<div class="flex-1 rounded-t bg-gradient-to-b from-[#869C8A] to-[#6A7F6E] hover:brightness-95 transition"
-                         style="height:${pct}%" title="${tip}"></div>`;
+            const tone = count === 0 ? 'background:var(--surface-2)' : 'background:var(--accent)';
+            return `<div class="flex-1 rounded-t hover:brightness-95 transition" style="height:${pct}%;${tone}" title="${tip}"></div>`;
         }).join('');
 
-        const first = new Date(start);
-        const last = new Date(start);
-        last.setDate(start.getDate() + DAYS - 1);
         const fmt = (d) => d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
-        axis.innerHTML = `<span>${fmt(first)}</span><span>Today</span>`;
+        axis.innerHTML = `<span>${fmt(start)}</span><span>Today</span>`;
     }
 
     // ISO week starts Monday.

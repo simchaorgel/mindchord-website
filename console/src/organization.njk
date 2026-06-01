@@ -3,24 +3,20 @@ layout: sidebar.njk
 title: Mindchord Console — Organization
 nav: organization
 ---
-<!-- Heading row: org name left, stat cards right -->
-<div class="flex items-center justify-between gap-12 flex-wrap">
-    <h1 id="org-name" class="wordmark text-4xl md:text-5xl tracking-tight">
-        <span class="inline-block h-9 w-48 rounded bg-[#6B635A]/10 animate-pulse align-middle"></span>
+<!-- Heading row: org name left, metric tiles right -->
+<div class="flex items-start justify-between gap-10 flex-wrap">
+    <h1 id="org-name" class="text-display">
+        <span class="skeleton inline-block h-9 w-52 align-middle"></span>
     </h1>
 
-    <div class="flex items-center gap-4 flex-wrap">
-        <div class="stat-card">
-            <div class="stat-head"><span class="dot dot-sage"></span><span class="lbl">Clients</span></div>
-            <div id="stat-clients" class="num">
-                <span class="inline-block h-8 w-10 rounded bg-[#2C2825]/10 animate-pulse"></span>
-            </div>
+    <div class="flex items-center gap-3 flex-wrap">
+        <div class="stat min-w-[150px]">
+            <div class="lbl">Clients</div>
+            <div id="stat-clients" class="num"><span class="skeleton inline-block h-7 w-10 align-middle"></span></div>
         </div>
-        <div class="stat-card">
-            <div class="stat-head"><span class="dot dot-gold"></span><span class="lbl">Clinicians</span></div>
-            <div id="stat-clinicians" class="num">
-                <span class="inline-block h-8 w-10 rounded bg-[#2C2825]/10 animate-pulse"></span>
-            </div>
+        <div class="stat min-w-[150px]">
+            <div class="lbl">Clinicians</div>
+            <div id="stat-clinicians" class="num"><span class="skeleton inline-block h-7 w-10 align-middle"></span></div>
         </div>
     </div>
 </div>
@@ -28,32 +24,31 @@ nav: organization
 <!-- ── Plan ────────────────────────────────────────────────────
      Hardcoded limits for now — will move to a `plans` table once
      billing is wired up. -->
-<section class="mt-14">
-    <h2 class="wordmark text-2xl tracking-tight">Plan</h2>
-    <div class="mt-5 card px-6 md:px-8 py-6">
-        <dl class="grid grid-cols-3 sm:divide-x sm:divide-[#6B635A]/15">
+<section class="mt-12">
+    <h2 class="text-section">Plan</h2>
+    <div class="mt-4 card px-6 md:px-8 py-6">
+        <dl class="grid grid-cols-3 sm:divide-x sm:divide-line">
             <div class="sm:px-8 sm:first:pl-0">
                 <dt class="meta-label">Members</dt>
-                <dd class="wordmark mt-2 text-3xl tracking-tight">20</dd>
+                <dd class="text-title tnum mt-2">20</dd>
             </div>
             <div class="sm:px-8">
                 <dt class="meta-label">Clinicians</dt>
-                <dd class="wordmark mt-2 text-3xl tracking-tight">5</dd>
+                <dd class="text-title tnum mt-2">5</dd>
             </div>
             <div class="sm:px-8">
                 <dt class="meta-label">Protocols / client</dt>
-                <dd class="wordmark mt-2 text-3xl tracking-tight">3</dd>
+                <dd class="text-title tnum mt-2">3</dd>
             </div>
         </dl>
     </div>
 </section>
 
 <!-- ── Clinicians ──────────────────────────────────────────── -->
-<section class="mt-14">
+<section class="mt-12">
     <div class="flex items-end justify-between gap-6">
-        <h2 class="wordmark text-2xl tracking-tight">Clinicians</h2>
-        <button id="add-clinician-btn" type="button"
-                class="wordmark shrink-0 relative isolate inline-flex items-center gap-2 px-5 h-11 text-[15px] text-[#F5F0EB] rounded-full ring-4 ring-transparent hover:ring-[#7A8F7E]/30 active:scale-95 transition-all duration-200 before:content-[''] before:absolute before:inset-0 before:-z-10 before:rounded-full before:bg-gradient-to-b before:from-[#869C8A] before:to-[#6A7F6E] before:transition-all before:duration-200 hover:before:brightness-90">
+        <h2 class="text-section">Clinicians</h2>
+        <button id="add-clinician-btn" type="button" class="btn btn-primary btn-sm shrink-0">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4">
                 <path d="M11 11V5a1 1 0 1 1 2 0v6h6a1 1 0 1 1 0 2h-6v6a1 1 0 1 1-2 0v-6H5a1 1 0 1 1 0-2h6Z"/>
             </svg>
@@ -61,13 +56,13 @@ nav: organization
         </button>
     </div>
 
-    <div class="mt-5 card px-6 md:px-8">
-        <ul id="clinicians-loading" class="divide-y divide-[#6B635A]/15">
-            <li class="py-5 flex items-center gap-6"><span class="h-5 w-40 rounded bg-[#6B635A]/10 animate-pulse"></span><span class="h-3 w-32 rounded bg-[#6B635A]/10 animate-pulse"></span></li>
-            <li class="py-5 flex items-center gap-6"><span class="h-5 w-52 rounded bg-[#6B635A]/10 animate-pulse"></span><span class="h-3 w-28 rounded bg-[#6B635A]/10 animate-pulse"></span></li>
+    <div class="mt-4 card overflow-hidden">
+        <ul id="clinicians-loading" class="divide-y divide-line">
+            <li class="px-6 py-4 flex items-center gap-6"><span class="skeleton h-4 w-40"></span><span class="skeleton h-3 w-32"></span></li>
+            <li class="px-6 py-4 flex items-center gap-6"><span class="skeleton h-4 w-52"></span><span class="skeleton h-3 w-28"></span></li>
         </ul>
-        <div id="clinicians-empty" class="hidden py-10 text-center wordmark text-[#6B635A]">No clinicians yet.</div>
-        <ul id="clinicians-list" class="hidden divide-y divide-[#6B635A]/15"></ul>
+        <div id="clinicians-empty" class="hidden py-12 text-center text-muted text-body">No clinicians yet.</div>
+        <ul id="clinicians-list" class="hidden divide-y divide-line"></ul>
     </div>
 </section>
 
@@ -140,13 +135,16 @@ nav: organization
             return `
             <li>
                 <a href="/console/client/?id=${encodeURIComponent(p.id)}"
-                   class="flex items-center justify-between py-5 group">
-                    <div class="flex items-baseline gap-6 min-w-0">
-                        <span class="wordmark text-xl text-[#2C2825] group-hover:text-[#C4704B] transition truncate">${escapeHtml(fullName(p))}</span>
-                        <span class="wordmark text-sm text-[#6B635A] truncate">${subline}</span>
+                   class="flex items-center justify-between px-6 py-4 group hover:bg-surface-2 transition">
+                    <div class="flex items-center gap-4 min-w-0">
+                        <span class="w-9 h-9 rounded-full bg-accent-weak text-accent-ink grid place-items-center text-caption font-semibold shrink-0">${escapeHtml(initials(p))}</span>
+                        <div class="min-w-0">
+                            <div class="text-body font-medium text-ink group-hover:text-accent transition truncate">${escapeHtml(fullName(p))}</div>
+                            <div class="text-caption text-muted truncate">${subline}</div>
+                        </div>
                     </div>
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
-                         class="w-4 h-4 shrink-0 text-[#6B635A] group-hover:text-[#C4704B] transition">
+                         class="w-4 h-4 shrink-0 text-muted group-hover:text-accent transition">
                         <path d="M9.3 6.3a1 1 0 0 1 1.4 0l5.3 5.3a.5.5 0 0 1 0 .8l-5.3 5.3a1 1 0 1 1-1.4-1.42L13.18 12 9.3 8.12a1 1 0 0 1 0-1.42Z"/>
                     </svg>
                 </a>
@@ -191,6 +189,13 @@ nav: organization
     function fullName(p) {
         const parts = [p.display_name, p.surname].filter(Boolean);
         return parts.length ? parts.join(' ') : '(unnamed)';
+    }
+
+    function initials(p) {
+        const a = (p.display_name || '').trim();
+        const b = (p.surname || '').trim();
+        const i = (a[0] || '') + (b[0] || '');
+        return i.toUpperCase() || '–';
     }
 
     function escapeHtml(s) {
