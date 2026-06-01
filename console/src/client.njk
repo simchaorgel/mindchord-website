@@ -1,6 +1,6 @@
 ---
 layout: sidebar.njk
-title: Mindchord Console — Client
+title: Mindchord Console | Client
 nav: clients
 ---
 <style>
@@ -133,6 +133,43 @@ nav: clients
             <button type="button" class="btn btn-secondary" data-close>Cancel</button>
             <button type="button" class="btn btn-danger" data-confirm>Remove client</button>
         </div>
+    </div>
+</div>
+
+<!-- Edit client details -->
+<div id="edit-client-modal" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="ecm-title">
+    <div class="scrim" data-close></div>
+    <div class="dialog">
+        <div class="flex items-center justify-between gap-4">
+            <h2 id="ecm-title" class="text-section">Edit details</h2>
+            <button type="button" class="icon-close" data-close aria-label="Close">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+            </button>
+        </div>
+        <p class="text-body text-muted mt-2">The client can see these details in the Mindchord app.</p>
+        <form id="edit-client-form" class="mt-5" novalidate>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <label class="field block">
+                    <span class="label">First name</span>
+                    <input id="ec-firstname" class="input" type="text" autocomplete="given-name" placeholder="Jane">
+                </label>
+                <label class="field block">
+                    <span class="label">Surname</span>
+                    <input id="ec-surname" class="input" type="text" autocomplete="family-name" placeholder="Doe">
+                </label>
+            </div>
+            <p id="ec-error" class="text-caption text-danger mt-4 hidden"></p>
+            <div class="mt-6 flex items-center justify-end gap-3">
+                <button type="button" class="btn btn-secondary" data-close>Cancel</button>
+                <button type="submit" id="ec-save" class="btn btn-primary min-w-[120px]">
+                    <svg data-spinner class="hidden animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-90" fill="currentColor" d="M4 12a8 8 0 0 1 8-8V0C5.373 0 0 5.373 0 12h4Z"></path>
+                    </svg>
+                    <span data-label>Save</span>
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -304,22 +341,30 @@ nav: clients
             heading.textContent = 'Client not found';
             return;
         }
-        const data = profileRes.data;
-        heading.textContent = fullName(data);
-
-        const parts = [];
-        if (data.role) parts.push(data.role.charAt(0).toUpperCase() + data.role.slice(1));
-        const total = countRes.count ?? 0;
-        parts.push(`${total} session${total === 1 ? '' : 's'} completed`);
-        sub.textContent = parts.join(' · ');
+        clientProfile = profileRes.data;
+        clientSessionCount = countRes.count ?? 0;
+        renderClientHeader();
 
         // Client loaded successfully — surface the actions menu.
         document.getElementById('client-actions').classList.remove('hidden');
     }
 
+    // Current client profile + session count, kept so the edit form can prefill
+    // and the header can re-render after an edit without a full reload.
+    let clientProfile = null;
+    let clientSessionCount = 0;
+
+    function renderClientHeader() {
+        document.getElementById('client-name').textContent = fullName(clientProfile);
+        const parts = [];
+        if (clientProfile.role) parts.push(clientProfile.role.charAt(0).toUpperCase() + clientProfile.role.slice(1));
+        parts.push(`${clientSessionCount} session${clientSessionCount === 1 ? '' : 's'} completed`);
+        document.getElementById('client-sub').textContent = parts.join(' · ');
+    }
+
     // ── Client actions menu ─────────────────────────────────────────────
-    // Handlers are stubbed for now (Edit / Block / Remove backends are not
-    // built yet); the menu open/close behaviour is wired so the UI is real.
+    // 'Edit' is wired below. Block / Remove still open their confirm modals
+    // with stubbed confirm handlers until those backends exist.
     (function () {
         const wrap = document.getElementById('client-actions');
         const btn = document.getElementById('client-menu-btn');
@@ -337,11 +382,55 @@ nav: clients
             item.addEventListener('click', () => {
                 const action = item.dataset.clientAction;
                 close();
-                if (action === 'block') openModal('block-modal');
+                if (action === 'edit') openEditClient();
+                else if (action === 'block') openModal('block-modal');
                 else if (action === 'remove') openModal('remove-modal');
-                // TODO: 'edit' opens an edit form once that flow exists.
-                else console.log('client action:', action, clientId);
             });
+        });
+    })();
+
+    // ── Edit client details (display_name / surname) ────────────────────
+    // Client-side UPDATE on profiles, gated by RLS. Refreshes the header in
+    // place on success — no full reload needed.
+    function openEditClient() {
+        if (!clientProfile) return;
+        document.getElementById('ec-error').classList.add('hidden');
+        document.getElementById('ec-firstname').value = clientProfile.display_name || '';
+        document.getElementById('ec-surname').value = clientProfile.surname || '';
+        document.getElementById('edit-client-modal').hidden = false;
+        document.getElementById('ec-firstname').focus();
+    }
+    (function () {
+        const modal = document.getElementById('edit-client-modal');
+        const form = document.getElementById('edit-client-form');
+        const errorEl = document.getElementById('ec-error');
+        const saveBtn = document.getElementById('ec-save');
+        const spinner = saveBtn.querySelector('[data-spinner]');
+
+        const close = () => { modal.hidden = true; };
+        modal.querySelectorAll('[data-close]').forEach(el => el.addEventListener('click', close));
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !modal.hidden) close(); });
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            errorEl.classList.add('hidden');
+            const display_name = document.getElementById('ec-firstname').value.trim() || null;
+            const surname = document.getElementById('ec-surname').value.trim() || null;
+
+            saveBtn.disabled = true; spinner.classList.remove('hidden');
+            try {
+                const { error } = await window.consoleAuth.sb
+                    .from('profiles').update({ display_name, surname }).eq('id', clientId);
+                if (error) throw error;
+                clientProfile = { ...clientProfile, display_name, surname };
+                renderClientHeader();
+                close();
+            } catch (err) {
+                errorEl.textContent = err.message || 'Could not save changes. Please try again.';
+                errorEl.classList.remove('hidden');
+            } finally {
+                saveBtn.disabled = false; spinner.classList.add('hidden');
+            }
         });
     })();
 
