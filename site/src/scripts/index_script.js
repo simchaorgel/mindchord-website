@@ -90,22 +90,51 @@
 // coral marker bar to overlay just that link.
 // ─────────────────────────────────────────────────────────────────────
 (function aboutToc() {
-    const toc = document.getElementById('about-toc');
-    if (!toc) return;
-    const links = Array.from(toc.querySelectorAll('.toc-link'));
-    const subsections = links.map(l => document.getElementById(l.dataset.target));
+    // Two navs share the same scroll-spy: the desktop vertical rail (#about-toc)
+    // and the mobile sticky chip bar (#about-toc-mobile). Either may be absent.
+    const desktopToc = document.getElementById('about-toc');
+    const mobileToc = document.getElementById('about-toc-mobile');
+    const links = Array.from(document.querySelectorAll(
+        '#about-toc .toc-link, #about-toc-mobile .toc-chip'));
+    if (!links.length) return;
+
+    // Ordered section ids, taken from whichever nav exists.
+    const order = Array.from((desktopToc || mobileToc).querySelectorAll('[data-target]'))
+        .map(l => l.dataset.target);
+    const subsections = order.map(id => document.getElementById(id));
 
     function setActive(idx) {
-        links.forEach((l, i) => l.classList.toggle('active', i === idx));
-        if (idx < 0) { toc.classList.remove('has-active'); return; }
-        toc.classList.add('has-active');
-        // Position the marker bar over the active link (relative to the <ul>)
-        const ul = toc.querySelector('ul');
-        const link = links[idx];
-        const ulRect = ul.getBoundingClientRect();
-        const linkRect = link.getBoundingClientRect();
-        ul.style.setProperty('--toc-marker-top', (linkRect.top - ulRect.top) + 'px');
-        ul.style.setProperty('--toc-marker-height', linkRect.height + 'px');
+        const activeId = idx < 0 ? null : order[idx];
+        links.forEach(l => l.classList.toggle('active', l.dataset.target === activeId));
+
+        // Desktop: slide the coral marker bar over the active rail link.
+        if (desktopToc) {
+            if (activeId === null) {
+                desktopToc.classList.remove('has-active');
+            } else {
+                desktopToc.classList.add('has-active');
+                const ul = desktopToc.querySelector('ul');
+                const link = desktopToc.querySelector(`.toc-link[data-target="${activeId}"]`);
+                if (ul && link) {
+                    const ulRect = ul.getBoundingClientRect();
+                    const linkRect = link.getBoundingClientRect();
+                    ul.style.setProperty('--toc-marker-top', (linkRect.top - ulRect.top) + 'px');
+                    ul.style.setProperty('--toc-marker-height', linkRect.height + 'px');
+                }
+            }
+        }
+
+        // Mobile: keep the active chip scrolled into view within the strip.
+        if (mobileToc && activeId !== null) {
+            const chip = mobileToc.querySelector(`.toc-chip[data-target="${activeId}"]`);
+            if (chip) {
+                const cRect = chip.getBoundingClientRect();
+                const nRect = mobileToc.getBoundingClientRect();
+                if (cRect.left < nRect.left || cRect.right > nRect.right) {
+                    mobileToc.scrollTo({ left: chip.offsetLeft - 16, behavior: 'smooth' });
+                }
+            }
+        }
     }
 
     // The "active" section is the last one whose top has passed our reference line.
@@ -124,4 +153,81 @@
     window.addEventListener('scroll', update, { passive: true });
     window.addEventListener('resize', update);
     update();
+})();
+
+// ─────────────────────────────────────────────────────────────────────
+// App gallery lightbox
+// Click/tap a .gallery-item thumbnail to open the #lightbox overlay.
+// Desktop: side arrows, keyboard (←/→/Esc), click the backdrop to close.
+// Mobile: swipe left/right to navigate, swipe down or tap backdrop to close.
+// ─────────────────────────────────────────────────────────────────────
+(function lightbox() {
+    const lb = document.getElementById('lightbox');
+    const groups = Array.from(document.querySelectorAll('.gallery'));
+    if (!lb || !groups.length) return;
+
+    const imgEl = lb.querySelector('.lightbox-img');
+    // Navigation is scoped to the gallery that was clicked, so the App and
+    // Console galleries each cycle through only their own images.
+    let sources = [];
+    let current = 0;
+
+    function show(i) {
+        current = (i + sources.length) % sources.length;
+        imgEl.src = sources[current].src;
+        imgEl.alt = sources[current].alt;
+    }
+    function open(groupSources, i) {
+        sources = groupSources;
+        show(i);
+        lb.classList.add('is-open');
+        lb.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('lightbox-open');
+    }
+    function close() {
+        lb.classList.remove('is-open');
+        lb.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('lightbox-open');
+    }
+    const isOpen = () => lb.classList.contains('is-open');
+
+    groups.forEach(group => {
+        const items = Array.from(group.querySelectorAll('.gallery-item'));
+        const groupSources = items.map(it => {
+            const img = it.querySelector('img');
+            return { src: img.getAttribute('src'), alt: img.getAttribute('alt') || '' };
+        });
+        items.forEach((it, i) => it.addEventListener('click', () => open(groupSources, i)));
+    });
+
+    lb.querySelector('.lightbox-prev').addEventListener('click', e => { e.stopPropagation(); show(current - 1); });
+    lb.querySelector('.lightbox-next').addEventListener('click', e => { e.stopPropagation(); show(current + 1); });
+    lb.querySelector('.lightbox-close').addEventListener('click', close);
+
+    // Click anywhere that isn't the image or a control closes the viewer.
+    lb.addEventListener('click', e => {
+        if (e.target === lb || e.target.classList.contains('lightbox-stage')) close();
+    });
+
+    document.addEventListener('keydown', e => {
+        if (!isOpen()) return;
+        if (e.key === 'Escape') close();
+        else if (e.key === 'ArrowLeft') show(current - 1);
+        else if (e.key === 'ArrowRight') show(current + 1);
+    });
+
+    // Touch: horizontal swipe = prev/next, downward swipe = close.
+    let startX = 0, startY = 0, tracking = false;
+    lb.addEventListener('touchstart', e => {
+        const t = e.changedTouches[0];
+        startX = t.clientX; startY = t.clientY; tracking = true;
+    }, { passive: true });
+    lb.addEventListener('touchend', e => {
+        if (!tracking) return;
+        tracking = false;
+        const t = e.changedTouches[0];
+        const dx = t.clientX - startX, dy = t.clientY - startY;
+        if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) show(dx < 0 ? current + 1 : current - 1);
+        else if (dy > 90 && Math.abs(dy) > Math.abs(dx)) close();
+    }, { passive: true });
 })();

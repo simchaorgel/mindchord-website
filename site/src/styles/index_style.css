@@ -52,6 +52,145 @@
     .cta-blob { width: 640px; height: 640px; filter: blur(140px); }
 }
 
-/* EEG canvas — shorter on mobile so it doesn't dominate the viewport */
-.eeg-canvas-h { height: 220px; }
+/* EEG canvas — a tall band at the foot of the full-height mobile hero */
+.eeg-canvas-h { height: 280px; }
 @media (min-width: 768px) { .eeg-canvas-h { height: 360px; } }
+
+/* Mobile About nav — sticky horizontal scroll-spy chip bar (hidden ≥768px).
+    Hide the scrollbar but keep the strip scrollable. */
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.toc-chip {
+    display: inline-block;
+    white-space: nowrap;
+    padding: 5px 14px;
+    border-radius: 9999px;
+    color: #2C2825;
+    opacity: 0.7;
+    background: rgba(44, 40, 37, 0.05);
+    border: 1px solid rgba(44, 40, 37, 0.08);
+    transition: color 180ms ease, background 180ms ease,
+                border-color 180ms ease, opacity 180ms ease;
+}
+.toc-chip.active {
+    opacity: 1;
+    color: #F5F0EB;
+    background: #C4704B;
+    border-color: #C4704B;
+}
+/* Clear the sticky header (64px) + chip bar so jumped-to headings aren't
+    hidden underneath. Mobile only — desktop uses scroll-mt-28 as-is. */
+@media (max-width: 767px) {
+    .about-subsection { scroll-margin-top: 124px; }
+}
+
+/* ── App gallery + lightbox ─────────────────────────────────────────── */
+/* Each thumbnail is a <button> reset to a plain framed image with a subtle
+    lift on hover. Landscape desktop screenshots, shown at their natural ratio. */
+.gallery-item {
+    display: block;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    background: none;
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    line-height: 0;
+    box-shadow: 0 1px 2px rgba(44, 40, 37, 0.06);
+    transition: transform 220ms ease, box-shadow 220ms ease;
+}
+.gallery-item:hover,
+.gallery-item:focus-visible {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(44, 40, 37, 0.10);
+    outline: none;
+}
+.gallery-item img {
+    transition: transform 320ms ease;
+}
+.gallery-item:hover img { transform: scale(1.04); }
+
+/* Scroll-lock the page behind the open lightbox */
+body.lightbox-open { overflow: hidden; }
+
+.lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    padding: clamp(1rem, 4vw, 3rem);
+    background: rgba(28, 24, 21, 0.84);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 220ms ease;
+}
+.lightbox.is-open { opacity: 1; pointer-events: auto; }
+
+.lightbox-stage {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.85rem;
+    max-width: 100%;
+    max-height: 100%;
+}
+.lightbox-img {
+    display: block;
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 82vh;
+    border-radius: 12px;
+    background: #000;
+    object-fit: contain;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
+}
+.lightbox-close {
+    position: absolute;
+    top: clamp(0.75rem, 2.5vw, 1.5rem);
+    right: clamp(0.75rem, 2.5vw, 1.5rem);
+    width: 44px;
+    height: 44px;
+}
+.lightbox-close,
+.lightbox-nav {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(245, 240, 235, 0.12);
+    color: #F5F0EB;
+    line-height: 1;
+    cursor: pointer;
+    transition: background 180ms ease, transform 150ms ease;
+}
+.lightbox-nav { width: 52px; height: 52px; }
+.lightbox-close svg { width: 20px; height: 20px; }
+.lightbox-nav svg { width: 26px; height: 26px; }
+.lightbox-close:hover,
+.lightbox-nav:hover { background: rgba(245, 240, 235, 0.26); }
+.lightbox-nav:active { transform: scale(0.92); }
+
+/* Mobile: image goes edge-to-edge, arrows float in the bottom corners and the
+    counter sits centred between them. */
+@media (max-width: 639px) {
+    .lightbox { gap: 0; padding: 0; }
+    .lightbox-stage { width: 100%; height: 100%; justify-content: center; }
+    .lightbox-img { max-height: 76vh; border-radius: 0; max-width: 100%; }
+    .lightbox-nav {
+        position: absolute;
+        bottom: 1.5rem;
+        background: rgba(245, 240, 235, 0.18);
+    }
+    .lightbox-prev { left: 1.5rem; }
+    .lightbox-next { right: 1.5rem; }
+}
