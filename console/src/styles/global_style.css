@@ -33,6 +33,13 @@
     --border: #E7E3DD;        /* hairline */
     --border-strong: #CFC9C0; /* control borders */
 
+    /* Cool neutrals — used for editor controls (bands, segmented, refs) where
+       the warm beige read muddy. Cleaner, slightly cooler grey. */
+    --cool-fill: #F4F5F6;     /* very light grey band/control fill */
+    --cool-fill-2: #ECEEF0;   /* slightly stronger cool fill (segmented track) */
+    --cool-border: #E1E3E6;   /* cool hairline */
+    --cool-footer: #EAECEF;   /* cooler grey for the editor footer bar */
+
     /* Ink */
     --ink: #211E1A;           /* primary text */
     --text-muted: #756F66;    /* secondary text, labels */
@@ -44,6 +51,7 @@
     --accent: #C4704B;
     --accent-hover: #AE6040;
     --accent-weak: #F5E8E0;
+    --accent-weak-hover: #EFDBCF; /* hover for selected/tinted controls */
     --accent-ink: #8F4E2E;    /* accent text on the weak tint */
 
     /* Status */
@@ -148,6 +156,13 @@ body { font-family: 'Inter', system-ui, sans-serif; color: var(--ink); backgroun
 }
 textarea.input { height: auto; min-height: 96px; padding: 12px 14px; line-height: 1.55; resize: vertical; }
 textarea.input[data-autogrow] { min-height: 0; resize: none; overflow: hidden; }
+
+/* Compact text inputs — tighter height/padding for short free-text fields
+   (e.g. protocol name/description). `.input-mono` swaps to a neutral grotesque
+   so user-entered prose reads distinct from the UI's Inter chrome. */
+.input-sm { height: 38px; padding: 0 12px; font-size: 14px; }
+textarea.input-sm { height: auto; padding: 9px 12px; }
+.input-grotesk { font-family: Helvetica, Arial, system-ui, sans-serif; letter-spacing: -0.01em; }
 select.input {
     appearance: none; padding-right: 40px; cursor: pointer;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2369707C' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
@@ -274,22 +289,51 @@ select.input {
 .menu-item.danger:hover { background: var(--danger-weak); }
 .menu-sep { height: 1px; margin: 6px 4px; background: var(--border); }
 
-/* ── Modal ──────────────────────────────────────────────────────────────── */
-.modal { position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; padding: 24px; }
-.modal[hidden] { display: none; }
-.modal .scrim {
-    position: absolute; inset: 0; background: rgba(20, 23, 30, 0.4);
-    animation: fade var(--t-base) var(--ease) both;
+/* ── Modal ──────────────────────────────────────────────────────────────────
+   Enter AND exit are driven by the [hidden] attribute. The JS (which only
+   toggles `hidden`) animates both ways with no change; `allow-discrete` keeps
+   the node displayed until the child transitions finish, `@starting-style`
+   gives each child its enter from-state.
+
+   IMPORTANT — two things make backdrop-filter behave here:
+   1. `.modal` itself never fades opacity. An opacity<1 ancestor turns the
+      scrim into a group, which makes its backdrop-filter recompute then "pop".
+      So the fade lives on the scrim's own background/blur and on the dialog.
+   2. Page modals are hoisted to <body> (see sidebar.njk) so the scrim's
+      backdrop-filter can sample the whole page, including the sticky sidebar,
+      instead of being trapped inside the .enter stacking context. */
+.modal {
+    position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; padding: 24px;
+    transition: display var(--t-base) allow-discrete;
 }
+.modal[hidden] { display: none; }
+
+/* Scrim — tint + light frost. Both fade via the scrim's OWN properties (no
+   wrapping opacity), which keeps the blur stable instead of popping. */
+.modal .scrim {
+    position: absolute; inset: 0;
+    background: oklch(0.30 0.012 264 / 0.34);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    transition: background-color var(--t-base) var(--ease), backdrop-filter var(--t-base) var(--ease);
+}
+.modal[hidden] .scrim { background: oklch(0.30 0.012 264 / 0); backdrop-filter: blur(0); -webkit-backdrop-filter: blur(0); }
+@starting-style { .modal:not([hidden]) .scrim { background: oklch(0.30 0.012 264 / 0); backdrop-filter: blur(0); -webkit-backdrop-filter: blur(0); } }
+
 .modal .dialog {
     position: relative; width: 100%; max-width: 400px;
     max-height: 86vh; overflow-y: auto;
     background: var(--surface); border: 1px solid var(--border);
     border-radius: var(--r-lg); box-shadow: var(--shadow); padding: 28px;
-    animation: pop var(--t-base) var(--ease) both;
+    opacity: 1;
+    transition: opacity var(--t-base) var(--ease), transform var(--t-base) var(--ease);
     scrollbar-width: thin;
     scrollbar-color: var(--border-strong) transparent;
 }
+/* Dialog fades + slides. The dialog has no backdrop-filter, so opacity is safe
+   here. Exit state on [hidden], enter from-state on @starting-style. */
+.modal[hidden] .dialog { opacity: 0; transform: translateY(8px) scale(0.98); }
+@starting-style { .modal:not([hidden]) .dialog { opacity: 0; transform: translateY(8px) scale(0.98); } }
 /* Keep the scrollbar thumb clear of the dialog's rounded corners. The thumb's
    transparent border (matched to the surface) insets it; the track margin
    stops it short of the top/bottom radius. */
@@ -300,6 +344,91 @@ select.input {
     border: 3px solid var(--surface); background-clip: padding-box;
 }
 .modal .dialog-lg { max-width: 680px; padding: 32px 36px; }
+
+/* ── Drawer variant ──────────────────────────────────────────────────────────
+   A wide right-side pane (Supabase-style) for editors. The dialog goes
+   full-height and flush to the right edge, square corners, and slides in/out
+   horizontally instead of the centered fade+scale. Add `.modal-drawer` on the
+   .modal and `.drawer` on the dialog. */
+.modal-drawer { place-items: stretch; padding: 0; }
+.modal-drawer .scrim { cursor: pointer; }
+.modal .drawer {
+    margin-left: auto;                 /* pin to the right */
+    width: 44vw; max-width: 720px; min-width: 0;
+    height: 100%; max-height: none;
+    border-radius: 0; border: none;
+    border-left: 1px solid var(--border);
+    box-shadow: -16px 0 48px oklch(0.3 0.03 264 / 0.18);
+    /* Slide horizontally; no scale/translateY from the centered variant. */
+    transform: none;
+    transition: transform var(--t-base) var(--ease);
+}
+.modal-drawer[hidden] .drawer { opacity: 1; transform: translateX(100%); }
+@starting-style { .modal-drawer:not([hidden]) .drawer { transform: translateX(100%); } }
+@media (max-width: 640px) {
+    .modal .drawer { width: 100vw; max-width: none; border-left: none; }
+}
+
+/* Framed dialog: a fixed header + footer with a scrolling body between them.
+   Used by the protocol editor so its controls scroll while the title and the
+   Save/Cancel bar stay put. Padding lives on the parts, not the shell. */
+/* Harsher corners throughout the framed editor — squarer, more "engineered".
+   Scoped to the framed dialog so the rest of the console keeps its softer
+   radii. */
+.dialog-framed { border-radius: 8px; }
+.dialog-framed .input,
+.dialog-framed .segmented,
+.dialog-framed .segmented button,
+.dialog-framed .chip-toggle { border-radius: 4px; }
+
+/* Cool-neutral controls inside the editor (warm beige read muddy here). */
+.dialog-framed .pf-band { background: var(--cool-fill); border-color: var(--cool-border); }
+.dialog-framed .segmented { background: var(--cool-fill-2); border-color: var(--cool-border); }
+.dialog-framed .chip-toggle { border-color: var(--cool-border); }
+.dialog-framed .chip-toggle:hover { background: var(--cool-fill); }
+
+/* Footer buttons — squarer, static (no press-scale), with a layered
+   inset-highlight + soft drop shadow for a tactile, "physical" feel. */
+.dialog-framed .dialog-footer .btn { border-radius: 4px; }
+/* Press down a couple px and flatten the shadow — reads as pushing the button
+   into the surface (replaces the global scale-on-active). */
+.dialog-framed .dialog-footer .btn:active { transform: translateY(2px); }
+.dialog-framed .dialog-footer .btn-primary {
+    box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.14), 0 1px 2px oklch(0.3 0.1 268 / 0.22);
+}
+.dialog-framed .dialog-footer .btn-primary:active {
+    box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.14), 0 0 0 oklch(0.3 0.1 268 / 0.22);
+}
+.dialog-framed .dialog-footer .btn-secondary:active {
+    box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.6), 0 0 0 oklch(0.3 0.1 268 / 0.12);
+}
+.dialog-framed .dialog-footer .btn-primary:hover {
+    box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.18), 0 2px 4px oklch(0.3 0.1 268 / 0.26);
+}
+.dialog-framed .dialog-footer .btn-secondary {
+    box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.6), 0 1px 2px oklch(0.3 0.1 268 / 0.12);
+}
+
+.modal .dialog-framed { padding: 0; display: flex; flex-direction: column; overflow: hidden; }
+.dialog-framed .dialog-header {
+    flex-shrink: 0; padding: 22px 28px;
+    border-bottom: 1px solid var(--border); background: var(--surface);
+}
+.dialog-framed .dialog-body {
+    flex: 1; min-height: 0; overflow-y: auto; padding: 24px 28px;
+    scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent;
+}
+.dialog-framed .dialog-body::-webkit-scrollbar { width: 10px; }
+.dialog-framed .dialog-body::-webkit-scrollbar-track { background: transparent; }
+.dialog-framed .dialog-body::-webkit-scrollbar-thumb {
+    background: var(--border-strong); border-radius: 999px;
+    border: 3px solid var(--surface); background-clip: padding-box;
+}
+.dialog-framed .dialog-footer {
+    flex-shrink: 0; padding: 16px 28px;
+    border-top: 1px solid var(--cool-border); background: var(--cool-footer);
+    display: flex; align-items: center; justify-content: flex-end; gap: 12px;
+}
 
 /* Bare icon-only close, sits flush next to a dialog heading (no padding/bg). */
 .icon-close {
@@ -320,16 +449,31 @@ select.input {
 }
 .segmented button.is-on { background: var(--surface); color: var(--ink); box-shadow: var(--shadow-sm); }
 
-/* Reference channel multi-select — a row of toggle chips */
+/* Reference channel multi-select — squarish options with a leading tick that
+   appears only when selected. Lighter surface + border than the chips were. */
 .chip-toggle {
-    display: inline-flex; align-items: center; height: 32px; padding: 0 12px;
-    font-size: 13px; font-weight: 500; color: var(--text-muted); cursor: pointer; user-select: none;
-    background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--r-full);
+    display: inline-flex; align-items: center; gap: 7px;
+    height: 34px; padding: 0 12px;
+    font-size: 13px; font-weight: 500; color: var(--ink); cursor: pointer; user-select: none;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 4px;
     transition: background var(--t-fast) var(--ease), color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
 }
+.chip-toggle:hover { border-color: var(--border-strong); background: var(--surface-2); }
 .chip-toggle input { position: absolute; opacity: 0; width: 0; height: 0; }
-.chip-toggle:has(input:checked) { background: var(--accent-weak); color: var(--accent-ink); border-color: transparent; }
+/* The tick: a check glyph that's collapsed (zero width) until checked. */
+.chip-toggle .tick {
+    width: 0; height: 14px; overflow: hidden; flex-shrink: 0;
+    color: var(--accent); opacity: 0;
+    transition: width var(--t-fast) var(--ease), opacity var(--t-fast) var(--ease);
+}
+.chip-toggle .tick svg { width: 14px; height: 14px; }
+.chip-toggle:has(input:checked) { background: var(--accent-weak); color: var(--accent-ink); border-color: color-mix(in srgb, var(--accent) 35%, transparent); }
+/* Selected chips are tinted, not white — so they get a tinted hover, not the
+   generic grey one. */
+.chip-toggle:has(input:checked):hover { background: var(--accent-weak-hover); border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
+.chip-toggle:has(input:checked) .tick { width: 14px; opacity: 1; }
 .chip-toggle:has(input:focus-visible) { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 24%, transparent); }
+.chip-toggle.is-disabled { opacity: 0.4; pointer-events: none; }
 @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes pop { from { opacity: 0; transform: translateY(8px) scale(0.98); } to { opacity: 1; transform: none; } }
 

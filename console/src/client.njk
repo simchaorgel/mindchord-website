@@ -137,18 +137,18 @@ nav: clients
 </div>
 
 <!-- Edit client details -->
-<div id="edit-client-modal" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="ecm-title">
+<div id="edit-client-modal" class="modal modal-drawer" hidden role="dialog" aria-modal="true" aria-labelledby="ecm-title">
     <div class="scrim" data-close></div>
-    <div class="dialog">
-        <div class="flex items-center justify-between gap-4">
+    <form id="edit-client-form" class="dialog drawer dialog-framed" novalidate>
+        <div class="dialog-header flex items-center justify-between gap-4">
             <h2 id="ecm-title" class="text-section">Edit details</h2>
             <button type="button" class="icon-close" data-close aria-label="Close">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
             </button>
         </div>
-        <p class="text-body text-muted mt-2">The client can see these details in the Mindchord app.</p>
-        <form id="edit-client-form" class="mt-5" novalidate>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="dialog-body">
+            <p class="text-body text-muted">The client can see these details in the Mindchord app.</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-5">
                 <label class="field block">
                     <span class="label">First name</span>
                     <input id="ec-firstname" class="input" type="text" autocomplete="given-name" placeholder="Jane">
@@ -159,53 +159,55 @@ nav: clients
                 </label>
             </div>
             <p id="ec-error" class="text-caption text-danger mt-4 hidden"></p>
-            <div class="mt-6 flex items-center justify-end gap-3">
-                <button type="button" class="btn btn-secondary" data-close>Cancel</button>
-                <button type="submit" id="ec-save" class="btn btn-primary min-w-[120px]">
-                    <svg data-spinner class="hidden animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-90" fill="currentColor" d="M4 12a8 8 0 0 1 8-8V0C5.373 0 0 5.373 0 12h4Z"></path>
-                    </svg>
-                    <span data-label>Save</span>
-                </button>
-            </div>
-        </form>
-    </div>
+        </div>
+        <div class="dialog-footer">
+            <button type="button" class="btn btn-secondary" data-close>Cancel</button>
+            <button type="submit" id="ec-save" class="btn btn-primary min-w-[120px]">
+                <svg data-spinner class="hidden animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-90" fill="currentColor" d="M4 12a8 8 0 0 1 8-8V0C5.373 0 0 5.373 0 12h4Z"></path>
+                </svg>
+                <span data-label>Save changes</span>
+            </button>
+        </div>
+    </form>
 </div>
 
 <!-- ── Protocol editor (New / Edit) ────────────────────────────────────────
      Channels are Muse headband sensors (AF7/AF8/TP9/TP10/AUX); aux_position
      is the 10-20 site the loose AUX electrode sits at, shown only when the
      feedback channel is AUX. Bands are 1–2 frequency windows. -->
-<div id="protocol-modal" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="protocol-title">
+<div id="protocol-modal" class="modal modal-drawer" hidden role="dialog" aria-modal="true" aria-labelledby="protocol-title">
     <div class="scrim" data-close></div>
-    <div class="dialog dialog-lg">
-        <div class="flex items-center justify-between gap-4">
+    <form id="protocol-form" class="dialog drawer dialog-framed" novalidate>
+        <!-- Sticky header -->
+        <div class="dialog-header flex items-center justify-between gap-4">
             <h2 id="protocol-title" class="text-section">New protocol</h2>
             <button type="button" class="icon-close" data-close aria-label="Close">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
             </button>
         </div>
 
-        <form id="protocol-form" class="mt-6" novalidate>
+        <!-- Scrolling body -->
+        <div class="dialog-body">
             <!-- Details -->
-            <div class="space-y-4">
+            <div class="space-y-3">
                 <label class="field block">
                     <span class="label">Name</span>
-                    <input id="pf-name" class="input" type="text" placeholder="e.g. Alpha uptraining" required>
+                    <input id="pf-name" class="input input-sm input-grotesk" type="text" placeholder="e.g. Alpha uptraining" required>
                 </label>
 
                 <label class="field block">
                     <span class="label">Description</span>
-                    <textarea id="pf-description" class="input" data-autogrow placeholder="Notes for this protocol…" required rows="2"></textarea>
+                    <textarea id="pf-description" class="input input-sm input-grotesk" data-autogrow placeholder="Notes for this protocol…" required rows="2"></textarea>
                 </label>
             </div>
 
             <!-- Bands -->
-            <div class="mt-8 pt-6 border-t border-line">
+            <div class="mt-7">
                 <div class="flex items-center justify-between">
                     <h3 class="meta-label">Bands</h3>
-                    <button id="pf-add-band" type="button" class="btn btn-ghost btn-sm text-accent">
+                    <button id="pf-add-band" type="button" class="btn btn-secondary btn-sm text-accent">
                         <svg viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4"><path d="M11 11V5a1 1 0 1 1 2 0v6h6a1 1 0 1 1 0 2h-6v6a1 1 0 1 1-2 0v-6H5a1 1 0 1 1 0-2h6Z"/></svg>
                         Add band
                     </button>
@@ -214,7 +216,7 @@ nav: clients
             </div>
 
             <!-- Channels -->
-            <div class="mt-8 pt-6 border-t border-line space-y-4">
+            <div class="mt-7 space-y-4">
                 <h3 class="meta-label">Channels</h3>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <label class="field block">
@@ -240,27 +242,29 @@ nav: clients
             </div>
 
             <!-- Duration -->
-            <div class="mt-8 pt-6 border-t border-line">
-                <label class="field block max-w-[200px]">
-                    <span class="label">Duration (minutes)</span>
-                    <input id="pf-duration" class="input tnum" type="number" min="1" step="1" placeholder="3">
-                </label>
+            <div class="mt-7">
+                <span class="label">Duration</span>
+                <div class="mt-2 flex items-center gap-2.5">
+                    <input id="pf-duration" class="input input-sm tnum w-24" type="number" min="1" step="1" placeholder="3">
+                    <span class="text-body text-muted">minutes</span>
+                </div>
             </div>
 
             <p id="pf-error" class="text-caption text-danger mt-5 hidden"></p>
+        </div>
 
-            <div class="mt-8 flex items-center justify-end gap-3">
-                <button type="button" class="btn btn-secondary" data-close>Cancel</button>
-                <button type="submit" id="pf-save" class="btn btn-primary min-w-[120px]">
-                    <svg data-spinner class="hidden animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-90" fill="currentColor" d="M4 12a8 8 0 0 1 8-8V0C5.373 0 0 5.373 0 12h4Z"></path>
-                    </svg>
-                    <span data-label>Save</span>
-                </button>
-            </div>
-        </form>
-    </div>
+        <!-- Sticky footer -->
+        <div class="dialog-footer">
+            <button type="button" class="btn btn-secondary" data-close>Cancel</button>
+            <button type="submit" id="pf-save" class="btn btn-primary min-w-[130px]">
+                <svg data-spinner class="hidden animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-90" fill="currentColor" d="M4 12a8 8 0 0 1 8-8V0C5.373 0 0 5.373 0 12h4Z"></path>
+                </svg>
+                <span data-label>Save changes</span>
+            </button>
+        </div>
+    </form>
 </div>
 
 <!-- Remove protocol confirmation -->
@@ -547,15 +551,27 @@ nav: clients
 
         let editingId = null;   // null = creating; otherwise the protocol id
 
-        // One-time: fill the AUX-position + reference-channel controls.
+        // One-time: fill the AUX-position + reference-channel controls. Each
+        // reference option has a leading tick that only shows when selected.
         auxSel.innerHTML = AUX_POSITIONS.map(p => `<option value="${p}">${p}</option>`).join('');
         referenceWrap.innerHTML = FEEDBACK_CHANNELS.map(c => `
-            <label class="chip-toggle"><input type="checkbox" value="${c}">${c}</label>
+            <label class="chip-toggle" data-ref="${c}">
+                <span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+                <input type="checkbox" value="${c}">${c}
+            </label>
         `).join('');
 
-        feedbackSel.addEventListener('change', syncAuxVisibility);
-        function syncAuxVisibility() {
+        feedbackSel.addEventListener('change', syncFeedback);
+        // The feedback channel can't also be a reference — disable + uncheck it.
+        function syncFeedback() {
             auxField.classList.toggle('hidden', feedbackSel.value !== 'AUX');
+            referenceWrap.querySelectorAll('[data-ref]').forEach(label => {
+                const isFeedback = label.dataset.ref === feedbackSel.value;
+                label.classList.toggle('is-disabled', isFeedback);
+                const cb = label.querySelector('input');
+                cb.disabled = isFeedback;
+                if (isFeedback) cb.checked = false;
+            });
         }
 
         // Auto-grow the description textarea to fit its content.
@@ -567,7 +583,7 @@ nav: clients
         function bandRow(band = {}) {
             const dir = (band.direction || 'reward').toLowerCase();
             const row = document.createElement('div');
-            row.className = 'pf-band rounded-card bg-surface-2 p-4';
+            row.className = 'pf-band rounded border p-4';
             row.innerHTML = `
                 <div class="flex items-end gap-3">
                     <label class="field shrink-0"><span class="label">Low (Hz)</span>
@@ -613,7 +629,7 @@ nav: clients
             bandsWrap.innerHTML = '';
 
             titleEl.textContent = protocol ? 'Edit protocol' : 'New protocol';
-            saveLabel.textContent = 'Save';
+            saveLabel.textContent = protocol ? 'Save changes' : 'Create protocol';
 
             if (protocol) {
                 document.getElementById('pf-name').value = protocol.name || '';
@@ -639,7 +655,7 @@ nav: clients
 
             if (bandsWrap.children.length === 0) bandsWrap.appendChild(bandRow());
             syncBandAdd();
-            syncAuxVisibility();
+            syncFeedback();
 
             modal.hidden = false;
             autoGrow(); // size description now that it's visible (prefilled edits)

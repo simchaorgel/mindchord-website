@@ -60,6 +60,14 @@ layout: base.njk
     // getSession() / requireSession() to get the session object.
     window.consoleAuth.requireSession();
 
+    // Hoist page modals out to <body>. Page content is rendered inside the
+    // `.enter` wrapper, whose animation creates a stacking context — which traps
+    // a modal scrim's backdrop-filter so it can't sample the sticky sidebar.
+    // Moving the nodes to <body> (where the sign-out modal already lives) frees
+    // them; listeners attached by the page's inline scripts move with the node.
+    // Runs after those scripts, since this is the last script in the body.
+    document.querySelectorAll('.enter .modal').forEach(m => document.body.appendChild(m));
+
     // Sign-out confirmation modal.
     (function () {
         const modal = document.getElementById('signout-modal');
