@@ -136,6 +136,139 @@ nav: clients
     </div>
 </div>
 
+<!-- ── Protocol editor (New / Edit) ────────────────────────────────────────
+     Channels are Muse headband sensors (AF7/AF8/TP9/TP10/AUX); aux_position
+     is the 10-20 site the loose AUX electrode sits at, shown only when the
+     feedback channel is AUX. Bands are 1–2 frequency windows. -->
+<div id="protocol-modal" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="protocol-title">
+    <div class="scrim" data-close></div>
+    <div class="dialog dialog-lg">
+        <div class="flex items-center justify-between gap-4">
+            <h2 id="protocol-title" class="text-section">New protocol</h2>
+            <button type="button" class="icon-close" data-close aria-label="Close">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+            </button>
+        </div>
+
+        <form id="protocol-form" class="mt-6" novalidate>
+            <!-- Details -->
+            <div class="space-y-4">
+                <label class="field block">
+                    <span class="label">Name</span>
+                    <input id="pf-name" class="input" type="text" placeholder="e.g. Alpha uptraining" required>
+                </label>
+
+                <label class="field block">
+                    <span class="label">Description</span>
+                    <textarea id="pf-description" class="input" data-autogrow placeholder="Notes for this protocol…" required rows="2"></textarea>
+                </label>
+            </div>
+
+            <!-- Bands -->
+            <div class="mt-8 pt-6 border-t border-line">
+                <div class="flex items-center justify-between">
+                    <h3 class="meta-label">Bands</h3>
+                    <button id="pf-add-band" type="button" class="btn btn-ghost btn-sm text-accent">
+                        <svg viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4"><path d="M11 11V5a1 1 0 1 1 2 0v6h6a1 1 0 1 1 0 2h-6v6a1 1 0 1 1-2 0v-6H5a1 1 0 1 1 0-2h6Z"/></svg>
+                        Add band
+                    </button>
+                </div>
+                <div id="pf-bands" class="mt-3 flex flex-col gap-3"></div>
+            </div>
+
+            <!-- Channels -->
+            <div class="mt-8 pt-6 border-t border-line space-y-4">
+                <h3 class="meta-label">Channels</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <label class="field block">
+                        <span class="label">Feedback channel</span>
+                        <select id="pf-feedback" class="input">
+                            <option value="AF7">AF7</option>
+                            <option value="AF8">AF8</option>
+                            <option value="TP9">TP9</option>
+                            <option value="TP10">TP10</option>
+                            <option value="AUX">AUX</option>
+                        </select>
+                    </label>
+                    <label id="pf-aux-field" class="field block hidden">
+                        <span class="label">AUX position</span>
+                        <select id="pf-aux" class="input"></select>
+                    </label>
+                </div>
+
+                <div class="field block">
+                    <span class="label">Reference channels <span class="text-muted font-normal">(optional)</span></span>
+                    <div id="pf-reference" class="mt-2 flex flex-wrap gap-2"></div>
+                </div>
+            </div>
+
+            <!-- Duration -->
+            <div class="mt-8 pt-6 border-t border-line">
+                <label class="field block max-w-[200px]">
+                    <span class="label">Duration (minutes)</span>
+                    <input id="pf-duration" class="input tnum" type="number" min="1" step="1" placeholder="3">
+                </label>
+            </div>
+
+            <p id="pf-error" class="text-caption text-danger mt-5 hidden"></p>
+
+            <div class="mt-8 flex items-center justify-end gap-3">
+                <button type="button" class="btn btn-secondary" data-close>Cancel</button>
+                <button type="submit" id="pf-save" class="btn btn-primary min-w-[120px]">
+                    <svg data-spinner class="hidden animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-90" fill="currentColor" d="M4 12a8 8 0 0 1 8-8V0C5.373 0 0 5.373 0 12h4Z"></path>
+                    </svg>
+                    <span data-label>Save</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Remove protocol confirmation -->
+<div id="remove-protocol-modal" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="rp-title">
+    <div class="scrim" data-close></div>
+    <div class="dialog">
+        <h2 id="rp-title" class="text-section">Remove protocol?</h2>
+        <p id="rp-body" class="text-body text-muted mt-2"></p>
+        <p id="rp-error" class="text-caption text-danger mt-3 hidden"></p>
+        <div class="mt-6 flex items-center justify-end gap-3">
+            <button type="button" class="btn btn-secondary" data-close>Cancel</button>
+            <button type="button" id="rp-confirm" class="btn btn-danger min-w-[120px]">
+                <svg data-spinner class="hidden animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-90" fill="currentColor" d="M4 12a8 8 0 0 1 8-8V0C5.373 0 0 5.373 0 12h4Z"></path>
+                </svg>
+                <span data-label>Remove</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Session protocol view (read-only) — shows the exact, frozen settings the
+     session ran against, which may be an archived protocol version. -->
+<div id="session-protocol-modal" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="spm-title">
+    <div class="scrim" data-close></div>
+    <div class="dialog dialog-lg">
+        <div class="flex items-start justify-between gap-4">
+            <div class="min-w-0">
+                <h2 id="spm-title" class="text-section">Protocol</h2>
+                <p id="spm-when" class="text-caption text-muted mt-1"></p>
+            </div>
+            <button type="button" class="icon-close mt-1" data-close aria-label="Close">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+            </button>
+        </div>
+        <div id="spm-body" class="mt-5"></div>
+    </div>
+</div>
+
+<script>
+    // Muse channels + the 10-20 sites where a loose AUX electrode can sit.
+    const FEEDBACK_CHANNELS = ['AF7', 'AF8', 'TP9', 'TP10', 'AUX'];
+    const AUX_POSITIONS = ['Fp1','Fp2','F7','F3','Fz','F4','F8','T3','C3','Cz','C4','T4','T5','P3','Pz','P4','T6','O1','O2'];
+</script>
 <script>
     const clientId = new URLSearchParams(location.search).get('id');
 
@@ -262,14 +395,347 @@ nav: clients
             empty.classList.remove('hidden');
             return;
         }
+        // Cache so the editor/remove flows can read a protocol's current
+        // values and session count without re-querying.
+        protocolsById = new Map(data.map(p => [p.id, p]));
+        protocolCounts = countsMap;
+
         if (data.length === 0) {
+            grid.classList.add('hidden');
             empty.classList.remove('hidden');
             return;
         }
 
+        empty.classList.add('hidden');
         grid.innerHTML = data.map(p => renderProtocol(p, countsMap.get(p.id) || 0)).join('');
         grid.classList.remove('hidden');
     }
+
+    // In-memory caches, populated by loadProtocols().
+    let protocolsById = new Map();
+    let protocolCounts = new Map();
+
+    // The caller's id + org, required on every assigned_sessions INSERT — the
+    // table's RLS check is (assigned_by = auth.uid() AND org_id =
+    // current_user_org()). Fetched once and cached.
+    let callerCtx = null;
+    async function getCallerCtx() {
+        if (callerCtx) return callerCtx;
+        const session = await window.consoleAuth.getSession();
+        const userId = session?.user?.id;
+        const { data } = await window.consoleAuth.sb
+            .from('profiles').select('org_id').eq('id', userId).maybeSingle();
+        callerCtx = { assigned_by: userId, org_id: data?.org_id ?? null };
+        return callerCtx;
+    }
+
+    // Re-run the protocol query and re-render (after a save/remove). Resets the
+    // loading/empty state the same way the initial load does.
+    async function reloadProtocols() {
+        document.getElementById('protocols-grid').classList.add('hidden');
+        document.getElementById('protocols-empty').classList.add('hidden');
+        document.getElementById('protocols-loading').classList.remove('hidden');
+        await loadProtocols();
+    }
+
+    // ════════════════════════════════════════════════════════════════════
+    //  Protocol editor — create / edit / version / remove
+    // ════════════════════════════════════════════════════════════════════
+    (function () {
+        const modal = document.getElementById('protocol-modal');
+        const form = document.getElementById('protocol-form');
+        const titleEl = document.getElementById('protocol-title');
+        const errorEl = document.getElementById('pf-error');
+        const saveBtn = document.getElementById('pf-save');
+        const saveSpinner = saveBtn.querySelector('[data-spinner]');
+        const saveLabel = saveBtn.querySelector('[data-label]');
+
+        const bandsWrap = document.getElementById('pf-bands');
+        const feedbackSel = document.getElementById('pf-feedback');
+        const auxField = document.getElementById('pf-aux-field');
+        const auxSel = document.getElementById('pf-aux');
+        const referenceWrap = document.getElementById('pf-reference');
+
+        let editingId = null;   // null = creating; otherwise the protocol id
+
+        // One-time: fill the AUX-position + reference-channel controls.
+        auxSel.innerHTML = AUX_POSITIONS.map(p => `<option value="${p}">${p}</option>`).join('');
+        referenceWrap.innerHTML = FEEDBACK_CHANNELS.map(c => `
+            <label class="chip-toggle"><input type="checkbox" value="${c}">${c}</label>
+        `).join('');
+
+        feedbackSel.addEventListener('change', syncAuxVisibility);
+        function syncAuxVisibility() {
+            auxField.classList.toggle('hidden', feedbackSel.value !== 'AUX');
+        }
+
+        // Auto-grow the description textarea to fit its content.
+        const descEl = document.getElementById('pf-description');
+        function autoGrow() { descEl.style.height = 'auto'; descEl.style.height = descEl.scrollHeight + 'px'; }
+        descEl.addEventListener('input', autoGrow);
+
+        // ── Bands: 1–2 rows of {lo, hi, direction, threshold_z} ──────────
+        function bandRow(band = {}) {
+            const dir = (band.direction || 'reward').toLowerCase();
+            const row = document.createElement('div');
+            row.className = 'pf-band rounded-card bg-surface-2 p-4';
+            row.innerHTML = `
+                <div class="flex items-end gap-3">
+                    <label class="field shrink-0"><span class="label">Low (Hz)</span>
+                        <input class="input tnum w-20" type="number" min="0" step="0.5" data-band="lo" value="${band.lo ?? ''}"></label>
+                    <label class="field shrink-0"><span class="label">High (Hz)</span>
+                        <input class="input tnum w-20" type="number" min="0" step="0.5" data-band="hi" value="${band.hi ?? ''}"></label>
+                    <div class="field shrink-0"><span class="label">Direction</span>
+                        <div class="segmented" data-band="direction">
+                            <button type="button" data-dir="reward" class="${dir === 'reward' ? 'is-on' : ''}">Reward</button>
+                            <button type="button" data-dir="punish" class="${dir === 'punish' ? 'is-on' : ''}">Punish</button>
+                        </div>
+                    </div>
+                    <label class="field flex-1 min-w-0"><span class="label whitespace-nowrap">Z <span class="text-muted font-normal">(blank = auto)</span></span>
+                        <input class="input tnum w-full" type="number" step="0.01" data-band="threshold_z" value="${band.threshold_z ?? ''}"></label>
+                    <button type="button" class="btn btn-ghost btn-icon text-muted hover:text-danger shrink-0" data-remove-band aria-label="Remove band" title="Remove band">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M6 6v14a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V6"/></svg>
+                    </button>
+                </div>`;
+
+            row.querySelectorAll('[data-dir]').forEach(b => b.addEventListener('click', () => {
+                row.querySelectorAll('[data-dir]').forEach(x => x.classList.toggle('is-on', x === b));
+            }));
+            row.querySelector('[data-remove-band]').addEventListener('click', () => { row.remove(); syncBandAdd(); });
+            return row;
+        }
+
+        function syncBandAdd() {
+            // Cap at 2 bands.
+            document.getElementById('pf-add-band').style.display =
+                bandsWrap.children.length >= 2 ? 'none' : '';
+        }
+        document.getElementById('pf-add-band').addEventListener('click', () => {
+            if (bandsWrap.children.length >= 2) return;
+            bandsWrap.appendChild(bandRow());
+            syncBandAdd();
+        });
+
+        // ── Open: prefill for edit, or blank for create ──────────────────
+        function open(protocol) {
+            editingId = protocol ? protocol.id : null;
+            errorEl.classList.add('hidden');
+            form.reset();
+            bandsWrap.innerHTML = '';
+
+            titleEl.textContent = protocol ? 'Edit protocol' : 'New protocol';
+            saveLabel.textContent = 'Save';
+
+            if (protocol) {
+                document.getElementById('pf-name').value = protocol.name || '';
+                document.getElementById('pf-description').value = protocol.description || '';
+                const bands = Array.isArray(protocol.bands) ? protocol.bands.slice(0, 2) : [];
+                bands.forEach(b => bandsWrap.appendChild(bandRow(b)));
+
+                const ch = protocol.channels || {};
+                feedbackSel.value = FEEDBACK_CHANNELS.includes(ch.feedback) ? ch.feedback : 'AF7';
+                if (ch.aux_position && AUX_POSITIONS.includes(ch.aux_position)) auxSel.value = ch.aux_position;
+                const refs = Array.isArray(ch.reference) ? ch.reference : [];
+                referenceWrap.querySelectorAll('input').forEach(cb => { cb.checked = refs.includes(cb.value); });
+
+                const mins = protocol.duration_seconds != null ? Math.round(protocol.duration_seconds / 60) : '';
+                document.getElementById('pf-duration').value = mins;
+                // Remember the exact original seconds, so an untouched duration
+                // round-trips without re-rounding.
+                document.getElementById('pf-duration').dataset.originalSeconds = protocol.duration_seconds ?? '';
+            } else {
+                feedbackSel.value = 'AF7';
+                delete document.getElementById('pf-duration').dataset.originalSeconds;
+            }
+
+            if (bandsWrap.children.length === 0) bandsWrap.appendChild(bandRow());
+            syncBandAdd();
+            syncAuxVisibility();
+
+            modal.hidden = false;
+            autoGrow(); // size description now that it's visible (prefilled edits)
+            document.getElementById('pf-name').focus();
+        }
+        function close() { modal.hidden = true; }
+
+        // ── Read the form into a protocol payload (params only) ──────────
+        function readForm() {
+            const name = document.getElementById('pf-name').value.trim();
+            if (!name) return { error: 'Please enter a protocol name.' };
+
+            const description = document.getElementById('pf-description').value.trim();
+            if (!description) return { error: 'Please enter a description.' };
+
+            const bands = [];
+            for (const row of bandsWrap.querySelectorAll('.pf-band')) {
+                const lo = row.querySelector('[data-band="lo"]').value;
+                const hi = row.querySelector('[data-band="hi"]').value;
+                const zRaw = row.querySelector('[data-band="threshold_z"]').value;
+                const direction = row.querySelector('[data-dir].is-on')?.dataset.dir || 'reward';
+                if (lo === '' || hi === '') return { error: 'Each band needs a low and high frequency.' };
+                if (+lo >= +hi) return { error: 'Each band’s low frequency must be below its high frequency.' };
+                bands.push({ lo: +lo, hi: +hi, direction, threshold_z: zRaw === '' ? null : +zRaw });
+            }
+            if (bands.length === 0) return { error: 'Add at least one band.' };
+
+            const feedback = feedbackSel.value;
+            const reference = [...referenceWrap.querySelectorAll('input:checked')].map(cb => cb.value);
+            const channels = { feedback, reference };
+            if (feedback === 'AUX') channels.aux_position = auxSel.value;
+
+            // Preserve exact original seconds if the minutes field is unchanged.
+            // Blank falls back to the placeholder default (3 minutes).
+            const DEFAULT_DURATION_MIN = 3;
+            const durEl = document.getElementById('pf-duration');
+            const mins = durEl.value;
+            const orig = durEl.dataset.originalSeconds;
+            let duration_seconds;
+            if (mins === '') {
+                duration_seconds = DEFAULT_DURATION_MIN * 60;
+            } else {
+                duration_seconds = (orig !== undefined && orig !== '' && Math.round(+orig / 60) === +mins)
+                    ? +orig : Math.round(+mins * 60);
+            }
+
+            return { payload: { name, description, bands, channels, duration_seconds } };
+        }
+
+        function setSaving(on) {
+            saveBtn.disabled = on;
+            saveSpinner.classList.toggle('hidden', !on);
+        }
+
+        // Stable serialisation of the PARAMETERS only (bands / channels /
+        // duration) — the fields that change how a session is interpreted.
+        // Name and description are excluded on purpose: they're labels, so
+        // editing them must never spawn a new version.
+        function paramsKey(p) {
+            return JSON.stringify({
+                bands: (p.bands || []).map(b => ({
+                    lo: +b.lo, hi: +b.hi,
+                    direction: (b.direction || 'reward').toLowerCase(),
+                    threshold_z: b.threshold_z == null ? null : +b.threshold_z,
+                })),
+                channels: {
+                    feedback: p.channels?.feedback ?? null,
+                    reference: [...(p.channels?.reference || [])].sort(),
+                    aux_position: p.channels?.aux_position ?? null,
+                },
+                duration_seconds: p.duration_seconds ?? null,
+            });
+        }
+
+        // ── Save: create / edit-in-place / version ───────────────────────
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            errorEl.classList.add('hidden');
+            const { payload, error } = readForm();
+            if (error) { errorEl.textContent = error; errorEl.classList.remove('hidden'); return; }
+
+            const sb = window.consoleAuth.sb;
+            setSaving(true);
+            try {
+                if (!editingId) {
+                    // Create. RLS requires assigned_by + org_id on the row.
+                    const ctx = await getCallerCtx();
+                    const { error: insErr } = await sb.from('assigned_sessions')
+                        .insert({ client_id: clientId, ...ctx, ...payload });
+                    if (insErr) throw insErr;
+                } else {
+                    const original = protocolsById.get(editingId);
+                    const paramsChanged = !original || paramsKey(payload) !== paramsKey(original);
+                    const hasSessions = (protocolCounts.get(editingId) || 0) > 0;
+
+                    // Version ONLY when the parameters changed on a protocol that
+                    // already has sessions. A name/description-only edit (or any
+                    // edit before the first session) just updates in place.
+                    if (hasSessions && paramsChanged) {
+                        // Insert the new row FIRST, then archive the old. If the
+                        // insert fails nothing changed; if the archive fails we
+                        // have a harmless duplicate, never a gap.
+                        const ctx = await getCallerCtx();
+                        const { error: insErr } = await sb.from('assigned_sessions')
+                            .insert({ client_id: clientId, ...ctx, ...payload });
+                        if (insErr) throw insErr;
+                        const { error: arcErr } = await sb.from('assigned_sessions')
+                            .update({ archived_at: new Date().toISOString() }).eq('id', editingId);
+                        if (arcErr) throw arcErr;
+                    } else {
+                        const { error: updErr } = await sb.from('assigned_sessions')
+                            .update(payload).eq('id', editingId);
+                        if (updErr) throw updErr;
+                    }
+                }
+                close();
+                await reloadProtocols();
+            } catch (err) {
+                errorEl.textContent = err.message || 'Could not save the protocol. Please try again.';
+                errorEl.classList.remove('hidden');
+            } finally {
+                setSaving(false);
+            }
+        });
+
+        modal.querySelectorAll('[data-close]').forEach(el => el.addEventListener('click', close));
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !modal.hidden) close(); });
+
+        // ── Triggers: New button + delegated card Edit buttons ───────────
+        document.getElementById('add-protocol-btn').addEventListener('click', () => open(null));
+        document.getElementById('protocols-grid').addEventListener('click', (e) => {
+            const btn = e.target.closest('[data-action]');
+            if (!btn) return;
+            const protocol = protocolsById.get(btn.dataset.id);
+            if (!protocol) return;
+            if (btn.dataset.action === 'edit') open(protocol);
+            else if (btn.dataset.action === 'remove') openRemoveProtocol(protocol);
+        });
+
+        // ── Remove protocol: archive if it has sessions, else hard delete ─
+        function openRemoveProtocol(protocol) {
+            const m = document.getElementById('remove-protocol-modal');
+            const hasSessions = (protocolCounts.get(protocol.id) || 0) > 0;
+            const confirmBtn = document.getElementById('rp-confirm');
+            const spinner = confirmBtn.querySelector('[data-spinner]');
+            const rpError = document.getElementById('rp-error');
+            rpError.classList.add('hidden');
+
+            document.getElementById('rp-body').textContent = hasSessions
+                ? `“${protocol.name || 'Untitled'}” has sessions, so it will be archived — its past sessions and their settings are kept, it just won’t appear in the active list.`
+                : `“${protocol.name || 'Untitled'}” has no sessions, so it will be permanently deleted.`;
+            confirmBtn.querySelector('[data-label]').textContent = hasSessions ? 'Archive' : 'Delete';
+
+            const onConfirm = async () => {
+                confirmBtn.disabled = true; spinner.classList.remove('hidden');
+                const sb = window.consoleAuth.sb;
+                try {
+                    const { error } = hasSessions
+                        ? await sb.from('assigned_sessions').update({ archived_at: new Date().toISOString() }).eq('id', protocol.id)
+                        : await sb.from('assigned_sessions').delete().eq('id', protocol.id);
+                    if (error) throw error;
+                    m.hidden = true;
+                    await reloadProtocols();
+                } catch (err) {
+                    rpError.textContent = err.message || 'Could not remove the protocol. Please try again.';
+                    rpError.classList.remove('hidden');
+                } finally {
+                    confirmBtn.disabled = false; spinner.classList.add('hidden');
+                }
+            };
+
+            // Replace the button to drop any previous protocol's handler.
+            const fresh = confirmBtn.cloneNode(true);
+            confirmBtn.replaceWith(fresh);
+            fresh.addEventListener('click', onConfirm);
+
+            m.querySelectorAll('[data-close]').forEach(el => el.addEventListener('click', () => { m.hidden = true; }));
+            m.hidden = false;
+            fresh.focus();
+        }
+        document.addEventListener('keydown', (e) => {
+            const m = document.getElementById('remove-protocol-modal');
+            if (e.key === 'Escape' && !m.hidden) m.hidden = true;
+        });
+    })();
 
     // Map<assigned_session_id, count> — only completed sessions count.
     async function fetchSessionCountsByProtocol() {
@@ -386,18 +852,90 @@ nav: clients
     document.getElementById('sessions-prev').addEventListener('click', () => { sessionsPage--; renderSessionsPage(); });
     document.getElementById('sessions-next').addEventListener('click', () => { sessionsPage++; renderSessionsPage(); });
 
+    // ── Session → read-only protocol view ───────────────────────────────
+    // The session's protocol may be an archived version, so fetch it fresh by
+    // id rather than relying on the active-protocols cache. Reuses the same
+    // band/channel/duration renderers as the protocol cards.
+    (function () {
+        const modal = document.getElementById('session-protocol-modal');
+        const body = document.getElementById('spm-body');
+        const titleEl = document.getElementById('spm-title');
+        const whenEl = document.getElementById('spm-when');
+
+        const close = () => { modal.hidden = true; };
+        modal.querySelectorAll('[data-close]').forEach(el => el.addEventListener('click', close));
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !modal.hidden) close(); });
+
+        document.getElementById('sessions-list').addEventListener('click', async (e) => {
+            const btn = e.target.closest('[data-view-protocol]');
+            if (!btn) return;
+            const id = btn.dataset.viewProtocol;
+
+            titleEl.textContent = 'Protocol';
+            whenEl.textContent = btn.dataset.when ? `Session · ${btn.dataset.when}` : '';
+            body.innerHTML = `<div class="skeleton h-28 rounded-card"></div>`;
+            modal.hidden = false;
+            modal.querySelector('[data-close]').focus();
+
+            const { data, error } = await window.consoleAuth.sb
+                .from('assigned_sessions')
+                .select('name, description, bands, channels, duration_seconds, archived_at, created_at')
+                .eq('id', id)
+                .maybeSingle();
+
+            if (error || !data) {
+                body.innerHTML = `<p class="text-body text-muted">Could not load this protocol.</p>`;
+                return;
+            }
+            titleEl.textContent = data.name || 'Untitled';
+            body.innerHTML = renderProtocolReadonly(data);
+        });
+
+        function renderProtocolReadonly(p) {
+            const bands = Array.isArray(p.bands) ? p.bands.slice(0, 2) : [];
+            const channels = p.channels || {};
+            const archived = p.archived_at
+                ? `<span class="chip chip-neutral">Archived version</span>` : '';
+            return `
+                ${p.description ? `<p class="text-body text-muted">${escapeHtml(p.description)}</p>` : ''}
+                ${archived ? `<div class="mt-3">${archived}</div>` : ''}
+                <div class="mt-6 pt-6 border-t border-line grid grid-cols-1 sm:grid-cols-3 gap-6">
+                    <div>
+                        <div class="meta-label">Bands</div>
+                        <div class="mt-2 flex flex-col items-start gap-2">
+                            ${bands.length ? bands.map(renderBand).join('') : '<span class="text-caption text-muted">—</span>'}
+                        </div>
+                    </div>
+                    <div>
+                        <div class="meta-label">Channels</div>
+                        <div class="text-caption text-ink mt-2">${renderChannels(channels)}</div>
+                    </div>
+                    <div>
+                        <div class="meta-label">Duration</div>
+                        <div class="text-caption text-ink mt-2">${formatDuration(p.duration_seconds)}</div>
+                    </div>
+                </div>`;
+        }
+    })();
+
     function renderSession(s) {
         const summary = s.summary || {};
         const duration = summary.duration_s ?? (s.ended_at && s.started_at
             ? (new Date(s.ended_at) - new Date(s.started_at)) / 1000 : null);
         const pct = summary.pct_above != null ? Math.round(summary.pct_above * 100) + '%' : '—';
         const streak = summary.max_streak_s != null ? formatDuration(summary.max_streak_s) : '—';
-        const protocol = s.assigned_sessions?.name || 'Ad-hoc session';
+        const name = s.assigned_sessions?.name || 'Ad-hoc session';
         const when = formatDateTime(s.started_at);
+
+        // Only sessions tied to a protocol are clickable; ad-hoc ones are plain.
+        const nameCell = s.assigned_session_id
+            ? `<button type="button" class="text-ink font-medium text-left hover:text-accent transition"
+                       data-view-protocol="${escapeHtml(s.assigned_session_id)}" data-when="${escapeHtml(when)}">${escapeHtml(name)}</button>`
+            : `<span class="text-muted">${escapeHtml(name)}</span>`;
 
         return `
             <tr>
-                <td class="text-ink">${escapeHtml(protocol)}</td>
+                <td>${nameCell}</td>
                 <td class="text-muted tnum">${when}</td>
                 <td class="text-right tnum">${formatDuration(duration)}</td>
                 <td class="text-right tnum">${pct}</td>

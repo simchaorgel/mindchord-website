@@ -147,6 +147,7 @@ body { font-family: 'Inter', system-ui, sans-serif; color: var(--ink); backgroun
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
 }
 textarea.input { height: auto; min-height: 96px; padding: 12px 14px; line-height: 1.55; resize: vertical; }
+textarea.input[data-autogrow] { min-height: 0; resize: none; overflow: hidden; }
 select.input {
     appearance: none; padding-right: 40px; cursor: pointer;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2369707C' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
@@ -282,10 +283,53 @@ select.input {
 }
 .modal .dialog {
     position: relative; width: 100%; max-width: 400px;
+    max-height: 86vh; overflow-y: auto;
     background: var(--surface); border: 1px solid var(--border);
-    border-radius: var(--r-lg); box-shadow: var(--shadow); padding: 24px;
+    border-radius: var(--r-lg); box-shadow: var(--shadow); padding: 28px;
     animation: pop var(--t-base) var(--ease) both;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-strong) transparent;
 }
+/* Keep the scrollbar thumb clear of the dialog's rounded corners. The thumb's
+   transparent border (matched to the surface) insets it; the track margin
+   stops it short of the top/bottom radius. */
+.modal .dialog::-webkit-scrollbar { width: 12px; }
+.modal .dialog::-webkit-scrollbar-track { background: transparent; margin: 14px 0; }
+.modal .dialog::-webkit-scrollbar-thumb {
+    background: var(--border-strong); border-radius: 999px;
+    border: 3px solid var(--surface); background-clip: padding-box;
+}
+.modal .dialog-lg { max-width: 680px; padding: 32px 36px; }
+
+/* Bare icon-only close, sits flush next to a dialog heading (no padding/bg). */
+.icon-close {
+    flex-shrink: 0; display: inline-grid; place-items: center;
+    width: 24px; height: 24px; color: var(--text-muted); cursor: pointer;
+    border-radius: var(--r-sm); transition: color var(--t-fast) var(--ease);
+}
+.icon-close:hover { color: var(--ink); }
+.icon-close svg { width: 18px; height: 18px; }
+
+/* Segmented control — used for band direction (reward / punish).
+   Height matches .input (44px) so it lines up in a row of fields. */
+.segmented { display: inline-flex; align-items: center; height: 44px; padding: 4px; gap: 2px; background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: var(--r); }
+.segmented button {
+    height: 100%; padding: 0 16px; border-radius: var(--r-sm);
+    font-size: 14px; font-weight: 500; color: var(--text-muted); cursor: pointer;
+    transition: background var(--t-fast) var(--ease), color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
+}
+.segmented button.is-on { background: var(--surface); color: var(--ink); box-shadow: var(--shadow-sm); }
+
+/* Reference channel multi-select — a row of toggle chips */
+.chip-toggle {
+    display: inline-flex; align-items: center; height: 32px; padding: 0 12px;
+    font-size: 13px; font-weight: 500; color: var(--text-muted); cursor: pointer; user-select: none;
+    background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--r-full);
+    transition: background var(--t-fast) var(--ease), color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
+}
+.chip-toggle input { position: absolute; opacity: 0; width: 0; height: 0; }
+.chip-toggle:has(input:checked) { background: var(--accent-weak); color: var(--accent-ink); border-color: transparent; }
+.chip-toggle:has(input:focus-visible) { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 24%, transparent); }
 @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes pop { from { opacity: 0; transform: translateY(8px) scale(0.98); } to { opacity: 1; transform: none; } }
 
