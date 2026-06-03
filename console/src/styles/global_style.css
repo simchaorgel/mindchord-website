@@ -351,10 +351,9 @@ select.input {
    horizontally instead of the centered fade+scale. Add `.modal-drawer` on the
    .modal and `.drawer` on the dialog. */
 .modal-drawer { place-items: stretch; padding: 0; }
-.modal-drawer .scrim { cursor: pointer; }
 .modal .drawer {
     margin-left: auto;                 /* pin to the right */
-    width: 44vw; max-width: 720px; min-width: 0;
+    width: 680px; max-width: 100vw;    /* fixed — same space every time */
     height: 100%; max-height: none;
     border-radius: 0; border: none;
     border-left: 1px solid var(--border);
@@ -382,10 +381,52 @@ select.input {
 .dialog-framed .chip-toggle { border-radius: 4px; }
 
 /* Cool-neutral controls inside the editor (warm beige read muddy here). */
-.dialog-framed .pf-band { background: var(--cool-fill); border-color: var(--cool-border); }
 .dialog-framed .segmented { background: var(--cool-fill-2); border-color: var(--cool-border); }
 .dialog-framed .chip-toggle { border-color: var(--cool-border); }
 .dialog-framed .chip-toggle:hover { background: var(--cool-fill); }
+
+/* ── Protocol editor — sectioned body + band mini-table ─────────────────────
+   The body reads as a sequence of hairline-divided sections, each led by a
+   meta-label. Bands are an aligned mini-table: the field labels live once in a
+   column header rather than repeating on every row, so 1–2 bands stay tidy and
+   line up instead of crowding a single flex strip. */
+.pf-section + .pf-section { margin-top: 22px; padding-top: 22px; border-top: 1px solid var(--border); }
+.pf-help { margin: 10px 0 12px; font-size: 12.5px; color: var(--text-muted); }
+
+.pf-bands-panel {
+    border: 1px solid var(--cool-border); border-radius: 6px;
+    background: var(--surface); overflow: hidden;
+}
+/* Header + rows are separate grids, so the Direction column is a FIXED width
+   (not auto) — otherwise the header sizes it to the label and the rows to the
+   segmented control, and every column drifts out of alignment. */
+.pf-band-head, .pf-band {
+    display: grid; align-items: center; gap: 12px;
+    grid-template-columns: 1fr 1fr 168px minmax(74px, 1fr) 30px;
+}
+.pf-band .segmented-sm { width: 100%; }
+.pf-band .segmented-sm button { flex: 1 1 0; }
+.pf-band-head {
+    padding: 9px 14px; background: var(--cool-fill);
+    border-bottom: 1px solid var(--cool-border);
+    font-size: 10.5px; font-weight: 600; letter-spacing: 0.07em;
+    text-transform: uppercase; color: var(--text-muted);
+}
+.pf-band { padding: 12px 14px; }
+.pf-band + .pf-band { border-top: 1px solid var(--cool-border); }
+
+/* Compact segmented sized to match input-sm, so the band row lines up. */
+.segmented-sm { height: 38px; padding: 3px; }
+.segmented-sm button { padding: 0 14px; font-size: 13px; }
+
+/* Bare delete affordance for a band row (no button chrome until hovered). */
+.pf-band-remove {
+    display: inline-grid; place-items: center; width: 30px; height: 30px;
+    color: var(--text-muted); background: transparent; border-radius: 4px; cursor: pointer;
+    transition: color var(--t-fast) var(--ease), background var(--t-fast) var(--ease);
+}
+.pf-band-remove:hover { color: var(--danger); background: var(--danger-weak); }
+.pf-band-remove svg { width: 16px; height: 16px; }
 
 /* Footer buttons — squarer, static (no press-scale), with a layered
    inset-highlight + soft drop shadow for a tactile, "physical" feel. */

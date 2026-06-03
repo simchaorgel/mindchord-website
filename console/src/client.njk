@@ -188,23 +188,26 @@ nav: clients
             </button>
         </div>
 
-        <!-- Scrolling body -->
+        <!-- Scrolling body — a sequence of hairline-divided sections. -->
         <div class="dialog-body">
             <!-- Details -->
-            <div class="space-y-3">
-                <label class="field block">
-                    <span class="label">Name</span>
-                    <input id="pf-name" class="input input-sm input-grotesk" type="text" placeholder="e.g. Alpha uptraining" required>
-                </label>
+            <section class="pf-section">
+                <h3 class="meta-label">Details</h3>
+                <div class="mt-3 space-y-3">
+                    <label class="field block">
+                        <span class="label">Name</span>
+                        <input id="pf-name" class="input input-grotesk" type="text" placeholder="e.g. Alpha uptraining" required>
+                    </label>
 
-                <label class="field block">
-                    <span class="label">Description</span>
-                    <textarea id="pf-description" class="input input-sm input-grotesk" data-autogrow placeholder="Notes for this protocol…" required rows="2"></textarea>
-                </label>
-            </div>
+                    <label class="field block">
+                        <span class="label">Description</span>
+                        <textarea id="pf-description" class="input input-grotesk" data-autogrow placeholder="Notes for this protocol…" required rows="2"></textarea>
+                    </label>
+                </div>
+            </section>
 
-            <!-- Bands -->
-            <div class="mt-7">
+            <!-- Bands — an aligned mini-table; labels live in the column header. -->
+            <section class="pf-section">
                 <div class="flex items-center justify-between">
                     <h3 class="meta-label">Bands</h3>
                     <button id="pf-add-band" type="button" class="btn btn-secondary btn-sm text-accent">
@@ -212,44 +215,45 @@ nav: clients
                         Add band
                     </button>
                 </div>
-                <div id="pf-bands" class="mt-3 flex flex-col gap-3"></div>
-            </div>
+                <p class="pf-help">Reward or inhibit one or two frequency windows. Leave Z blank to auto-calibrate.</p>
+                <div class="pf-bands-panel">
+                    <div class="pf-band-head">
+                        <span>Low Hz</span>
+                        <span>High Hz</span>
+                        <span>Direction</span>
+                        <span>Z</span>
+                        <span></span>
+                    </div>
+                    <div id="pf-bands"></div>
+                </div>
+            </section>
 
             <!-- Channels -->
-            <div class="mt-7 space-y-4">
+            <section class="pf-section">
                 <h3 class="meta-label">Channels</h3>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <label class="field block">
-                        <span class="label">Feedback channel</span>
-                        <select id="pf-feedback" class="input">
-                            <option value="AF7">AF7</option>
-                            <option value="AF8">AF8</option>
-                            <option value="TP9">TP9</option>
-                            <option value="TP10">TP10</option>
-                            <option value="AUX">AUX</option>
-                        </select>
-                    </label>
-                    <label id="pf-aux-field" class="field block hidden">
-                        <span class="label">AUX position</span>
-                        <select id="pf-aux" class="input"></select>
-                    </label>
-                </div>
-
+                <p class="pf-help">The feedback channel drives training; reference channels are subtracted as noise.</p>
                 <div class="field block">
+                    <span class="label">Feedback channel</span>
+                    <div id="pf-feedback" class="mt-2 flex flex-wrap gap-2"></div>
+                </div>
+                <label id="pf-aux-field" class="field block hidden mt-4">
+                    <span class="label">AUX position</span>
+                    <select id="pf-aux" class="input max-w-[240px]"></select>
+                </label>
+                <div class="field block mt-4">
                     <span class="label">Reference channels <span class="text-muted font-normal">(optional)</span></span>
                     <div id="pf-reference" class="mt-2 flex flex-wrap gap-2"></div>
                 </div>
-            </div>
+            </section>
 
             <!-- Duration -->
-            <div class="mt-7">
-                <span class="label">Duration</span>
-                <div class="mt-2 flex items-center gap-2.5">
-                    <input id="pf-duration" class="input input-sm tnum w-24" type="number" min="1" step="1" placeholder="3">
+            <section class="pf-section">
+                <h3 class="meta-label">Duration</h3>
+                <div class="mt-3 flex items-center gap-2.5">
+                    <input id="pf-duration" class="input tnum w-24" type="number" min="1" step="1" placeholder="3">
                     <span class="text-body text-muted">minutes</span>
                 </div>
-            </div>
-
+            </section>
         </div>
 
         <!-- Sticky footer -->
@@ -544,29 +548,40 @@ nav: clients
         const saveLabel = saveBtn.querySelector('[data-label]');
 
         const bandsWrap = document.getElementById('pf-bands');
-        const feedbackSel = document.getElementById('pf-feedback');
+        const feedbackWrap = document.getElementById('pf-feedback');
         const auxField = document.getElementById('pf-aux-field');
         const auxSel = document.getElementById('pf-aux');
         const referenceWrap = document.getElementById('pf-reference');
 
         let editingId = null;   // null = creating; otherwise the protocol id
 
-        // One-time: fill the AUX-position + reference-channel controls. Each
-        // reference option has a leading tick that only shows when selected.
+        // One-time: fill the AUX-position select + the feedback / reference chip
+        // groups. Both use the same chip-toggle look (leading tick on select);
+        // feedback is single-select (radios), reference is multi-select
+        // (checkboxes).
         auxSel.innerHTML = AUX_POSITIONS.map(p => `<option value="${p}">${p}</option>`).join('');
-        referenceWrap.innerHTML = FEEDBACK_CHANNELS.map(c => `
-            <label class="chip-toggle" data-ref="${c}">
+        const chipMarkup = (type, name, c) => `
+            <label class="chip-toggle" data-chip="${c}">
                 <span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
-                <input type="checkbox" value="${c}">${c}
-            </label>
-        `).join('');
+                <input type="${type}"${name ? ` name="${name}"` : ''} value="${c}">${c}
+            </label>`;
+        feedbackWrap.innerHTML = FEEDBACK_CHANNELS.map(c => chipMarkup('radio', 'pf-feedback', c)).join('');
+        referenceWrap.innerHTML = FEEDBACK_CHANNELS.map(c => chipMarkup('checkbox', '', c)).join('');
 
-        feedbackSel.addEventListener('change', syncFeedback);
+        // Single-select feedback: read/write the checked radio.
+        const getFeedback = () => feedbackWrap.querySelector('input:checked')?.value || 'AF7';
+        function setFeedback(v) {
+            const val = FEEDBACK_CHANNELS.includes(v) ? v : 'AF7';
+            feedbackWrap.querySelectorAll('input').forEach(r => { r.checked = r.value === val; });
+        }
+
+        feedbackWrap.addEventListener('change', syncFeedback);
         // The feedback channel can't also be a reference — disable + uncheck it.
         function syncFeedback() {
-            auxField.classList.toggle('hidden', feedbackSel.value !== 'AUX');
-            referenceWrap.querySelectorAll('[data-ref]').forEach(label => {
-                const isFeedback = label.dataset.ref === feedbackSel.value;
+            const fb = getFeedback();
+            auxField.classList.toggle('hidden', fb !== 'AUX');
+            referenceWrap.querySelectorAll('[data-chip]').forEach(label => {
+                const isFeedback = label.dataset.chip === fb;
                 label.classList.toggle('is-disabled', isFeedback);
                 const cb = label.querySelector('input');
                 cb.disabled = isFeedback;
@@ -583,25 +598,18 @@ nav: clients
         function bandRow(band = {}) {
             const dir = (band.direction || 'reward').toLowerCase();
             const row = document.createElement('div');
-            row.className = 'pf-band rounded border p-4';
+            row.className = 'pf-band';
             row.innerHTML = `
-                <div class="flex items-end gap-3">
-                    <label class="field shrink-0"><span class="label">Low (Hz)</span>
-                        <input class="input tnum w-20" type="number" min="0" step="0.5" data-band="lo" value="${band.lo ?? ''}"></label>
-                    <label class="field shrink-0"><span class="label">High (Hz)</span>
-                        <input class="input tnum w-20" type="number" min="0" step="0.5" data-band="hi" value="${band.hi ?? ''}"></label>
-                    <div class="field shrink-0"><span class="label">Direction</span>
-                        <div class="segmented" data-band="direction">
-                            <button type="button" data-dir="reward" class="${dir === 'reward' ? 'is-on' : ''}">Reward</button>
-                            <button type="button" data-dir="punish" class="${dir === 'punish' ? 'is-on' : ''}">Punish</button>
-                        </div>
-                    </div>
-                    <label class="field flex-1 min-w-0"><span class="label whitespace-nowrap">Z <span class="text-muted font-normal">(blank = auto)</span></span>
-                        <input class="input tnum w-full" type="number" step="0.01" data-band="threshold_z" value="${band.threshold_z ?? ''}"></label>
-                    <button type="button" class="btn btn-ghost btn-icon text-muted hover:text-danger shrink-0" data-remove-band aria-label="Remove band" title="Remove band">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M6 6v14a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V6"/></svg>
-                    </button>
-                </div>`;
+                <input class="input input-sm tnum" type="number" min="0" step="0.5" data-band="lo" value="${band.lo ?? ''}" placeholder="4" aria-label="Low frequency (Hz)">
+                <input class="input input-sm tnum" type="number" min="0" step="0.5" data-band="hi" value="${band.hi ?? ''}" placeholder="8" aria-label="High frequency (Hz)">
+                <div class="segmented segmented-sm" data-band="direction">
+                    <button type="button" data-dir="reward" class="${dir === 'reward' ? 'is-on' : ''}">Reward</button>
+                    <button type="button" data-dir="punish" class="${dir === 'punish' ? 'is-on' : ''}">Punish</button>
+                </div>
+                <input class="input input-sm tnum" type="number" step="0.01" data-band="threshold_z" value="${band.threshold_z ?? ''}" placeholder="auto" aria-label="Threshold Z (blank for auto)">
+                <button type="button" class="pf-band-remove" data-remove-band aria-label="Remove band" title="Remove band">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M6 6v14a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V6"/></svg>
+                </button>`;
 
             row.querySelectorAll('[data-dir]').forEach(b => b.addEventListener('click', () => {
                 row.querySelectorAll('[data-dir]').forEach(x => x.classList.toggle('is-on', x === b));
@@ -638,7 +646,7 @@ nav: clients
                 bands.forEach(b => bandsWrap.appendChild(bandRow(b)));
 
                 const ch = protocol.channels || {};
-                feedbackSel.value = FEEDBACK_CHANNELS.includes(ch.feedback) ? ch.feedback : 'AF7';
+                setFeedback(ch.feedback);
                 if (ch.aux_position && AUX_POSITIONS.includes(ch.aux_position)) auxSel.value = ch.aux_position;
                 const refs = Array.isArray(ch.reference) ? ch.reference : [];
                 referenceWrap.querySelectorAll('input').forEach(cb => { cb.checked = refs.includes(cb.value); });
@@ -649,7 +657,7 @@ nav: clients
                 // round-trips without re-rounding.
                 document.getElementById('pf-duration').dataset.originalSeconds = protocol.duration_seconds ?? '';
             } else {
-                feedbackSel.value = 'AF7';
+                setFeedback('AF7');
                 delete document.getElementById('pf-duration').dataset.originalSeconds;
             }
 
@@ -683,7 +691,7 @@ nav: clients
             }
             if (bands.length === 0) return { error: 'Add at least one band.' };
 
-            const feedback = feedbackSel.value;
+            const feedback = getFeedback();
             const reference = [...referenceWrap.querySelectorAll('input:checked')].map(cb => cb.value);
             const channels = { feedback, reference };
             if (feedback === 'AUX') channels.aux_position = auxSel.value;
@@ -862,7 +870,7 @@ nav: clients
         const bands = Array.isArray(p.bands) ? p.bands.slice(0, 2) : [];
         const channels = p.channels || {};
         return `
-            <article class="card card-hover p-6">
+            <article class="card p-6">
                 <div class="flex items-start justify-between gap-6">
                     <div class="min-w-0">
                         <h3 class="text-section">${escapeHtml(p.name || 'Untitled')}</h3>
