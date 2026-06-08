@@ -215,7 +215,7 @@ nav: clients
                         Add band
                     </button>
                 </div>
-                <p class="pf-help">Reward or inhibit one or two frequency windows. Leave Z blank to auto-calibrate.</p>
+                <p class="pf-help">Reward or inhibit one or two frequency windows. Leave Z blank to default to 0.</p>
                 <div class="pf-bands-panel">
                     <div class="pf-band-head">
                         <span>Low Hz</span>
@@ -606,7 +606,7 @@ nav: clients
                     <button type="button" data-dir="reward" class="${dir === 'reward' ? 'is-on' : ''}">Reward</button>
                     <button type="button" data-dir="punish" class="${dir === 'punish' ? 'is-on' : ''}">Punish</button>
                 </div>
-                <input class="input input-sm tnum" type="number" step="0.01" data-band="threshold_z" value="${band.threshold_z ?? ''}" placeholder="auto" aria-label="Threshold Z (blank for auto)">
+                <input class="input input-sm tnum" type="number" step="0.01" data-band="threshold_z" value="${band.threshold_z ?? ''}" placeholder="0" aria-label="Threshold Z (blank defaults to 0)">
                 <button type="button" class="pf-band-remove" data-remove-band aria-label="Remove band" title="Remove band">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M6 6v14a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V6"/></svg>
                 </button>`;
@@ -1066,7 +1066,7 @@ nav: clients
         const dir = (b.direction || '').toLowerCase();
         const cls = dir === 'reward' ? 'reward' : dir === 'punish' ? 'punish' : '';
         const dirLabel = dir ? dir.charAt(0).toUpperCase() + dir.slice(1) : '';
-        const z = b.threshold_z == null ? 'Z auto' : `Z ${(+b.threshold_z).toFixed(2)}`;
+        const z = b.threshold_z == null ? 'Z 0' : `Z ${(+b.threshold_z).toFixed(2)}`;
         return `<span class="band-chip ${cls}"><span class="dot"></span>${b.lo}–${b.hi} Hz${dirLabel ? ' · ' + dirLabel : ''} · ${z}</span>`;
     }
 

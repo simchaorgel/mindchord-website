@@ -313,8 +313,8 @@ select.input {
 .modal .scrim {
     position: absolute; inset: 0;
     background: oklch(0.30 0.012 264 / 0.34);
-    backdrop-filter: blur(2px);
-    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
     transition: background-color var(--t-base) var(--ease), backdrop-filter var(--t-base) var(--ease);
 }
 .modal[hidden] .scrim { background: oklch(0.30 0.012 264 / 0); backdrop-filter: blur(0); -webkit-backdrop-filter: blur(0); }
