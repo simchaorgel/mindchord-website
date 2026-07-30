@@ -150,14 +150,38 @@ function normaliseProtocol(row) {
 // (Skipping it fails with an opaque ASN.1 error, hence the explicit message.)
 const ED25519_PKCS8_PREFIX = Buffer.from('302e020100300506032b657004220420', 'hex');
 
+// The public key embedded in the desktop build. NOT secret — it's here purely so
+// a misconfigured private key fails loudly on the first mint attempt.
+//
+// Without this check, the wrong key produces licences that look perfectly fine
+// here and are rejected on the client's machine as `unsigned`, with nothing to
+// indicate why. That's the one failure mode in this whole flow that can't be
+// diagnosed remotely, so it's worth refusing to sign at all.
+//
+// If the desktop signing key is ever rotated, this constant must move with it.
+const EXPECTED_PUBLIC_KEY = 'MeJR0kiOfr5HZ1LKRM6v0YGvD0qx4SpD+0hp7/XN/Js=';
+
 function loadSigningKey(b64) {
     const seed = Buffer.from(String(b64), 'base64');
     if (seed.length !== 32) throw new Error('MINDCHORD_LICENCE_KEY must be a base64-encoded 32-byte Ed25519 seed.');
-    return crypto.createPrivateKey({
+
+    const key = crypto.createPrivateKey({
         key: Buffer.concat([ED25519_PKCS8_PREFIX, seed]),
         format: 'der',
         type: 'pkcs8',
     });
+
+    // Derive the public half and compare. In SPKI DER the raw 32-byte key is
+    // the tail, after a fixed header.
+    const derived = crypto.createPublicKey(key)
+        .export({ format: 'der', type: 'spki' })
+        .subarray(-32).toString('base64');
+    if (derived !== EXPECTED_PUBLIC_KEY) {
+        const err = new Error('Signing key does not match the desktop build.');
+        err.keyMismatch = true;
+        throw err;
+    }
+    return key;
 }
 
 // Serialise ONCE, sign those bytes, base64 those same bytes.
@@ -203,7 +227,13 @@ exports.handler = async (event) => {
 
     let signingKey;
     try { signingKey = loadSigningKey(LICENCE_KEY); }
-    catch { return json(500, { error: 'Licence signing key is misconfigured on the server.' }); }
+    catch (err) {
+        return json(500, {
+            error: err.keyMismatch
+                ? 'The licence signing key on the server does not match the Mindchord app. Licences signed with it would be rejected, so none was issued.'
+                : 'Licence signing key is misconfigured on the server.',
+        });
+    }
 
     const admin = createClient(SUPABASE_URL, SECRET_KEY, { auth: { persistSession: false } });
 
