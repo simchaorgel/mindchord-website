@@ -30,12 +30,43 @@ npm
 ### Scripts
 *Dev server scripts*
 - `npm run dev:site` runs the public site dev server at http://localhost:8080
-- `run dev:console` runs the console dev server at http://localhost:8081. To view visit http://localhost:8081/console/dashboard
+- `npm run dev:console` runs the console dev server at http://localhost:8081. To view visit http://localhost:8081/console/dashboard
 *Build scripts (for testing)*
 - `npm run build:site` builds the public site to `dist/`
 - `npm run build:console` builds the console to `dist/console/`
 - `npm run build` builds both parts
 
+
+## Offline licences
+The desktop app can run with no network access, gated by a signed `.mind` licence file
+that carries the client's identity, their entitlement, and their protocols. The console
+issues those files from a client's page (**Create offline licence**).
+
+Signing happens in `netlify/functions/mint-licence.js` — never in the browser. Anyone
+holding the private key can mint a licence for any machine, and if it leaks the only fix
+is a new desktop build with a new public key plus a reissue to every existing client.
+
+A licence is locked to one computer by its **machine code**, which the client reads off
+the app's licence screen. It's stored on the client's profile (Edit details) so it only
+has to be collected once — renewals read it from there. Issuing a new licence is how you
+both renew a subscription and push protocol changes; there's no way to revoke one early,
+so the expiry window (one month) *is* the revocation window.
+
+## Environment variables
+Set in Netlify → Site settings → Environment variables. None of these may be committed
+or reach the browser bundle.
+
+| Variable | Used by | Notes |
+|---|---|---|
+| `SUPABASE_URL` | all functions | Falls back to a hardcoded project URL. |
+| `SUPABASE_SERVICE_ROLE_KEY` | `add-client`, `mint-licence` | Bypasses RLS, so every function using it must authenticate its caller itself. |
+| `MINDCHORD_LICENCE_KEY` | `mint-licence` | Base64-encoded 32-byte Ed25519 seed. Must match the public key embedded in the desktop build. |
+
+## Database migrations
+`supabase/migrations/` is a record of schema changes, applied by hand via the Supabase
+SQL editor — there's no migration runner. Files are idempotent and numbered in order.
+Note that `service_role` bypasses RLS but **not** table-level GRANTs, so a new table or
+column usually needs an explicit grant before a function can touch it.
 
 ## Deployment
 Netlify auto-deploys on git pushes to `main` and runs `npm install && npm run build`

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mockup 4 — Living Harmonograph</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#17120E;            /* warm near-black, derived from app's #2C2825 */
+    --bg-2:#1F1813;
+    --paper:#F5F0EB;         /* app background, used as text */
+    --muted:#B8AC9E;         /* warm muted */
+    --coral:#E07A4E;         /* app coral, nudged brighter so it glows */
+    --gold:#D7A94A;          /* app gold, brighter */
+    --sage:#8FB089;          /* app sage, brighter */
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{background:radial-gradient(120% 100% at 70% 30%, var(--bg-2), var(--bg) 70%);
+    color:var(--paper);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;overflow:hidden}
+  .serif{font-family:'Newsreader',Georgia,serif}
+
+  /* full-bleed living visual */
+  canvas{position:fixed;inset:0;width:100%;height:100%;z-index:0}
+  /* subtle vignette so text edge stays legible */
+  .vignette{position:fixed;inset:0;z-index:1;pointer-events:none;
+    background:radial-gradient(110% 90% at 30% 50%, rgba(23,18,14,.72) 0%, rgba(23,18,14,.25) 42%, transparent 70%)}
+
+  header{position:fixed;top:0;left:0;right:0;z-index:3;display:flex;align-items:center;
+    justify-content:space-between;padding:26px 40px}
+  .brand{font-size:21px;letter-spacing:.3px}
+  nav a{color:var(--muted);text-decoration:none;font-size:14px;margin-left:30px;transition:color .2s}
+  nav a:hover{color:var(--paper)}
+
+  .hero{position:relative;z-index:2;height:100vh;display:flex;flex-direction:column;
+    justify-content:center;padding:0 8vw;max-width:760px}
+  .eyebrow{font-size:13px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:24px;opacity:.9}
+  h1{font-size:clamp(48px,7.5vw,92px);line-height:1.0;letter-spacing:-.02em;font-weight:400}
+  .sub{margin-top:26px;max-width:440px;color:var(--muted);font-size:clamp(16px,1.8vw,19px);line-height:1.6}
+  .link{margin-top:40px;display:inline-flex;align-items:center;gap:12px;color:var(--paper);
+    text-decoration:none;font-size:16px;width:fit-content;padding-bottom:6px;
+    border-bottom:1px solid rgba(245,240,235,.35);transition:gap .25s,border-color .25s}
+  .link:hover{gap:18px;border-color:var(--coral)}
+  .link .arr{display:inline-flex;width:34px;height:34px;align-items:center;justify-content:center;
+    border-radius:50%;background:var(--coral);color:var(--bg)}
+  .link .arr svg{width:15px;height:15px}
+
+  .tag{position:fixed;bottom:18px;left:0;right:0;text-align:center;z-index:3;
+    color:#5a4f44;font-size:12px;letter-spacing:2px;text-transform:uppercase}
+</style>
+</head>
+<body>
+  <canvas id="harm"></canvas>
+  <div class="vignette"></div>
+
+  <header>
+    <div class="brand serif">Mindchord</div>
+    <nav><a href="#">About</a><a href="#">Get started</a><a href="#">Contact</a></nav>
+  </header>
+
+  <section class="hero">
+    <div class="eyebrow">Take-home neurofeedback</div>
+    <h1 class="serif">Upgrade<br>your mind.</h1>
+    <p class="sub">Portable EEG, sessions designed by your provider, and feedback that turns your own brain activity into something you can see and hear.</p>
+    <a class="link" href="#">
+      <span>Find out more</span>
+      <span class="arr"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13.2 5.3a1 1 0 0 1 1.4 0l5.8 5.8a1.25 1.25 0 0 1 0 1.77l-5.8 5.83a1 1 0 0 1-1.42-1.41L17.18 13H4.75a1 1 0 1 1 0-2h12.43l-3.98-3.98a1 1 0 0 1 0-1.42Z"/></svg></span>
+    </a>
+  </section>
+
+  <div class="tag">Direction 4 — Living Harmonograph</div>
+
+<script>
+(function(){
+  const canvas=document.getElementById('harm');
+  const ctx=canvas.getContext('2d');
+  let W,H,DPR,cx,cy,R;
+  function resize(){
+    DPR=Math.min(window.devicePixelRatio||1,2);
+    W=innerWidth;H=innerHeight;
+    canvas.width=W*DPR;canvas.height=H*DPR;ctx.setTransform(DPR,0,0,DPR,0,0);
+    // visual sits to the right of the text, centred in the right ~60%
+    cx=W*0.66;cy=H*0.5;R=Math.min(W,H)*0.34;
+  }
+  resize();addEventListener('resize',resize);
+
+  // A harmonograph: two pendulums per axis, near-harmonic frequency ratios
+  // (a "chord"). Phases drift slowly with time so the figure breathes and
+  // re-draws itself forever instead of decaying to a dead still image.
+  const strands=[
+    {color:'231,122,78',  f:[2,3,3,2], base:1.00, amp:.95, glow:18, w:1.4}, // coral
+    {color:'215,169,74',  f:[3,2,2,3], base:1.00, amp:.78, glow:14, w:1.2}, // gold
+    {color:'143,176,137', f:[2,2,3,3], base:1.00, amp:.62, glow:12, w:1.1}, // sage
+  ];
+
+  const t0=performance.now();
+  function draw(now){
+    const T=(now-t0)/1000;
+    ctx.clearRect(0,0,W,H);
+    ctx.globalCompositeOperation='lighter'; // additive — strands glow where they cross
+
+    strands.forEach((s,si)=>{
+      // slowly drifting phases give the living, morphing quality
+      const p1=T*0.05+si*0.7, p2=T*0.037+si*1.3, p3=T*0.043, p4=T*0.029;
+      const A=R*s.amp;
+      ctx.beginPath();
+      const N=1400;
+      for(let i=0;i<=N;i++){
+        const u=i/N*Math.PI*2;
+        const x=cx + A*( Math.sin(s.f[0]*u+p1) + 0.6*Math.sin(s.f[2]*u+p3) )/1.6;
+        const y=cy + A*( Math.sin(s.f[1]*u+p2) + 0.6*Math.sin(s.f[3]*u+p4) )/1.6;
+        i?ctx.lineTo(x,y):ctx.moveTo(x,y);
+      }
+      ctx.shadowColor='rgba('+s.color+',0.9)';
+      ctx.shadowBlur=s.glow;
+      ctx.strokeStyle='rgba('+s.color+',0.55)';
+      ctx.lineWidth=s.w;
+      ctx.stroke();
+    });
+
+    ctx.globalCompositeOperation='source-over';
+    requestAnimationFrame(draw);
+  }
+  requestAnimationFrame(draw);
+})();
+</script>
+</body>
+</html>

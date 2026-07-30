@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mockup 1 — Precision Instrument</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0A0E15;          /* near-black canvas */
+    --ink-2:#0E141F;
+    --fog:#8893A6;          /* muted body text */
+    --bright:#E8EDF5;        /* headline */
+    --signal:#46E6C4;        /* electric mint — the one accent */
+    --signal-2:#5BB8FF;      /* secondary glow */
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{background:var(--ink);color:var(--bright);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased}
+  .serif{font-family:'Newsreader',Georgia,serif}
+
+  /* faint instrument grid behind everything */
+  body::before{
+    content:"";position:fixed;inset:0;z-index:0;
+    background-image:
+      linear-gradient(to right, rgba(255,255,255,.025) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255,255,255,.025) 1px, transparent 1px);
+    background-size:48px 48px;
+    -webkit-mask-image:radial-gradient(ellipse 80% 60% at 50% 35%, #000 30%, transparent 80%);
+            mask-image:radial-gradient(ellipse 80% 60% at 50% 35%, #000 30%, transparent 80%);
+  }
+
+  header{position:relative;z-index:3;display:flex;align-items:center;justify-content:space-between;
+    padding:22px 32px;border-bottom:1px solid rgba(255,255,255,.06)}
+  .brand{font-size:20px;letter-spacing:.3px}
+  nav a{color:var(--fog);text-decoration:none;font-size:14px;margin-left:28px;transition:color .2s}
+  nav a:hover{color:var(--bright)}
+
+  .hero{position:relative;z-index:2;text-align:center;padding:90px 24px 0}
+  .eyebrow{font-size:13px;letter-spacing:3px;text-transform:uppercase;color:var(--signal);opacity:.85;margin-bottom:22px}
+  h1{font-size:clamp(44px,7vw,82px);line-height:1.02;letter-spacing:-.02em;font-weight:400}
+  h1 .glow{color:var(--signal);text-shadow:0 0 32px rgba(70,230,196,.45)}
+  .sub{max-width:560px;margin:26px auto 0;color:var(--fog);font-size:clamp(16px,2vw,19px);line-height:1.6}
+
+  .cta{margin-top:38px;display:inline-flex;align-items:center;gap:10px;
+    padding:15px 30px;border-radius:999px;font-size:15px;font-weight:500;color:var(--ink);
+    background:var(--signal);text-decoration:none;
+    box-shadow:0 0 0 0 rgba(70,230,196,.5);transition:transform .2s, box-shadow .3s}
+  .cta:hover{transform:translateY(-2px);box-shadow:0 8px 40px rgba(70,230,196,.4)}
+  .cta svg{width:16px;height:16px}
+
+  /* the signal — full-bleed glowing waveform */
+  .signal-wrap{position:relative;z-index:1;margin-top:50px;width:100%}
+  canvas{display:block;width:100%;height:320px}
+  .readout{position:relative;z-index:2;display:flex;justify-content:center;gap:48px;
+    padding:8px 0 70px;color:var(--fog);font-size:12.5px;letter-spacing:.5px}
+  .readout b{color:var(--signal);font-weight:600;font-variant-numeric:tabular-nums}
+  .label{margin-top:80px;text-align:center;color:#3a4456;font-size:12px;letter-spacing:2px;text-transform:uppercase;padding-bottom:40px}
+</style>
+</head>
+<body>
+  <header>
+    <div class="brand serif">Mindchord</div>
+    <nav>
+      <a href="#">About</a>
+      <a href="#">Get started</a>
+      <a href="#">Contact</a>
+    </nav>
+  </header>
+
+  <section class="hero">
+    <div class="eyebrow">Take-home neurofeedback</div>
+    <h1 class="serif">Upgrade your <span class="glow">mind</span>.</h1>
+    <p class="sub">Mindchord connects to portable EEG headsets to run the neurofeedback sessions your provider designs — at home, on your schedule.</p>
+    <a class="cta" href="#">Find out more
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M13.2 5.3a1 1 0 0 1 1.4 0l5.8 5.8a1.25 1.25 0 0 1 0 1.77l-5.8 5.83a1 1 0 0 1-1.42-1.41L17.18 13H4.75a1 1 0 1 1 0-2h12.43l-3.98-3.98a1 1 0 0 1 0-1.42Z"/></svg>
+    </a>
+  </section>
+
+  <div class="signal-wrap">
+    <canvas id="eeg"></canvas>
+  </div>
+  <div class="readout">
+    <span>SIGNAL <b id="r1">—</b></span>
+    <span>Z-SCORE <b id="r2">—</b></span>
+    <span>IN-ZONE <b id="r3">—</b></span>
+  </div>
+
+  <div class="label">Direction 1 — Precision Instrument</div>
+
+<script>
+(function(){
+  const canvas=document.getElementById('eeg');
+  const ctx=canvas.getContext('2d');
+  let W,H,DPR;
+  function resize(){
+    DPR=window.devicePixelRatio||1;
+    W=canvas.clientWidth;H=canvas.clientHeight;
+    canvas.width=W*DPR;canvas.height=H*DPR;ctx.setTransform(DPR,0,0,DPR,0,0);
+  }
+  resize();addEventListener('resize',resize);
+
+  // one expressive waveform — rich harmonic content, big amplitude
+  function sample(t,seed){
+    const slow=Math.sin(t*0.6+seed)*0.5+Math.sin(t*1.3+seed*1.7)*0.28;
+    const fast=Math.sin(t*9+seed*3.1)*0.16+Math.sin(t*17+seed*5.7)*0.10+Math.sin(t*31+seed*7.3)*0.06;
+    let v=slow+fast;return Math.max(-1,Math.min(1,v));
+  }
+
+  const t0=performance.now();
+  function draw(now){
+    const e=(now-t0)/1000;
+    ctx.clearRect(0,0,W,H);
+    const mid=H*0.5, amp=H*0.34, step=2;
+
+    // build path once
+    const pts=[];
+    for(let x=0;x<=W;x+=step){
+      const tx=e*0.18+x*0.012;
+      pts.push([x, mid+sample(tx,12.5)*amp]);
+    }
+
+    // soft fill under the curve
+    const grad=ctx.createLinearGradient(0,0,0,H);
+    grad.addColorStop(0,'rgba(70,230,196,0.16)');
+    grad.addColorStop(1,'rgba(70,230,196,0)');
+    ctx.beginPath();ctx.moveTo(0,H);
+    pts.forEach(p=>ctx.lineTo(p[0],p[1]));
+    ctx.lineTo(W,H);ctx.closePath();ctx.fillStyle=grad;ctx.fill();
+
+    // glow pass (thick, blurred)
+    ctx.save();
+    ctx.shadowColor='rgba(70,230,196,0.9)';ctx.shadowBlur=22;
+    ctx.lineWidth=3.2;ctx.strokeStyle='#46E6C4';ctx.lineJoin='round';ctx.lineCap='round';
+    ctx.beginPath();pts.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.stroke();
+    ctx.restore();
+
+    // crisp core line on top
+    ctx.lineWidth=1.6;ctx.strokeStyle='#CFFFF2';ctx.lineJoin='round';ctx.lineCap='round';
+    ctx.beginPath();pts.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.stroke();
+
+    // "now" cursor dot at the right edge
+    const last=pts[pts.length-1];
+    ctx.beginPath();ctx.arc(last[0]-2,last[1],4.5,0,7);ctx.fillStyle='#CFFFF2';
+    ctx.shadowColor='rgba(70,230,196,1)';ctx.shadowBlur=16;ctx.fill();ctx.shadowBlur=0;
+
+    // live readout
+    const v=sample(e*0.18+W*0.012,12.5);
+    document.getElementById('r1').textContent=(70+v*18).toFixed(1)+' µV';
+    document.getElementById('r2').textContent=(v*2.1).toFixed(2);
+    document.getElementById('r3').textContent=Math.round(50+v*42)+'%';
+
+    requestAnimationFrame(draw);
+  }
+  requestAnimationFrame(draw);
+})();
+</script>
+</body>
+</html>

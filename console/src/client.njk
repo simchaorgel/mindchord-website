@@ -42,6 +42,10 @@ nav: clients
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
                 Edit details
             </button>
+            <button type="button" class="menu-item" data-client-action="licence" role="menuitem">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M9 15h6"/><path d="M9 11h3"/></svg>
+                Create offline licence
+            </button>
             <button type="button" class="menu-item" data-client-action="block" role="menuitem">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m5.6 5.6 12.8 12.8"/></svg>
                 Block access
@@ -158,6 +162,23 @@ nav: clients
                     <input id="ec-surname" class="input" type="text" autocomplete="family-name" placeholder="Doe">
                 </label>
             </div>
+
+            <!-- Machine code — needed before an offline licence can be issued.
+                 Kept here rather than in the licence dialog so it's part of the
+                 client's record: it only has to be collected once, and every
+                 later renewal reads it from here. -->
+            <div class="mt-6 pt-6 border-t border-line">
+                <label class="field block">
+                    <span class="label">Machine code <span class="text-muted font-normal">(optional)</span></span>
+                    <input id="ec-machine-code" class="input tnum max-w-[260px]" type="text" spellcheck="false"
+                           autocapitalize="characters" autocomplete="off" placeholder="V57N-3SQ0-N7FW" aria-describedby="ec-mc-help">
+                </label>
+                <p id="ec-mc-help" class="pf-help">
+                    Only needed for offline use. The client finds it on the app’s licence screen, where a copy button puts it on their clipboard.
+                </p>
+                <p id="ec-mc-error" class="text-caption text-danger mt-2 hidden"></p>
+            </div>
+
             <p id="ec-error" class="text-caption text-danger mt-4 hidden"></p>
         </div>
         <div class="dialog-footer">
@@ -171,6 +192,97 @@ nav: clients
             </button>
         </div>
     </form>
+</div>
+
+<!-- ── Offline licence ─────────────────────────────────────────────────────
+     A signed .mind file carrying the client's identity, their entitlement, and
+     their active protocols — everything the desktop app would otherwise fetch
+     from Supabase. Issuing a new one is how you both renew a subscription and
+     push protocol changes; it's the same artifact either way.
+
+     Signing happens server-side (netlify/functions/mint-licence.js). The private
+     key must never reach the browser. -->
+<div id="licence-modal" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="lc-title">
+    <div class="scrim" data-close></div>
+    <div class="dialog dialog-lg">
+        <div class="flex items-start justify-between gap-4">
+            <div class="min-w-0">
+                <h2 id="lc-title" class="text-section">Create offline licence</h2>
+                <p class="text-caption text-muted mt-1">Lets this client run Mindchord without an internet connection.</p>
+            </div>
+            <button type="button" class="icon-close mt-1" data-close aria-label="Close">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+            </button>
+        </div>
+
+        <!-- Blocked: no machine code on record, so there's nothing to bind to. -->
+        <div id="lc-blocked" class="mt-6 hidden">
+            <p class="text-body">
+                This client has no machine code on record. A licence is locked to one computer, so
+                the code has to be added before one can be issued.
+            </p>
+            <p class="text-body text-muted mt-3">
+                Ask the client to open Mindchord and copy the code from the licence screen, then add it
+                under Edit details.
+            </p>
+            <div class="mt-6 flex items-center justify-end gap-3">
+                <button type="button" class="btn btn-secondary" data-close>Cancel</button>
+                <button type="button" id="lc-goto-edit" class="btn btn-primary">Edit details</button>
+            </div>
+        </div>
+
+        <!-- Ready to issue. -->
+        <div id="lc-ready" class="mt-6 hidden">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                <div>
+                    <div class="meta-label">Machine</div>
+                    <div id="lc-machine" class="text-caption text-ink tnum mt-2"></div>
+                </div>
+                <div>
+                    <div class="meta-label">Protocols</div>
+                    <div id="lc-protocols" class="text-caption text-ink mt-2"></div>
+                </div>
+                <div>
+                    <div class="meta-label">Valid until</div>
+                    <div id="lc-expiry" class="text-caption text-ink mt-2"></div>
+                </div>
+            </div>
+
+            <!-- Current licence state, when one has been issued before. -->
+            <p id="lc-existing" class="text-caption text-muted mt-5 hidden"></p>
+
+            <!-- Shown when a protocol was added or versioned after the last
+                 licence went out — i.e. the client is still running the old set. -->
+            <div id="lc-stale" class="mt-5 hidden rounded-card border border-line-strong bg-surface-2 p-4">
+                <p class="text-caption text-ink">
+                    Protocols have changed since the last licence was issued. The client is still running the
+                    older set until they import a new file.
+                </p>
+            </div>
+
+            <p id="lc-error" class="text-caption text-danger mt-5 hidden"></p>
+
+            <div class="mt-6 flex items-center justify-end gap-3">
+                <button type="button" class="btn btn-secondary" data-close>Cancel</button>
+                <button type="button" id="lc-create" class="btn btn-primary min-w-[150px]">
+                    <svg data-spinner class="hidden animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-90" fill="currentColor" d="M4 12a8 8 0 0 1 8-8V0C5.373 0 0 5.373 0 12h4Z"></path>
+                    </svg>
+                    <span data-label>Create licence</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Issued. -->
+        <div id="lc-done" class="mt-6 hidden">
+            <p class="text-body">The licence file has been downloaded. Send it to the client by email, USB stick or file share — they import it from the app’s licence screen.</p>
+            <p id="lc-done-detail" class="text-caption text-muted mt-3"></p>
+            <div class="mt-6 flex items-center justify-end gap-3">
+                <button type="button" class="btn btn-primary" data-close>Done</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- ── Protocol editor (New / Edit) ────────────────────────────────────────
@@ -249,9 +361,16 @@ nav: clients
             <!-- Duration -->
             <section class="pf-section">
                 <h3 class="meta-label">Duration</h3>
-                <div class="mt-3 flex items-center gap-2.5">
-                    <input id="pf-duration" class="input tnum w-24" type="number" min="1" step="1" placeholder="3">
-                    <span class="text-body text-muted">minutes</span>
+                <p class="pf-help">Calibration is the quiet baseline recorded before training starts. Leave blank to use the app’s default.</p>
+                <div class="mt-3 flex flex-wrap items-center gap-x-6 gap-y-3">
+                    <div class="flex items-center gap-2.5">
+                        <input id="pf-duration" class="input tnum w-24" type="number" min="1" step="1" placeholder="3">
+                        <span class="text-body text-muted">minutes</span>
+                    </div>
+                    <div class="flex items-center gap-2.5">
+                        <input id="pf-calibration" class="input tnum w-24" type="number" min="0" max="600" step="5" placeholder="—" aria-label="Calibration (seconds)">
+                        <span class="text-body text-muted">seconds calibration</span>
+                    </div>
                 </div>
             </section>
         </div>
@@ -313,6 +432,57 @@ nav: clients
     // Muse channels + the 10-20 sites where a loose AUX electrode can sit.
     const FEEDBACK_CHANNELS = ['AF7', 'AF8', 'TP9', 'TP10', 'AUX'];
     const AUX_POSITIONS = ['Fp1','Fp2','F7','F3','Fz','F4','F8','T3','C3','Cz','C4','T4','T5','P3','Pz','P4','T6','O1','O2'];
+
+    // Highest frequency a band may reach. Above this the desktop app has no
+    // defined behaviour, and a licence carrying it would be signed and
+    // un-recallable — so the editor refuses it and so does the mint endpoint.
+    const MAX_BAND_HZ = 45;
+
+    // The canonical value when a clinician leaves Z blank. This number is also
+    // hard-coded in netlify/functions/mint-licence.js and in the desktop app —
+    // it must be the same in all three, or a protocol means different things
+    // online and offline.
+    const DEFAULT_THRESHOLD_Z = 0;
+</script>
+<script>
+    // ── Machine codes ───────────────────────────────────────────────────────
+    // Identifies one computer; a licence is locked to it. Crockford Base32,
+    // which drops I, L, O and U because those are the characters people mangle
+    // when reading a code aloud. 12 characters, the last a position-weighted
+    // checksum over the first 11 — so a transposition is caught, not just a
+    // wrong character.
+    //
+    // Also implemented in netlify/functions/mint-licence.js. That copy is the
+    // gate; this one is here so a clinician finds a typo while the client is
+    // still on the phone. A wrong code produces a licence that fails silently
+    // on the target machine, which is near-impossible to diagnose remotely.
+    const CROCKFORD = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+
+    // Stored normalised — the app compares normalised forms, so case, hyphens
+    // and I/L/O confusion don't matter, but a wrong character does.
+    function normaliseMachineCode(code) {
+        return String(code || '').toUpperCase().replace(/[-\s]/g, '')
+            .replace(/I/g, '1').replace(/L/g, '1').replace(/O/g, '0');
+    }
+
+    function machineCodeCheckChar(body) {
+        let total = 0;
+        for (let i = 0; i < body.length; i++) total += (i + 1) * CROCKFORD.indexOf(body[i]);
+        return CROCKFORD[total % 32];
+    }
+
+    function isValidMachineCode(code) {
+        const c = normaliseMachineCode(code);
+        if (c.length !== 12) return false;
+        if ([...c].some(ch => !CROCKFORD.includes(ch))) return false;
+        return machineCodeCheckChar(c.slice(0, 11)) === c[11];
+    }
+
+    // Display form: three groups of four, as the app shows it.
+    function formatMachineCode(code) {
+        const c = normaliseMachineCode(code);
+        return c.length === 12 ? `${c.slice(0, 4)}-${c.slice(4, 8)}-${c.slice(8)}` : c;
+    }
 </script>
 <script>
     const clientId = new URLSearchParams(location.search).get('id');
@@ -333,7 +503,7 @@ nav: clients
         const [profileRes, countRes] = await Promise.all([
             window.consoleAuth.sb
                 .from('profiles')
-                .select('display_name, surname, role')
+                .select('display_name, surname, role, machine_code, licence_issued_at, licence_expires_at')
                 .eq('id', clientId)
                 .maybeSingle(),
             window.consoleAuth.sb
@@ -367,6 +537,14 @@ nav: clients
         const parts = [];
         if (clientProfile.role) parts.push(clientProfile.role.charAt(0).toUpperCase() + clientProfile.role.slice(1));
         parts.push(`${clientSessionCount} session${clientSessionCount === 1 ? '' : 's'} completed`);
+        // Only clients set up for offline use have a licence, so this stays out
+        // of the way for everyone else.
+        if (clientProfile.licence_expires_at) {
+            const exp = new Date(clientProfile.licence_expires_at);
+            parts.push(exp < new Date()
+                ? `Licence expired ${formatDate(clientProfile.licence_expires_at)}`
+                : `Licence until ${formatDate(clientProfile.licence_expires_at)}`);
+        }
         document.getElementById('client-sub').textContent = parts.join(' · ');
     }
 
@@ -391,20 +569,23 @@ nav: clients
                 const action = item.dataset.clientAction;
                 close();
                 if (action === 'edit') openEditClient();
+                else if (action === 'licence') openLicenceModal();
                 else if (action === 'block') openModal('block-modal');
                 else if (action === 'remove') openModal('remove-modal');
             });
         });
     })();
 
-    // ── Edit client details (display_name / surname) ────────────────────
+    // ── Edit client details (display_name / surname / machine_code) ─────
     // Client-side UPDATE on profiles, gated by RLS. Refreshes the header in
     // place on success — no full reload needed.
     function openEditClient() {
         if (!clientProfile) return;
         document.getElementById('ec-error').classList.add('hidden');
+        document.getElementById('ec-mc-error').classList.add('hidden');
         document.getElementById('ec-firstname').value = clientProfile.display_name || '';
         document.getElementById('ec-surname').value = clientProfile.surname || '';
+        document.getElementById('ec-machine-code').value = formatMachineCode(clientProfile.machine_code || '');
         document.getElementById('edit-client-modal').hidden = false;
         document.getElementById('ec-firstname').focus();
     }
@@ -412,6 +593,8 @@ nav: clients
         const modal = document.getElementById('edit-client-modal');
         const form = document.getElementById('edit-client-form');
         const errorEl = document.getElementById('ec-error');
+        const mcInput = document.getElementById('ec-machine-code');
+        const mcError = document.getElementById('ec-mc-error');
         const saveBtn = document.getElementById('ec-save');
         const spinner = saveBtn.querySelector('[data-spinner]');
 
@@ -419,18 +602,41 @@ nav: clients
         modal.querySelectorAll('[data-close]').forEach(el => el.addEventListener('click', close));
         document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !modal.hidden) close(); });
 
+        // Tidy the code into its display form once they've finished typing —
+        // doing it on every keystroke fights the cursor.
+        mcInput.addEventListener('blur', () => {
+            if (mcInput.value.trim()) mcInput.value = formatMachineCode(mcInput.value);
+        });
+        mcInput.addEventListener('input', () => mcError.classList.add('hidden'));
+
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             errorEl.classList.add('hidden');
+            mcError.classList.add('hidden');
             const display_name = document.getElementById('ec-firstname').value.trim() || null;
             const surname = document.getElementById('ec-surname').value.trim() || null;
+
+            // Blank clears the code; anything else has to pass the checksum
+            // before it's stored, because the failure it causes surfaces on the
+            // client's machine days later rather than here.
+            const rawCode = mcInput.value.trim();
+            let machine_code = null;
+            if (rawCode) {
+                if (!isValidMachineCode(rawCode)) {
+                    mcError.textContent = 'That machine code isn’t valid. Check it against the client’s licence screen — it should be 12 characters.';
+                    mcError.classList.remove('hidden');
+                    mcInput.focus();
+                    return;
+                }
+                machine_code = normaliseMachineCode(rawCode);
+            }
 
             saveBtn.disabled = true; spinner.classList.remove('hidden');
             try {
                 const { error } = await window.consoleAuth.sb
-                    .from('profiles').update({ display_name, surname }).eq('id', clientId);
+                    .from('profiles').update({ display_name, surname, machine_code }).eq('id', clientId);
                 if (error) throw error;
-                clientProfile = { ...clientProfile, display_name, surname };
+                clientProfile = { ...clientProfile, display_name, surname, machine_code };
                 renderClientHeader();
                 close();
             } catch (err) {
@@ -440,6 +646,150 @@ nav: clients
                 saveBtn.disabled = false; spinner.classList.add('hidden');
             }
         });
+    })();
+
+    // ── Offline licence ─────────────────────────────────────────────────
+    // The console never signs anything itself — it posts to mint-licence,
+    // which holds the private key and does the authorization checks, and gets
+    // back finished file text to hand the clinician as a download.
+    function openLicenceModal() {
+        if (!clientProfile) return;
+        const modal = document.getElementById('licence-modal');
+        const blocked = document.getElementById('lc-blocked');
+        const ready = document.getElementById('lc-ready');
+        const done = document.getElementById('lc-done');
+        const hasCode = !!clientProfile.machine_code;
+
+        document.getElementById('lc-error').classList.add('hidden');
+        done.classList.add('hidden');
+        blocked.classList.toggle('hidden', hasCode);
+        ready.classList.toggle('hidden', !hasCode);
+
+        if (hasCode) {
+            document.getElementById('lc-machine').textContent = formatMachineCode(clientProfile.machine_code);
+
+            const count = protocolsById.size;
+            document.getElementById('lc-protocols').textContent =
+                !protocolsLoaded ? '…' : count === 0 ? 'None — add one first' : `${count} active`;
+            // A licence with no protocols is unusable; the mint endpoint refuses
+            // one too. Only disable once we actually know the count.
+            document.getElementById('lc-create').disabled = protocolsLoaded && count === 0;
+
+            // Preview the expiry the server will stamp. Kept in step with
+            // addOneMonthUTC() in mint-licence.js; the server's value is
+            // authoritative and gets shown once the file is issued.
+            const preview = new Date();
+            const day = preview.getUTCDate();
+            preview.setUTCMonth(preview.getUTCMonth() + 1);
+            if (preview.getUTCDate() !== day) preview.setUTCDate(0);
+            document.getElementById('lc-expiry').textContent = formatDate(preview.toISOString());
+
+            const existing = document.getElementById('lc-existing');
+            if (clientProfile.licence_issued_at) {
+                const expired = clientProfile.licence_expires_at && new Date(clientProfile.licence_expires_at) < new Date();
+                existing.textContent = `A licence was issued on ${formatDate(clientProfile.licence_issued_at)} and `
+                    + `${expired ? 'expired' : 'runs until'} ${formatDate(clientProfile.licence_expires_at)}. `
+                    + 'Creating a new one replaces it.';
+                existing.classList.remove('hidden');
+            } else {
+                existing.classList.add('hidden');
+            }
+
+            document.getElementById('lc-stale').classList.toggle('hidden', !protocolsChangedSinceLicence());
+        }
+
+        modal.hidden = false;
+        modal.querySelector(hasCode ? '#lc-create' : '#lc-goto-edit').focus();
+    }
+
+    // True when an active protocol was created after the last licence went out,
+    // which means the client is running a stale set until they import a new file.
+    //
+    // Catches new and newly-versioned protocols — the changes that alter how a
+    // session runs. It does NOT catch a protocol archived since issue: the
+    // client keeps running that one until the licence expires, and there's no
+    // way to recall it.
+    function protocolsChangedSinceLicence() {
+        const issued = clientProfile?.licence_issued_at;
+        if (!issued) return false;
+        const issuedAt = new Date(issued);
+        return [...protocolsById.values()].some(p => p.created_at && new Date(p.created_at) > issuedAt);
+    }
+
+    (function () {
+        const modal = document.getElementById('licence-modal');
+        const createBtn = document.getElementById('lc-create');
+        const spinner = createBtn.querySelector('[data-spinner]');
+        const errorEl = document.getElementById('lc-error');
+
+        const close = () => { modal.hidden = true; };
+        modal.querySelectorAll('[data-close]').forEach(el => el.addEventListener('click', close));
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !modal.hidden) close(); });
+
+        // Blocked state → straight into the field they need to fill.
+        document.getElementById('lc-goto-edit').addEventListener('click', () => {
+            close();
+            openEditClient();
+            document.getElementById('ec-machine-code').focus();
+        });
+
+        createBtn.addEventListener('click', async () => {
+            errorEl.classList.add('hidden');
+            const session = await window.consoleAuth.getSession();
+            if (!session) { window.location.replace('/console/login/'); return; }
+
+            createBtn.disabled = true; spinner.classList.remove('hidden');
+            try {
+                const res = await fetch('/.netlify/functions/mint-licence', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + session.access_token,
+                    },
+                    body: JSON.stringify({ client_id: clientId }),
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) {
+                    errorEl.textContent = data.error || 'Could not create the licence. Please try again.';
+                    errorEl.classList.remove('hidden');
+                    return;
+                }
+
+                downloadLicence(data.filename, data.contents);
+
+                // Keep the page in step with what the server recorded — the
+                // header, and the protocol editor's versioning gate, both read
+                // these.
+                clientProfile = {
+                    ...clientProfile,
+                    licence_issued_at: data.issued_at,
+                    licence_expires_at: data.expires_at,
+                };
+                renderClientHeader();
+
+                document.getElementById('lc-done-detail').textContent =
+                    `${data.filename} · ${data.protocol_count} protocol${data.protocol_count === 1 ? '' : 's'} · valid until ${formatDate(data.expires_at)}`;
+                document.getElementById('lc-ready').classList.add('hidden');
+                document.getElementById('lc-done').classList.remove('hidden');
+                modal.querySelector('#lc-done [data-close]').focus();
+            } catch (err) {
+                errorEl.textContent = 'Network error. Please check your connection and try again.';
+                errorEl.classList.remove('hidden');
+            } finally {
+                createBtn.disabled = false; spinner.classList.add('hidden');
+            }
+        });
+
+        function downloadLicence(filename, contents) {
+            const url = URL.createObjectURL(new Blob([contents], { type: 'application/json' }));
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename || 'licence.mind';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+        }
     })();
 
     // ── Confirmation modals (Block / Remove) ────────────────────────────
@@ -473,7 +823,7 @@ nav: clients
         const [protocolsRes, countsMap] = await Promise.all([
             window.consoleAuth.sb
                 .from('assigned_sessions')
-                .select('id, name, description, bands, channels, duration_seconds, created_at')
+                .select('id, name, description, bands, channels, duration_seconds, calibration_seconds, created_at')
                 .eq('client_id', clientId)
                 .is('archived_at', null)
                 .order('created_at', { ascending: false }),
@@ -500,17 +850,43 @@ nav: clients
         if (data.length === 0) {
             grid.classList.add('hidden');
             empty.classList.remove('hidden');
+            protocolsLoaded = true;
             return;
         }
 
         empty.classList.add('hidden');
         grid.innerHTML = data.map(p => renderProtocol(p, countsMap.get(p.id) || 0)).join('');
         grid.classList.remove('hidden');
+        protocolsLoaded = true;
     }
+
+    // loadClient() reveals the actions menu as soon as the profile arrives,
+    // which can be before the protocols land — so the licence dialog has to know
+    // whether an empty cache means "none" or "not yet".
+    let protocolsLoaded = false;
 
     // In-memory caches, populated by loadProtocols().
     let protocolsById = new Map();
     let protocolCounts = new Map();
+
+    // A protocol is "in use" once the client could already have run it: either a
+    // completed session exists, or it went out in an offline licence.
+    //
+    // Editing the parameters of an in-use protocol has to create a new version
+    // rather than rewrite the old row, so past sessions keep the settings they
+    // actually ran under.
+    //
+    // The licence half is load-bearing: offline clients write no `sessions` rows
+    // at all — their logs stay on their machine until the export feature lands.
+    // Going on session count alone, every edit for an offline client would look
+    // like an edit to a never-used protocol and silently rewrite parameters they
+    // are still training against.
+    function isProtocolInUse(protocol) {
+        if ((protocolCounts.get(protocol.id) || 0) > 0) return true;
+        const issued = clientProfile?.licence_issued_at;
+        return !!(issued && protocol.created_at
+            && new Date(protocol.created_at) <= new Date(issued));
+    }
 
     // The caller's id + org, required on every assigned_sessions INSERT — the
     // table's RLS check is (assigned_by = auth.uid() AND org_id =
@@ -600,8 +976,8 @@ nav: clients
             const row = document.createElement('div');
             row.className = 'pf-band';
             row.innerHTML = `
-                <input class="input input-sm tnum" type="number" min="0" step="0.5" data-band="lo" value="${band.lo ?? ''}" placeholder="4" aria-label="Low frequency (Hz)">
-                <input class="input input-sm tnum" type="number" min="0" step="0.5" data-band="hi" value="${band.hi ?? ''}" placeholder="8" aria-label="High frequency (Hz)">
+                <input class="input input-sm tnum" type="number" min="0.5" max="${MAX_BAND_HZ}" step="0.5" data-band="lo" value="${band.lo ?? ''}" placeholder="4" aria-label="Low frequency (Hz)">
+                <input class="input input-sm tnum" type="number" min="0.5" max="${MAX_BAND_HZ}" step="0.5" data-band="hi" value="${band.hi ?? ''}" placeholder="8" aria-label="High frequency (Hz)">
                 <div class="segmented segmented-sm" data-band="direction">
                     <button type="button" data-dir="reward" class="${dir === 'reward' ? 'is-on' : ''}">Reward</button>
                     <button type="button" data-dir="punish" class="${dir === 'punish' ? 'is-on' : ''}">Punish</button>
@@ -656,9 +1032,11 @@ nav: clients
                 // Remember the exact original seconds, so an untouched duration
                 // round-trips without re-rounding.
                 document.getElementById('pf-duration').dataset.originalSeconds = protocol.duration_seconds ?? '';
+                document.getElementById('pf-calibration').value = protocol.calibration_seconds ?? '';
             } else {
                 setFeedback('AF7');
                 delete document.getElementById('pf-duration').dataset.originalSeconds;
+                document.getElementById('pf-calibration').value = '';
             }
 
             if (bandsWrap.children.length === 0) bandsWrap.appendChild(bandRow());
@@ -686,8 +1064,12 @@ nav: clients
                 const zRaw = row.querySelector('[data-band="threshold_z"]').value;
                 const direction = row.querySelector('[data-dir].is-on')?.dataset.dir || 'reward';
                 if (lo === '' || hi === '') return { error: 'Each band needs a low and high frequency.' };
+                if (+lo <= 0) return { error: 'Each band’s low frequency must be above 0 Hz.' };
                 if (+lo >= +hi) return { error: 'Each band’s low frequency must be below its high frequency.' };
-                bands.push({ lo: +lo, hi: +hi, direction, threshold_z: zRaw === '' ? null : +zRaw });
+                if (+hi > MAX_BAND_HZ) return { error: `Each band’s high frequency must be ${MAX_BAND_HZ} Hz or below.` };
+                // Always write a number — never null. The app and the licence
+                // minter both assume an explicit value.
+                bands.push({ lo: +lo, hi: +hi, direction, threshold_z: zRaw === '' ? DEFAULT_THRESHOLD_Z : +zRaw });
             }
             if (bands.length === 0) return { error: 'Add at least one band.' };
 
@@ -710,7 +1092,12 @@ nav: clients
                     ? +orig : Math.round(+mins * 60);
             }
 
-            return { payload: { name, description, bands, channels, duration_seconds } };
+            // Blank means "use the app's default", stored as null.
+            const calRaw = document.getElementById('pf-calibration').value;
+            if (calRaw !== '' && +calRaw < 0) return { error: 'Calibration can’t be negative.' };
+            const calibration_seconds = calRaw === '' ? null : Math.round(+calRaw);
+
+            return { payload: { name, description, bands, channels, duration_seconds, calibration_seconds } };
         }
 
         function setSaving(on) {
@@ -727,7 +1114,10 @@ nav: clients
                 bands: (p.bands || []).map(b => ({
                     lo: +b.lo, hi: +b.hi,
                     direction: (b.direction || 'reward').toLowerCase(),
-                    threshold_z: b.threshold_z == null ? null : +b.threshold_z,
+                    // Normalise legacy nulls to the canonical default, so opening
+                    // a pre-backfill protocol and saving it unchanged doesn't
+                    // read as a parameter change and spawn a pointless version.
+                    threshold_z: b.threshold_z == null ? DEFAULT_THRESHOLD_Z : +b.threshold_z,
                 })),
                 channels: {
                     feedback: p.channels?.feedback ?? null,
@@ -735,6 +1125,7 @@ nav: clients
                     aux_position: p.channels?.aux_position ?? null,
                 },
                 duration_seconds: p.duration_seconds ?? null,
+                calibration_seconds: p.calibration_seconds ?? null,
             });
         }
 
@@ -757,12 +1148,13 @@ nav: clients
                 } else {
                     const original = protocolsById.get(editingId);
                     const paramsChanged = !original || paramsKey(payload) !== paramsKey(original);
-                    const hasSessions = (protocolCounts.get(editingId) || 0) > 0;
+                    const inUse = !!original && isProtocolInUse(original);
 
-                    // Version ONLY when the parameters changed on a protocol that
-                    // already has sessions. A name/description-only edit (or any
-                    // edit before the first session) just updates in place.
-                    if (hasSessions && paramsChanged) {
+                    // Version ONLY when the parameters changed on a protocol the
+                    // client could already have run — see isProtocolInUse(). A
+                    // name/description-only edit, or any edit before it has been
+                    // used, just updates in place.
+                    if (inUse && paramsChanged) {
                         // Insert the new row FIRST, then archive the old. If the
                         // insert fails nothing changed; if the archive fails we
                         // have a harmless duplicate, never a gap.
@@ -806,22 +1198,25 @@ nav: clients
         // ── Remove protocol: archive if it has sessions, else hard delete ─
         function openRemoveProtocol(protocol) {
             const m = document.getElementById('remove-protocol-modal');
-            const hasSessions = (protocolCounts.get(protocol.id) || 0) > 0;
+            const inUse = isProtocolInUse(protocol);
             const confirmBtn = document.getElementById('rp-confirm');
             const spinner = confirmBtn.querySelector('[data-spinner]');
             const rpError = document.getElementById('rp-error');
             rpError.classList.add('hidden');
 
-            document.getElementById('rp-body').textContent = hasSessions
-                ? `“${protocol.name || 'Untitled'}” has sessions, so it will be archived — its past sessions and their settings are kept, it just won’t appear in the active list.`
-                : `“${protocol.name || 'Untitled'}” has no sessions, so it will be permanently deleted.`;
-            confirmBtn.querySelector('[data-label]').textContent = hasSessions ? 'Archive' : 'Delete';
+            // Anything the client could have run gets archived, never deleted —
+            // its settings have to stay readable for the sessions that used it,
+            // including offline sessions that haven't been imported yet.
+            document.getElementById('rp-body').textContent = inUse
+                ? `“${protocol.name || 'Untitled'}” has been used, so it will be archived — its past sessions and their settings are kept, it just won’t appear in the active list.`
+                : `“${protocol.name || 'Untitled'}” has never been used, so it will be permanently deleted.`;
+            confirmBtn.querySelector('[data-label]').textContent = inUse ? 'Archive' : 'Delete';
 
             const onConfirm = async () => {
                 confirmBtn.disabled = true; spinner.classList.remove('hidden');
                 const sb = window.consoleAuth.sb;
                 try {
-                    const { error } = hasSessions
+                    const { error } = inUse
                         ? await sb.from('assigned_sessions').update({ archived_at: new Date().toISOString() }).eq('id', protocol.id)
                         : await sb.from('assigned_sessions').delete().eq('id', protocol.id);
                     if (error) throw error;
@@ -850,18 +1245,18 @@ nav: clients
         });
     })();
 
-    // Map<assigned_session_id, count> — only completed sessions count.
+    // Map<protocol_id, count> — only completed sessions count.
     async function fetchSessionCountsByProtocol() {
         const map = new Map();
         const { data, error } = await window.consoleAuth.sb
             .from('sessions')
-            .select('assigned_session_id')
+            .select('protocol_id')
             .eq('user_id', clientId)
-            .not('assigned_session_id', 'is', null)
+            .not('protocol_id', 'is', null)
             .not('ended_at', 'is', null);
         if (error || !data) return map;
         for (const row of data) {
-            map.set(row.assigned_session_id, (map.get(row.assigned_session_id) || 0) + 1);
+            map.set(row.protocol_id, (map.get(row.protocol_id) || 0) + 1);
         }
         return map;
     }
@@ -895,7 +1290,7 @@ nav: clients
                     </div>
                     <div>
                         <div class="meta-label">Duration</div>
-                        <div class="text-caption text-ink mt-2">${formatDuration(p.duration_seconds)}</div>
+                        <div class="text-caption text-ink mt-2">${formatDurationWithCalibration(p)}</div>
                     </div>
 
                     <div class="ml-auto self-end flex items-center gap-2">
@@ -910,7 +1305,7 @@ nav: clients
     async function loadSessions() {
         const { data, error } = await window.consoleAuth.sb
             .from('sessions')
-            .select('id, started_at, ended_at, summary, assigned_session_id, assigned_sessions(name)')
+            .select('id, started_at, ended_at, summary, protocol_id, assigned_sessions(name)')
             .eq('user_id', clientId)
             .order('started_at', { ascending: false });
 
@@ -992,7 +1387,7 @@ nav: clients
 
             const { data, error } = await window.consoleAuth.sb
                 .from('assigned_sessions')
-                .select('name, description, bands, channels, duration_seconds, archived_at, created_at')
+                .select('name, description, bands, channels, duration_seconds, calibration_seconds, archived_at, created_at')
                 .eq('id', id)
                 .maybeSingle();
 
@@ -1025,7 +1420,7 @@ nav: clients
                     </div>
                     <div>
                         <div class="meta-label">Duration</div>
-                        <div class="text-caption text-ink mt-2">${formatDuration(p.duration_seconds)}</div>
+                        <div class="text-caption text-ink mt-2">${formatDurationWithCalibration(p)}</div>
                     </div>
                 </div>`;
         }
@@ -1041,9 +1436,9 @@ nav: clients
         const when = formatDateTime(s.started_at);
 
         // Only sessions tied to a protocol are clickable; ad-hoc ones are plain.
-        const nameCell = s.assigned_session_id
+        const nameCell = s.protocol_id
             ? `<button type="button" class="text-ink font-medium text-left hover:text-accent transition"
-                       data-view-protocol="${escapeHtml(s.assigned_session_id)}" data-when="${escapeHtml(when)}">${escapeHtml(name)}</button>`
+                       data-view-protocol="${escapeHtml(s.protocol_id)}" data-when="${escapeHtml(when)}">${escapeHtml(name)}</button>`
             : `<span class="text-muted">${escapeHtml(name)}</span>`;
 
         return `
@@ -1066,8 +1461,10 @@ nav: clients
         const dir = (b.direction || '').toLowerCase();
         const cls = dir === 'reward' ? 'reward' : dir === 'punish' ? 'punish' : '';
         const dirLabel = dir ? dir.charAt(0).toUpperCase() + dir.slice(1) : '';
-        const z = b.threshold_z == null ? 'Z 0' : `Z ${(+b.threshold_z).toFixed(2)}`;
-        return `<span class="band-chip ${cls}"><span class="dot"></span>${b.lo}–${b.hi} Hz${dirLabel ? ' · ' + dirLabel : ''} · ${z}</span>`;
+        // Legacy rows may still hold null; show the same canonical default the
+        // editor writes and the app assumes.
+        const zVal = b.threshold_z == null ? DEFAULT_THRESHOLD_Z : +b.threshold_z;
+        return `<span class="band-chip ${cls}"><span class="dot"></span>${b.lo}–${b.hi} Hz${dirLabel ? ' · ' + dirLabel : ''} · Z ${zVal.toFixed(2)}</span>`;
     }
 
     function renderChannels(ch) {
@@ -1079,6 +1476,15 @@ nav: clients
             out += `${dot}${escapeHtml(ch.aux_position.toUpperCase())}`;
         }
         return out;
+    }
+
+    // "20 min · 30 s calibration", or just the duration when calibration is
+    // unset (the app falls back to its own default).
+    function formatDurationWithCalibration(p) {
+        const base = formatDuration(p.duration_seconds);
+        return p.calibration_seconds == null
+            ? base
+            : `${base}<span class="text-muted"> · </span>${formatDuration(p.calibration_seconds)} calibration`;
     }
 
     // 75 → "1 min 15 s", 1200 → "20 min", 5400 → "1 h 30 min"
