@@ -46,9 +46,13 @@ Signing happens in `netlify/functions/mint-licence.js` — never in the browser.
 holding the private key can mint a licence for any machine, and if it leaks the only fix
 is a new desktop build with a new public key plus a reissue to every existing client.
 
-A licence is locked to one computer by its **machine code**, which the client reads off
-the app's licence screen. It's stored on the client's profile (Edit details) so it only
-has to be collected once — renewals read it from there. Issuing a new licence is how you
+Any member of the org can be issued one, not just clients — clinicians run the app
+themselves to try a protocol before assigning it, and reach the same page via the
+organization list. Org membership is the only boundary the endpoint enforces.
+
+A licence is locked to one computer by its **machine code**, which is read off the app's
+licence screen. It's stored on the profile (Edit details) so it only has to be collected
+once — renewals read it from there. Issuing a new licence is how you
 both renew a subscription and push protocol changes; there's no way to revoke one early,
 so the expiry window (one month) *is* the revocation window.
 

@@ -252,17 +252,34 @@ exports.handler = async (event) => {
         return json(403, { error: 'Only clinicians in an organization can issue licences.' });
     }
 
-    // 3. Confirm the target is a client in the SAME org. This is the check that
-    //    stops a clinician minting for someone else's client.
+    // 3. Confirm the target is in the SAME org. That's the whole boundary — it's
+    //    what stops a clinician minting for someone else's client.
+    //
+    //    Role is deliberately NOT checked: clinicians run the app themselves to
+    //    try a protocol before assigning it, so any member of the org can be
+    //    issued a licence. They reach it the same way, via the organization page.
     const { data: client, error: clientErr } = await admin
         .from('profiles')
         .select('id, org_id, role, display_name, surname, machine_code')
         .eq('id', clientId)
         .maybeSingle();
-    if (clientErr) return json(500, { error: 'Could not load the client.' });
-    if (!client || client.org_id !== caller.org_id || client.role !== 'client') {
-        // Deliberately identical to a genuine 404 — don't confirm that a client
-        // id exists in some other organization.
+    if (clientErr) {
+        console.error('mint-licence: client lookup failed', clientErr.message);
+        return json(500, { error: 'Could not load the client.' });
+    }
+    if (!client || client.org_id !== caller.org_id) {
+        // The response is deliberately identical either way — don't confirm that
+        // an id exists in some other organization. The log line is where the
+        // actual reason goes (Netlify → Functions → logs); it's server-side
+        // only, so it can be specific.
+        console.warn('mint-licence: refusing 404', JSON.stringify({
+            reason: !client ? 'no profile row with that id' : 'target org does not match caller org',
+            client_id: clientId,
+            client_org_id: client ? client.org_id : null,
+            client_role: client ? client.role : null,
+            caller_id: userData.user.id,
+            caller_org_id: caller.org_id,
+        }));
         return json(404, { error: 'Client not found.' });
     }
 
