@@ -206,7 +206,7 @@ function filenameFor(profile, expiresAt) {
     const name = [profile.display_name, profile.surname].filter(Boolean).join('-') || 'client';
     const slug = name.toLowerCase().normalize('NFKD')
         .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'client';
-    return `mindchord-${slug}-${isoUtc(expiresAt).slice(0, 10)}.mind`;
+    return `${slug}-${isoUtc(expiresAt).slice(0, 10)}.mind`;
 }
 
 exports.handler = async (event) => {
