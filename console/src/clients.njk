@@ -3,21 +3,23 @@ layout: sidebar.njk
 title: Mindchord Console | Clients
 nav: clients
 ---
-<div class="flex items-end justify-between gap-6">
-    <div>
-        <h1 class="text-display">Clients</h1>
-        <p class="text-body text-muted mt-2 max-w-xl">
-            Select a client to review their sessions and protocols.
-        </p>
-    </div>
+<style>
+    /* Matches the dashboard and organization mastheads: title size, dialled
+       back from the .text-title token's 600. Scoped (0,1,1) so it beats the
+       weight baked into the token without depending on Tailwind's ordering. */
+    .masthead h1 { font-weight: 500; }
+</style>
 
-    <a href="/console/add-client/" class="btn btn-primary shrink-0">
+<header class="masthead flex items-center justify-between gap-4 flex-wrap">
+    <h1 class="text-title">Clients</h1>
+
+    <a href="/console/add-client/" class="btn btn-primary btn-sm shrink-0">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4">
             <path d="M11 11V5a1 1 0 1 1 2 0v6h6a1 1 0 1 1 0 2h-6v6a1 1 0 1 1-2 0v-6H5a1 1 0 1 1 0-2h6Z"/>
         </svg>
         Add client
     </a>
-</div>
+</header>
 
 <!-- Skeleton rows render immediately; real rows replace them once the
      supabase query resolves. -->
@@ -35,25 +37,25 @@ nav: clients
 </section>
 
 <script>
-    loadPeople('client', {
-        loadingId: 'clients-loading',
-        emptyId: 'clients-empty',
-        listId: 'clients-list',
-    });
+    const { escapeHtml, fullName, initials, formatRelativeDate, classifyClient } = window.consoleUI;
 
-    // Loads profiles for a given role. RLS scopes rows to the calling
-    // clinician's org. Sessions are fetched separately and joined in JS
-    // (profiles ↔ sessions share auth.users as the FK target, not each
-    // other), so embedding would not work without a schema change.
-    async function loadPeople(role, ids) {
-        const loading = document.getElementById(ids.loadingId);
-        const empty = document.getElementById(ids.emptyId);
-        const list = document.getElementById(ids.listId);
+    loadClients();
 
-        const { data: people, error } = await window.consoleAuth.sb
+    // RLS scopes rows to the calling clinician's org. Sessions and protocols
+    // are fetched separately and joined in JS (profiles ↔ sessions share
+    // auth.users as the FK target, not each other), so embedding would not
+    // work without a schema change.
+    async function loadClients() {
+        const sb = window.consoleAuth.sb;
+        const loading = document.getElementById('clients-loading');
+        const empty = document.getElementById('clients-empty');
+        const list = document.getElementById('clients-list');
+
+        // licence_* columns are selected for classifyClient, not for display.
+        const { data: people, error } = await sb
             .from('profiles')
-            .select('id, display_name, surname')
-            .eq('role', role)
+            .select('id, display_name, surname, licence_issued_at, licence_expires_at')
+            .eq('role', 'client')
             .order('surname')
             .order('display_name');
 
@@ -69,7 +71,11 @@ nav: clients
             return;
         }
 
-        const statsByUser = await fetchSessionStats(people.map(p => p.id));
+        const ids = people.map(p => p.id);
+        const [statsByUser, hasProtocol] = await Promise.all([
+            fetchSessionStats(ids),
+            fetchClientsWithProtocol(ids),
+        ]);
 
         list.innerHTML = people.map(p => {
             const stats = statsByUser.get(p.id);
@@ -79,10 +85,19 @@ nav: clients
             const subline = count === 0
                 ? 'No sessions yet'
                 : countLabel + ' · last ' + formatRelativeDate(last);
+
+            // Only clients needing something get a chip. A chip on every row
+            // would flatten the signal — the point is that the eye lands on
+            // the exceptions while scanning alphabetically.
+            const flag = classifyClient(p, hasProtocol.has(p.id), last);
+            const chip = flag
+                ? `<span class="chip ${flag.chip} shrink-0">${escapeHtml(flag.label)}</span>`
+                : '';
+
             return `
             <li>
                 <a href="/console/client/?id=${encodeURIComponent(p.id)}"
-                   class="flex items-center justify-between px-6 py-4 group hover:bg-surface-2 transition">
+                   class="flex items-center justify-between gap-4 px-6 py-4 group hover:bg-surface-2 transition">
                     <div class="flex items-center gap-4 min-w-0">
                         <span class="w-9 h-9 rounded-full bg-accent-weak text-accent-ink grid place-items-center text-caption font-semibold shrink-0">${escapeHtml(initials(p))}</span>
                         <div class="min-w-0">
@@ -90,14 +105,31 @@ nav: clients
                             <div class="text-caption text-muted truncate">${subline}</div>
                         </div>
                     </div>
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
-                         class="w-4 h-4 shrink-0 text-muted group-hover:text-accent transition">
-                        <path d="M9.3 6.3a1 1 0 0 1 1.4 0l5.3 5.3a.5.5 0 0 1 0 .8l-5.3 5.3a1 1 0 1 1-1.4-1.42L13.18 12 9.3 8.12a1 1 0 0 1 0-1.42Z"/>
-                    </svg>
+                    <div class="flex items-center gap-3 shrink-0">
+                        ${chip}
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+                             class="w-4 h-4 text-muted group-hover:text-accent transition">
+                            <path d="M9.3 6.3a1 1 0 0 1 1.4 0l5.3 5.3a.5.5 0 0 1 0 .8l-5.3 5.3a1 1 0 1 1-1.4-1.42L13.18 12 9.3 8.12a1 1 0 0 1 0-1.42Z"/>
+                        </svg>
+                    </div>
                 </a>
             </li>`;
         }).join('');
         list.classList.remove('hidden');
+    }
+
+    // Set of client ids holding at least one un-archived protocol.
+    async function fetchClientsWithProtocol(clientIds) {
+        const set = new Set();
+        if (clientIds.length === 0) return set;
+        const { data, error } = await window.consoleAuth.sb
+            .from('assigned_sessions')
+            .select('client_id')
+            .in('client_id', clientIds)
+            .is('archived_at', null);
+        if (error || !data) return set;
+        for (const row of data) set.add(row.client_id);
+        return set;
     }
 
     // Returns Map<user_id, {count, last: Date}> from completed sessions.
@@ -121,34 +153,5 @@ nav: clients
             }
         }
         return map;
-    }
-
-    function formatRelativeDate(d) {
-        const now = new Date();
-        const diffMs = now - d;
-        const day = 24 * 60 * 60 * 1000;
-        if (diffMs < day && now.getDate() === d.getDate()) return 'today';
-        if (diffMs < 2 * day) return 'yesterday';
-        const days = Math.floor(diffMs / day);
-        if (days < 7) return days + ' days ago';
-        return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
-    }
-
-    function fullName(p) {
-        const parts = [p.display_name, p.surname].filter(Boolean);
-        return parts.length ? parts.join(' ') : '(unnamed)';
-    }
-
-    function initials(p) {
-        const a = (p.display_name || '').trim();
-        const b = (p.surname || '').trim();
-        const i = (a[0] || '') + (b[0] || '');
-        return i.toUpperCase() || '–';
-    }
-
-    function escapeHtml(s) {
-        return String(s).replace(/[&<>"']/g, c => ({
-            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-        }[c]));
     }
 </script>

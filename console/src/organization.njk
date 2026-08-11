@@ -3,51 +3,70 @@ layout: sidebar.njk
 title: Mindchord Console | Organization
 nav: organization
 ---
-<!-- Heading row: org name left, metric tiles right -->
-<div class="flex items-start justify-between gap-10 flex-wrap">
-    <h1 id="org-name" class="text-display">
-        <span class="skeleton inline-block h-9 w-52 align-middle"></span>
+<!-- Three blocks, one column, page scrolls normally:
+     1. Overview — four org-level counts as one hairline-divided strip.
+     2. Active clients — reach over time, the counterpart to the dashboard's
+        session-volume plot (throughput).
+     3. Clinicians — the roster, at the bottom.
+
+     Clinician rows link into the client detail page on purpose: clinicians
+     self-test, so they hold real sessions and licences of their own. -->
+
+<style>
+    /* Matches the dashboard masthead: title size, dialled back from the
+       .text-title token's 600. Scoped (0,1,1) so it beats the weight baked
+       into the token without depending on Tailwind's utility ordering. */
+    .masthead h1 { font-weight: 500; }
+</style>
+
+<header class="masthead">
+    <h1 id="org-name" class="text-title">
+        <span class="skeleton inline-block h-6 w-52 align-middle"></span>
     </h1>
+</header>
 
-    <div class="flex items-center gap-3 flex-wrap">
-        <div class="stat min-w-[150px]">
-            <div class="lbl">Clients</div>
-            <div id="stat-clients" class="num"><span class="skeleton inline-block h-7 w-10 align-middle"></span></div>
-        </div>
-        <div class="stat min-w-[150px]">
-            <div class="lbl">Clinicians</div>
-            <div id="stat-clinicians" class="num"><span class="skeleton inline-block h-7 w-10 align-middle"></span></div>
-        </div>
-    </div>
-</div>
-
-<!-- ── Plan ────────────────────────────────────────────────────
-     Hardcoded limits for now — will move to a `plans` table once
-     billing is wired up. -->
+<!-- Overview — bare on the page, no card. See .stat-row in global_style.css.
+     Without a card outline, the whitespace around it is what separates it from
+     the masthead and the plot, so the margins here are load-bearing. -->
 <section class="mt-12">
-    <h2 class="text-section">Plan</h2>
-    <div class="mt-4 card px-6 md:px-8 py-6">
-        <dl class="grid grid-cols-3 sm:divide-x sm:divide-line">
-            <div class="sm:px-8 sm:first:pl-0">
-                <dt class="meta-label">Members</dt>
-                <dd class="text-title tnum mt-2">20</dd>
-            </div>
-            <div class="sm:px-8">
-                <dt class="meta-label">Clinicians</dt>
-                <dd class="text-title tnum mt-2">5</dd>
-            </div>
-            <div class="sm:px-8">
-                <dt class="meta-label">Protocols / client</dt>
-                <dd class="text-title tnum mt-2">3</dd>
-            </div>
-        </dl>
-    </div>
+    <dl class="stat-row">
+        <div class="stat-item">
+            <dt class="lbl">Clients</dt>
+            <dd id="stat-clients" class="num"><span class="skeleton inline-block h-6 w-8 align-middle"></span></dd>
+        </div>
+        <div class="stat-item">
+            <dt class="lbl">Clinicians</dt>
+            <dd id="stat-clinicians" class="num"><span class="skeleton inline-block h-6 w-8 align-middle"></span></dd>
+        </div>
+        <div class="stat-item">
+            <dt class="lbl">Sessions</dt>
+            <dd id="stat-sessions" class="num"><span class="skeleton inline-block h-6 w-8 align-middle"></span></dd>
+        </div>
+        <div class="stat-item">
+            <dt class="lbl">Hours trained</dt>
+            <dd id="stat-hours" class="num"><span class="skeleton inline-block h-6 w-8 align-middle"></span></dd>
+        </div>
+    </dl>
 </section>
 
-<!-- ── Clinicians ──────────────────────────────────────────── -->
-<section class="mt-12">
+<!-- Clients — no card, no fill; --spark-h sizes it. Two series: the whole
+     roster, and how much of it is actually training. The gap between the lines
+     is the point of the chart. -->
+<section class="mt-14" style="--spark-h:150px">
+    <div id="active-label" class="text-caption font-medium text-muted">Clients</div>
+    <div class="plot mt-5">
+        <div id="active-axis" class="plot-axis"></div>
+        <div id="active-chart">
+            <div class="skeleton w-full rounded" style="height:var(--spark-h)"></div>
+        </div>
+    </div>
+    <div id="active-legend" class="legend mt-3"></div>
+</section>
+
+<!-- Clinicians -->
+<section class="mt-14">
     <div class="flex items-end justify-between gap-6">
-        <h2 class="text-section">Clinicians</h2>
+        <div class="text-caption font-medium text-muted">Clinicians</div>
         <a href="/console/add-clinician/" class="btn btn-primary btn-sm shrink-0">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4">
                 <path d="M11 11V5a1 1 0 1 1 2 0v6h6a1 1 0 1 1 0 2h-6v6a1 1 0 1 1-2 0v-6H5a1 1 0 1 1 0-2h6Z"/>
@@ -56,7 +75,7 @@ nav: organization
         </a>
     </div>
 
-    <div class="mt-4 card overflow-hidden">
+    <div class="mt-5 card overflow-hidden">
         <ul id="clinicians-loading" class="divide-y divide-line">
             <li class="px-6 py-4 flex items-center gap-6"><span class="skeleton h-4 w-40"></span><span class="skeleton h-3 w-32"></span></li>
             <li class="px-6 py-4 flex items-center gap-6"><span class="skeleton h-4 w-52"></span><span class="skeleton h-3 w-28"></span></li>
@@ -67,9 +86,15 @@ nav: organization
 </section>
 
 <script>
+    const {
+        escapeHtml, fullName, initials, formatRelativeDate,
+        pickStep, seriesPeak, niceCeil, renderSpark, renderAxis,
+    } = window.consoleUI;
+
     Promise.all([
         loadHeading(),
-        loadStats(),
+        loadCounts(),
+        loadSessionData(),
         loadPeople('clinician', {
             loadingId: 'clinicians-loading',
             emptyId: 'clinicians-empty',
@@ -83,20 +108,141 @@ nav: organization
         document.getElementById('org-name').textContent = data?.name || '';
     }
 
-    async function loadStats() {
+    // Count-only queries (head: true, no row data transferred). RLS scopes
+    // everything to the calling clinician's org.
+    async function loadCounts() {
         const sb = window.consoleAuth.sb;
         const [clients, clinicians] = await Promise.all([
             sb.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'client'),
             sb.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'clinician'),
         ]);
-        setStat('stat-clients', clients);
-        setStat('stat-clinicians', clinicians);
+        setStat('stat-clients', clients.error ? '—' : (clients.count ?? 0));
+        setStat('stat-clinicians', clinicians.error ? '—' : (clinicians.count ?? 0));
     }
 
-    function setStat(id, result) {
-        document.getElementById(id).textContent = result.error ? '—' : (result.count ?? 0);
+    function setStat(id, value) {
+        document.getElementById(id).textContent = value;
     }
 
+    // ── Sessions: total, hours trained, and the active-clients plot ─────────
+    // One fetch feeds all three — the session rows are needed in full for the
+    // distinct-client bucketing anyway, so counting and summing from the same
+    // rows avoids two extra round-trips.
+    async function loadSessionData() {
+        const sb = window.consoleAuth.sb;
+        const chart = document.getElementById('active-chart');
+        const label = document.getElementById('active-label');
+
+        const [clientRes, sessRes] = await Promise.all([
+            sb.from('profiles').select('id, created_at').eq('role', 'client'),
+            sb.from('sessions').select('user_id, started_at, ended_at'),
+        ]);
+
+        // Every figure on this page is client-scoped, so a failure in either
+        // query sinks all three. Checked together rather than separately: an
+        // empty clientRes would otherwise filter every session out and render
+        // the ordinary "No clients yet" for what is actually a failed query.
+        if (sessRes.error || clientRes.error) {
+            setStat('stat-sessions', '—');
+            setStat('stat-hours', '—');
+            return chartMessage(chart, sessRes.error ? 'Could not load sessions.' : 'Could not load clients.');
+        }
+
+        // Clinicians self-test, so their own sessions sit in this table too.
+        // Filtered out once, here, so the stats and the plot agree — otherwise
+        // "Hours trained" reads as care delivered while counting staff testing.
+        const clientIds = new Set((clientRes.data || []).map(r => r.id));
+        const sessions = (sessRes.data || []).filter(s => clientIds.has(s.user_id));
+
+        setStat('stat-sessions', sessions.length.toLocaleString());
+
+        // Hours trained: only completed sessions with a sane interval. A
+        // non-positive duration means clock skew or a bad write, not zero work.
+        let ms = 0;
+        for (const s of sessions) {
+            const a = Date.parse(s.started_at), b = Date.parse(s.ended_at);
+            if (Number.isFinite(a) && Number.isFinite(b) && b > a) ms += b - a;
+        }
+        const hours = ms / 3600000;
+        setStat('stat-hours', hours === 0 ? '0' : hours < 10 ? hours.toFixed(1) : Math.round(hours).toLocaleString());
+
+        const rows = sessions
+            .map(s => ({ user: s.user_id, t: Date.parse(s.started_at) }))
+            .filter(r => Number.isFinite(r.t));
+
+        // Every client counts from the moment their profile exists, protocol
+        // or not — a client sitting on the books untouched is precisely what
+        // the gap between the two lines is meant to expose.
+        const joinTimes = (clientRes.data || [])
+            .map(r => Date.parse(r.created_at))
+            .filter(Number.isFinite)
+            .sort((a, b) => a - b);
+
+        if (rows.length === 0 && joinTimes.length === 0) {
+            return chartMessage(chart, 'No clients yet.');
+        }
+
+        // Start the axis at whichever came first. Reduced rather than
+        // Math.min(...spread): the spread passes one argument per row and
+        // blows the argument limit at tens of thousands of them.
+        const earliestSession = rows.length ? rows.reduce((min, r) => (r.t < min ? r.t : min), rows[0].t) : Infinity;
+        const earliestJoin = joinTimes.length ? joinTimes[0] : Infinity;
+        const first = new Date(Math.min(earliestSession, earliestJoin));
+        first.setHours(0, 0, 0, 0);
+        const t0 = first.getTime();
+
+        const step = pickStep(Date.now() - t0);
+
+        // Whole buckets only — the current period is still in progress, and
+        // including it would draw a dip at the right edge every single load.
+        const n = Math.floor((Date.now() - t0) / step.ms);
+        if (n < 2) return chartMessage(chart, 'Not enough history yet.');
+
+        // Active: distinct clients per bucket, not session count — a client
+        // training five times in a week is one active client, not five.
+        const buckets = Array.from({ length: n }, () => new Set());
+        for (const r of rows) {
+            const idx = Math.floor((r.t - t0) / step.ms);
+            if (idx >= 0 && idx < n) buckets[idx].add(r.user);
+        }
+        const active = buckets.map(s => s.size);
+
+        // All clients: running total at each bucket's close. joinTimes is
+        // sorted, so one pointer walk covers every bucket.
+        const total = [];
+        let k = 0;
+        for (let i = 0; i < n; i++) {
+            const end = t0 + (i + 1) * step.ms;
+            while (k < joinTimes.length && joinTimes[k] <= end) k++;
+            total.push(k);
+        }
+
+        // Context line first so the accent line draws over it. `.line-2` only
+        // overrides the stroke colour, so it rides on top of `.line`.
+        const series = [
+            { values: total, cls: 'line line-2' },
+            { values: active, cls: 'line' },
+        ];
+        // niceCeil because this plot draws ticks — they have to land on whole
+        // values. A plot without an axis passes seriesPeak straight through.
+        const max = niceCeil(seriesPeak(series));
+
+        chart.innerHTML = renderSpark(series, max, 'All clients against active clients');
+        renderAxis(document.getElementById('active-axis'), max);
+
+        document.getElementById('active-legend').innerHTML = `
+            <span class="legend-key"><span class="swatch" style="background:var(--accent)"></span>Active clients</span>
+            <span class="legend-key"><span class="swatch" style="background:var(--sage)"></span>All clients</span>`;
+
+        const fmt = (msAt) => new Date(msAt).toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
+        label.textContent = `Clients (${fmt(t0)} – ${fmt(t0 + n * step.ms)})`;
+    }
+
+    function chartMessage(chart, text) {
+        chart.innerHTML = `<div class="grid place-items-center text-caption text-muted" style="height:var(--spark-h)">${text}</div>`;
+    }
+
+    // ── Clinicians roster ───────────────────────────────────────────────────
     // Loads profiles for a given role. RLS scopes rows to the calling org.
     async function loadPeople(role, ids) {
         const loading = document.getElementById(ids.loadingId);
@@ -153,6 +299,7 @@ nav: organization
         list.classList.remove('hidden');
     }
 
+    // Returns Map<user_id, {count, last: Date}> from completed sessions.
     async function fetchSessionStats(userIds) {
         const map = new Map();
         if (userIds.length === 0) return map;
@@ -173,34 +320,5 @@ nav: organization
             }
         }
         return map;
-    }
-
-    function formatRelativeDate(d) {
-        const now = new Date();
-        const diffMs = now - d;
-        const day = 24 * 60 * 60 * 1000;
-        if (diffMs < day && now.getDate() === d.getDate()) return 'today';
-        if (diffMs < 2 * day) return 'yesterday';
-        const days = Math.floor(diffMs / day);
-        if (days < 7) return days + ' days ago';
-        return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
-    }
-
-    function fullName(p) {
-        const parts = [p.display_name, p.surname].filter(Boolean);
-        return parts.length ? parts.join(' ') : '(unnamed)';
-    }
-
-    function initials(p) {
-        const a = (p.display_name || '').trim();
-        const b = (p.surname || '').trim();
-        const i = (a[0] || '') + (b[0] || '');
-        return i.toUpperCase() || '–';
-    }
-
-    function escapeHtml(s) {
-        return String(s).replace(/[&<>"']/g, c => ({
-            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-        }[c]));
     }
 </script>

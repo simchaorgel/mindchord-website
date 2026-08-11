@@ -4,15 +4,11 @@ title: Mindchord Console | Client
 nav: clients
 ---
 <style>
-    /* Band chip — small inline pill with a coloured dot for direction. */
-    .band-chip {
-        display: inline-flex; align-items: center; gap: 6px;
-        padding: 3px 9px; border-radius: 999px;
-        background: var(--surface-2); font-size: 12.5px; color: var(--ink);
-    }
-    .band-chip .dot { width: 6px; height: 6px; border-radius: 999px; background: var(--text-muted); }
-    .band-chip.reward .dot { background: var(--ok); }
-    .band-chip.punish .dot { background: var(--danger); }
+    /* Matches every other page masthead: title size, dialled back from the
+       .text-title token's 600. Scoped (0,1,1) so it beats the weight baked
+       into the token without depending on Tailwind's utility ordering. */
+    .masthead h1 { font-weight: 500; }
+
 </style>
 
 <!-- Breadcrumb back to the client list -->
@@ -23,12 +19,16 @@ nav: clients
     All clients
 </a>
 
-<div class="mt-4 flex items-start justify-between gap-6">
+<header class="masthead mt-4 flex items-start justify-between gap-6">
     <div class="min-w-0">
+        <!-- The one heading in the console at Display size. Every other page
+             titles a section; this one names a person, and the page is about
+             that person. Weight still comes from .masthead h1 (500), so the
+             treatment matches — only the step differs. -->
         <h1 id="client-name" class="text-display">
             <span class="skeleton inline-block h-10 w-72 align-middle"></span>
         </h1>
-        <p id="client-sub" class="text-body text-muted mt-2"></p>
+        <p id="client-sub" class="text-body text-muted mt-2.5"></p>
     </div>
 
     <!-- Client-level actions. Hidden until the client loads (no actions on a
@@ -57,7 +57,7 @@ nav: clients
             </button>
         </div>
     </div>
-</div>
+</header>
 
 <!-- ── Protocols ───────────────────────────────────────────── -->
 <section class="mt-10">
@@ -71,9 +71,11 @@ nav: clients
         </button>
     </div>
 
+    <!-- Height tuned to a real card carrying a two-band table (h-32 was sized
+         for the old layout and left the list jumping taller on load). -->
     <div id="protocols-loading" class="mt-5 flex flex-col gap-4">
-        <div class="skeleton h-32 rounded-card"></div>
-        <div class="skeleton h-32 rounded-card"></div>
+        <div class="skeleton h-48 rounded-card"></div>
+        <div class="skeleton h-48 rounded-card"></div>
     </div>
 
     <div id="protocols-empty" class="hidden mt-5 rounded-card border border-dashed border-line-strong p-10 text-center text-muted text-body">
@@ -98,7 +100,7 @@ nav: clients
 
         <table id="sessions-table" class="table hidden">
             <thead>
-                <tr><th>Session</th><th>Date</th><th class="text-right">Duration</th><th class="text-right">Above</th><th class="text-right">Best streak</th></tr>
+                <tr><th>Session</th><th>Date</th><th class="is-num">Duration</th><th class="is-num">Above</th><th class="is-num">Best streak</th></tr>
             </thead>
             <tbody id="sessions-list"></tbody>
         </table>
@@ -120,9 +122,12 @@ nav: clients
     <div class="dialog">
         <h2 id="block-title" class="text-section">Block access?</h2>
         <p class="text-body text-muted mt-2">This client will be signed out and unable to access the Mindchord app until you unblock them. Their data and history are kept.</p>
+        <p class="text-caption text-muted mt-4 p-3 rounded bg-surface-2">
+            Not available in the console yet, contact the Mindchord team to block a client.
+        </p>
         <div class="mt-6 flex items-center justify-end gap-3">
             <button type="button" class="btn btn-secondary" data-close>Cancel</button>
-            <button type="button" class="btn btn-danger" data-confirm>Block access</button>
+            <button type="button" class="btn btn-danger" data-confirm disabled>Block access</button>
         </div>
     </div>
 </div>
@@ -133,55 +138,69 @@ nav: clients
     <div class="dialog">
         <h2 id="remove-title" class="text-section">Remove client?</h2>
         <p class="text-body text-muted mt-2">This permanently removes the client and their account. This action cannot be undone.</p>
+        <p class="text-caption text-muted mt-4 p-3 rounded bg-surface-2">
+            Not available in the console yet, contact the Mindchord team to remove a client.
+        </p>
         <div class="mt-6 flex items-center justify-end gap-3">
             <button type="button" class="btn btn-secondary" data-close>Cancel</button>
-            <button type="button" class="btn btn-danger" data-confirm>Remove client</button>
+            <button type="button" class="btn btn-danger" data-confirm disabled>Remove client</button>
         </div>
     </div>
 </div>
 
 <!-- Edit client details -->
-<div id="edit-client-modal" class="modal modal-drawer" hidden role="dialog" aria-modal="true" aria-labelledby="ecm-title">
+<div id="edit-client-modal" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="ecm-title">
     <div class="scrim" data-close></div>
-    <form id="edit-client-form" class="dialog drawer dialog-framed" novalidate>
-        <div class="dialog-header flex items-center justify-between gap-4">
-            <h2 id="ecm-title" class="text-section">Edit details</h2>
+    <!-- Plain dialog, not .dialog-framed: with no header/footer bars the
+         content sits on one surface, matching the confirm dialogs. Closing is
+         Cancel, the scrim, or Escape — all wired to [data-close] — so there is
+         no separate X to sit in a bar that no longer exists. -->
+    <form id="edit-client-form" class="dialog dialog-md" novalidate>
+        <div class="flex items-start justify-between gap-4">
+            <div class="min-w-0">
+                <h2 id="ecm-title" class="text-section">Edit details</h2>
+                <p class="text-body text-muted mt-2">The client can see these details in the Mindchord app.</p>
+            </div>
             <button type="button" class="icon-close" data-close aria-label="Close">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
             </button>
         </div>
-        <div class="dialog-body">
-            <p class="text-body text-muted">The client can see these details in the Mindchord app.</p>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-5">
-                <label class="field block">
-                    <span class="label">First name</span>
-                    <input id="ec-firstname" class="input" type="text" autocomplete="given-name" placeholder="Jane">
-                </label>
-                <label class="field block">
-                    <span class="label">Surname</span>
-                    <input id="ec-surname" class="input" type="text" autocomplete="family-name" placeholder="Doe">
-                </label>
-            </div>
 
-            <!-- Machine code — needed before an offline licence can be issued.
-                 Kept here rather than in the licence dialog so it's part of the
-                 client's record: it only has to be collected once, and every
-                 later renewal reads it from here. -->
-            <div class="mt-6 pt-6 border-t border-line">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
+            <label class="field block">
+                <span class="label">First name</span>
+                <input id="ec-firstname" class="input" type="text" autocomplete="given-name">
+            </label>
+            <label class="field block">
+                <span class="label">Surname</span>
+                <input id="ec-surname" class="input" type="text" autocomplete="family-name">
+            </label>
+        </div>
+
+        <!-- Machine code — needed before an offline licence can be issued.
+             Kept here rather than in the licence dialog so it's part of the
+             client's record: it only has to be collected once, and every
+             later renewal reads it from here. -->
+        <div class="mt-6 pt-6 border-t border-line">
+            <!-- Same two-column grid as the name fields, so this input lines up
+                 with First name rather than needing its own width. -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <label class="field block">
                     <span class="label">Machine code <span class="text-muted font-normal">(optional)</span></span>
-                    <input id="ec-machine-code" class="input tnum max-w-[260px]" type="text" spellcheck="false"
+                    <input id="ec-machine-code" class="input tnum" type="text" spellcheck="false"
                            autocapitalize="characters" autocomplete="off" placeholder="H8K2-M4P6-R9TR" aria-describedby="ec-mc-help">
                 </label>
-                <p id="ec-mc-help" class="pf-help">
-                    Only needed for offline use. It’s on the app’s licence screen, where a copy button puts it on the clipboard.
-                </p>
-                <p id="ec-mc-error" class="text-caption text-danger mt-2 hidden"></p>
             </div>
-
-            <p id="ec-error" class="text-caption text-danger mt-4 hidden"></p>
+            <p id="ec-mc-help" class="pf-help">
+                Only needed for offline use. Clients can find their code in the Mindchord app after
+                switching to Offline mode in settings.
+            </p>
+            <p id="ec-mc-error" class="text-caption text-danger mt-2 hidden"></p>
         </div>
-        <div class="dialog-footer">
+
+        <p id="ec-error" class="text-caption text-danger mt-4 hidden"></p>
+
+        <div class="mt-6 flex items-center justify-end gap-3">
             <button type="button" class="btn btn-secondary" data-close>Cancel</button>
             <button type="submit" id="ec-save" class="btn btn-primary min-w-[120px]">
                 <svg data-spinner class="hidden animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -208,15 +227,15 @@ nav: clients
         <div class="flex items-start justify-between gap-4">
             <div class="min-w-0">
                 <h2 id="lc-title" class="text-section">Create offline licence</h2>
-                <p class="text-caption text-muted mt-1">Lets them run Mindchord without an internet connection.</p>
+                <p class="text-body text-muted mt-2">Lets clients run Mindchord without an internet connection.</p>
             </div>
-            <button type="button" class="icon-close mt-1" data-close aria-label="Close">
+            <button type="button" class="icon-close" data-close aria-label="Close">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
             </button>
         </div>
 
         <!-- Blocked: no machine code on record, so there's nothing to bind to. -->
-        <div id="lc-blocked" class="mt-6 hidden">
+        <div id="lc-blocked" class="mt-8 hidden">
             <p class="text-body">
                 There’s no machine code on record. A licence is locked to one computer, so the code
                 has to be added before one can be issued.
@@ -225,44 +244,44 @@ nav: clients
                 Open Mindchord on the computer that will run offline and copy the code from the licence
                 screen, then add it under Edit details.
             </p>
-            <div class="mt-6 flex items-center justify-end gap-3">
+            <div class="mt-8 flex items-center justify-end gap-3">
                 <button type="button" class="btn btn-secondary" data-close>Cancel</button>
                 <button type="button" id="lc-goto-edit" class="btn btn-primary">Edit details</button>
             </div>
         </div>
 
         <!-- Ready to issue. -->
-        <div id="lc-ready" class="mt-6 hidden">
+        <div id="lc-ready" class="mt-10 hidden">
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
                 <div>
-                    <div class="meta-label">Machine</div>
+                    <div class="lbl">Machine</div>
                     <div id="lc-machine" class="text-caption text-ink tnum mt-2"></div>
                 </div>
                 <div>
-                    <div class="meta-label">Protocols</div>
+                    <div class="lbl">Protocols</div>
                     <div id="lc-protocols" class="text-caption text-ink mt-2"></div>
                 </div>
                 <div>
-                    <div class="meta-label">Valid until</div>
+                    <div class="lbl">Valid until</div>
                     <div id="lc-expiry" class="text-caption text-ink mt-2"></div>
                 </div>
             </div>
 
             <!-- Current licence state, when one has been issued before. -->
-            <p id="lc-existing" class="text-caption text-muted mt-5 hidden"></p>
+            <p id="lc-existing" class="text-caption text-muted mt-8 hidden"></p>
 
             <!-- Shown when a protocol was added or versioned after the last
                  licence went out — i.e. the client is still running the old set. -->
-            <div id="lc-stale" class="mt-5 hidden rounded-card border border-line-strong bg-surface-2 p-4">
+            <div id="lc-stale" class="mt-8 hidden rounded-card border border-line-strong bg-surface-2 p-4">
                 <p class="text-caption text-ink">
                     Protocols have changed since the last licence was issued. The client is still running the
                     older set until they import a new file.
                 </p>
             </div>
 
-            <p id="lc-error" class="text-caption text-danger mt-5 hidden"></p>
+            <p id="lc-error" class="text-caption text-danger mt-8 hidden"></p>
 
-            <div class="mt-6 flex items-center justify-end gap-3">
+            <div class="mt-8 flex items-center justify-end gap-3">
                 <button type="button" class="btn btn-secondary" data-close>Cancel</button>
                 <button type="button" id="lc-create" class="btn btn-primary min-w-[150px]">
                     <svg data-spinner class="hidden animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -275,10 +294,10 @@ nav: clients
         </div>
 
         <!-- Issued. -->
-        <div id="lc-done" class="mt-6 hidden">
+        <div id="lc-done" class="mt-8 hidden">
             <p class="text-body">The licence file has been downloaded. It can travel by email, USB stick or file share — it’s imported from the app’s licence screen.</p>
             <p id="lc-done-detail" class="text-caption text-muted mt-3"></p>
-            <div class="mt-6 flex items-center justify-end gap-3">
+            <div class="mt-8 flex items-center justify-end gap-3">
                 <button type="button" class="btn btn-primary" data-close>Done</button>
             </div>
         </div>
@@ -289,46 +308,54 @@ nav: clients
      Channels are Muse headband sensors (AF7/AF8/TP9/TP10/AUX); aux_position
      is the 10-20 site the loose AUX electrode sits at, shown only when the
      feedback channel is AUX. Bands are 1–2 frequency windows. -->
-<div id="protocol-modal" class="modal modal-drawer" hidden role="dialog" aria-modal="true" aria-labelledby="protocol-title">
+<div id="protocol-modal" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="protocol-title">
     <div class="scrim" data-close></div>
-    <form id="protocol-form" class="dialog drawer dialog-framed" novalidate>
-        <!-- Sticky header -->
-        <div class="dialog-header flex items-center justify-between gap-4">
+    <!-- Plain dialog, not .dialog-framed. Each step is short enough that the
+         whole form fits without an internal scroll, so a pinned header and
+         footer would be framing nothing. -->
+    <form id="protocol-form" class="dialog dialog-xl" novalidate>
+        <div class="flex items-start justify-between gap-4">
             <h2 id="protocol-title" class="text-section">New protocol</h2>
             <button type="button" class="icon-close" data-close aria-label="Close">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
             </button>
         </div>
 
-        <!-- Scrolling body — a sequence of hairline-divided sections. -->
-        <div class="dialog-body">
-            <!-- Details -->
-            <section class="pf-section">
-                <h3 class="meta-label">Details</h3>
-                <div class="mt-3 space-y-3">
+        <!-- Numbered steps. Clickable rather than a forced wizard — when editing
+             an existing protocol you want to jump straight to the part you are
+             changing — but numbered so the intended order is still legible. -->
+        <div id="pf-steps" class="steps mt-5" role="tablist" aria-label="Protocol sections">
+            <button type="button" class="step is-on" role="tab" aria-selected="true"><span class="n">1</span>Details</button>
+            <button type="button" class="step" role="tab" aria-selected="false"><span class="n">2</span>Bands</button>
+            <button type="button" class="step" role="tab" aria-selected="false"><span class="n">3</span>Channels</button>
+            <button type="button" class="step" role="tab" aria-selected="false"><span class="n">4</span>Duration</button>
+        </div>
+
+        <div class="pf-panels mt-6">
+            <!-- 1 · Details -->
+            <section class="pf-panel" role="tabpanel">
+                <div class="space-y-3">
                     <label class="field block">
                         <span class="label">Name</span>
-                        <input id="pf-name" class="input input-grotesk" type="text" placeholder="e.g. Alpha uptraining" required>
+                        <input id="pf-name" class="input input-grotesk" type="text" required>
                     </label>
-
                     <label class="field block">
                         <span class="label">Description</span>
-                        <textarea id="pf-description" class="input input-grotesk" data-autogrow placeholder="Notes for this protocol…" required rows="2"></textarea>
+                        <textarea id="pf-description" class="input input-grotesk" data-autogrow required rows="2"></textarea>
                     </label>
                 </div>
             </section>
 
-            <!-- Bands — an aligned mini-table; labels live in the column header. -->
-            <section class="pf-section">
+            <!-- 2 · Bands — an aligned mini-table; labels live in the header. -->
+            <section class="pf-panel" role="tabpanel" hidden>
                 <div class="flex items-center justify-between">
-                    <h3 class="meta-label">Bands</h3>
-                    <button id="pf-add-band" type="button" class="btn btn-secondary btn-sm text-accent">
+                    <p class="pf-help !m-0">Reward or inhibit one or two frequency windows. Leave Z blank to default to 0.</p>
+                    <button id="pf-add-band" type="button" class="btn btn-secondary btn-sm text-accent shrink-0">
                         <svg viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4"><path d="M11 11V5a1 1 0 1 1 2 0v6h6a1 1 0 1 1 0 2h-6v6a1 1 0 1 1-2 0v-6H5a1 1 0 1 1 0-2h6Z"/></svg>
                         Add band
                     </button>
                 </div>
-                <p class="pf-help">Reward or inhibit one or two frequency windows. Leave Z blank to default to 0.</p>
-                <div class="pf-bands-panel">
+                <div class="pf-bands-panel mt-8">
                     <div class="pf-band-head">
                         <span>Low Hz</span>
                         <span>High Hz</span>
@@ -340,43 +367,53 @@ nav: clients
                 </div>
             </section>
 
-            <!-- Channels -->
-            <section class="pf-section">
-                <h3 class="meta-label">Channels</h3>
+            <!-- 3 · Channels -->
+            <section class="pf-panel" role="tabpanel" hidden>
                 <p class="pf-help">The feedback channel drives training; reference channels are subtracted as noise.</p>
-                <div class="field block">
-                    <span class="label">Feedback channel</span>
-                    <div id="pf-feedback" class="mt-2 flex flex-wrap gap-2"></div>
-                </div>
-                <label id="pf-aux-field" class="field block hidden mt-4">
-                    <span class="label">AUX position</span>
-                    <select id="pf-aux" class="input max-w-[240px]"></select>
-                </label>
-                <div class="field block mt-4">
-                    <span class="label">Reference channels <span class="text-muted font-normal">(optional)</span></span>
-                    <div id="pf-reference" class="mt-2 flex flex-wrap gap-2"></div>
+                <div class="space-y-5">
+                    <div class="field block">
+                        <span class="label">Feedback channel</span>
+                        <div id="pf-feedback" class="mt-2 flex flex-wrap gap-x-2 gap-y-3"></div>
+                    </div>
+                    <div class="field block">
+                        <span class="label">Reference channels <span class="text-muted font-normal">(optional)</span></span>
+                        <div id="pf-reference" class="mt-2 flex flex-wrap gap-x-2 gap-y-3"></div>
+                    </div>
+                    <!-- Only shown for an AUX feedback channel. -->
+                    <label id="pf-aux-field" class="field block hidden">
+                        <span class="label">AUX position</span>
+                        <select id="pf-aux" class="input max-w-[240px]"></select>
+                    </label>
                 </div>
             </section>
 
-            <!-- Duration -->
-            <section class="pf-section">
-                <h3 class="meta-label">Duration</h3>
-                <p class="pf-help">Calibration is the quiet baseline recorded before training starts. Leave blank to use the app’s default.</p>
-                <div class="mt-3 flex flex-wrap items-center gap-x-6 gap-y-3">
-                    <div class="flex items-center gap-2.5">
-                        <input id="pf-duration" class="input tnum w-24" type="number" min="1" step="1" placeholder="3">
-                        <span class="text-body text-muted">minutes</span>
+            <!-- 4 · Duration -->
+            <section class="pf-panel" role="tabpanel" hidden>
+                <div class="space-y-7">
+                    <div class="field block">
+                        <span class="label">Session length</span>
+                        <div class="flex items-center gap-2.5">
+                            <input id="pf-duration" class="input tnum w-20" type="number" min="0" step="1" placeholder="3" aria-label="Session minutes">
+                            <span class="text-body text-muted">min</span>
+                            <input id="pf-duration-secs" class="input tnum w-20 ml-2" type="number" min="0" max="59" step="5" placeholder="0" aria-label="Session seconds">
+                            <span class="text-body text-muted">sec</span>
+                        </div>
                     </div>
-                    <div class="flex items-center gap-2.5">
-                        <input id="pf-calibration" class="input tnum w-24" type="number" min="0" max="600" step="5" placeholder="—" aria-label="Calibration (seconds)">
-                        <span class="text-body text-muted">seconds calibration</span>
+                    <div class="field block">
+                        <span class="label">Calibration</span>
+                        <div class="flex items-center gap-2.5">
+                            <input id="pf-calibration" class="input tnum w-20" type="number" min="0" max="600" step="5" placeholder="—" aria-label="Calibration (seconds)">
+                            <span class="text-body text-muted">sec</span>
+                        </div>
+                        <!-- Sits under the field it describes, not at the top of
+                             the panel where it explained something not yet seen. -->
+                        <p class="pf-help !mt-5">The quiet baseline recorded before training starts. Leave blank to use the app’s default.</p>
                     </div>
                 </div>
             </section>
         </div>
 
-        <!-- Sticky footer -->
-        <div class="dialog-footer">
+        <div class="mt-7 flex items-center justify-end gap-3">
             <p id="pf-error" class="text-caption text-danger mr-auto hidden"></p>
             <button type="button" class="btn btn-secondary" data-close>Cancel</button>
             <button type="submit" id="pf-save" class="btn btn-primary min-w-[130px]">
@@ -417,10 +454,13 @@ nav: clients
     <div class="dialog dialog-lg">
         <div class="flex items-start justify-between gap-4">
             <div class="min-w-0">
-                <h2 id="spm-title" class="text-section">Protocol</h2>
-                <p id="spm-when" class="text-caption text-muted mt-1"></p>
+                <div class="flex items-center gap-2.5 flex-wrap">
+                    <h2 id="spm-title" class="text-section">Protocol</h2>
+                    <span id="spm-archived" class="chip chip-neutral" hidden>Archived version</span>
+                </div>
+                <p id="spm-when" class="text-caption text-muted mt-2.5"></p>
             </div>
-            <button type="button" class="icon-close mt-1" data-close aria-label="Close">
+            <button type="button" class="icon-close" data-close aria-label="Close">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
             </button>
         </div>
@@ -793,23 +833,22 @@ nav: clients
     })();
 
     // ── Confirmation modals (Block / Remove) ────────────────────────────
-    // The confirm handlers are stubbed until the backends exist; the modal
-    // open/close + focus behaviour is fully wired.
+    // Neither action has a backend yet, so both confirm buttons ship disabled
+    // and the dialogs say where to go instead. There is deliberately no click
+    // handler on [data-confirm]: a confirmation that closes cleanly while doing
+    // nothing reads exactly like one that worked.
     function openModal(id) {
         const m = document.getElementById(id);
         m.hidden = false;
-        m.querySelector('[data-confirm]').focus();
+        // First control that can actually take focus — [data-confirm] is
+        // disabled here, and focusing a disabled element silently does nothing,
+        // which would leave focus outside the open dialog.
+        m.querySelector('.dialog button:not([disabled])')?.focus();
     }
     function closeModal(m) { m.hidden = true; }
 
     document.querySelectorAll('#block-modal, #remove-modal').forEach(m => {
         m.querySelectorAll('[data-close]').forEach(el => el.addEventListener('click', () => closeModal(m)));
-        m.querySelector('[data-confirm]').addEventListener('click', () => {
-            const action = m.dataset.action;
-            closeModal(m);
-            // TODO: wire to backend. Placeholder until those flows exist.
-            console.log('confirmed:', action, clientId);
-        });
     });
     document.addEventListener('keydown', (e) => {
         if (e.key !== 'Escape') return;
@@ -931,6 +970,22 @@ nav: clients
 
         let editingId = null;   // null = creating; otherwise the protocol id
 
+        // ── Steps ────────────────────────────────────────────────────────
+        // Panel indices, referenced by readForm() so a validation failure can
+        // open the step holding the field that failed — otherwise the message
+        // would point at something the user cannot see.
+        const STEP = { DETAILS: 0, BANDS: 1, CHANNELS: 2, DURATION: 3 };
+        const stepBtns = [...document.querySelectorAll('#pf-steps .step')];
+        const panels = [...document.querySelectorAll('#protocol-form .pf-panel')];
+        function showStep(i) {
+            stepBtns.forEach((b, n) => {
+                b.classList.toggle('is-on', n === i);
+                b.setAttribute('aria-selected', String(n === i));
+            });
+            panels.forEach((p, n) => { p.hidden = n !== i; });
+        }
+        stepBtns.forEach((b, i) => b.addEventListener('click', () => showStep(i)));
+
         // One-time: fill the AUX-position select + the feedback / reference chip
         // groups. Both use the same chip-toggle look (leading tick on select);
         // feedback is single-select (radios), reference is multi-select
@@ -975,20 +1030,32 @@ nav: clients
             const dir = (band.direction || 'reward').toLowerCase();
             const row = document.createElement('div');
             row.className = 'pf-band';
+            // Each cell is wrapped so the column dividers can sit in a padded
+            // gutter — padding on a bare <input> would shrink the input itself.
             row.innerHTML = `
-                <input class="input input-sm tnum" type="number" min="0.5" max="${MAX_BAND_HZ}" step="0.5" data-band="lo" value="${band.lo ?? ''}" placeholder="4" aria-label="Low frequency (Hz)">
-                <input class="input input-sm tnum" type="number" min="0.5" max="${MAX_BAND_HZ}" step="0.5" data-band="hi" value="${band.hi ?? ''}" placeholder="8" aria-label="High frequency (Hz)">
-                <div class="segmented segmented-sm" data-band="direction">
-                    <button type="button" data-dir="reward" class="${dir === 'reward' ? 'is-on' : ''}">Reward</button>
-                    <button type="button" data-dir="punish" class="${dir === 'punish' ? 'is-on' : ''}">Punish</button>
+                <div><input class="input input-sm tnum" type="number" min="0.5" max="${MAX_BAND_HZ}" step="0.5" data-band="lo" value="${band.lo ?? ''}" aria-label="Low frequency (Hz)"></div>
+                <div><input class="input input-sm tnum" type="number" min="0.5" max="${MAX_BAND_HZ}" step="0.5" data-band="hi" value="${band.hi ?? ''}" aria-label="High frequency (Hz)"></div>
+                <div>
+                    <div class="dir-toggle" data-band="direction" data-on="${dir}" role="group" aria-label="Direction">
+                        <span class="thumb" aria-hidden="true"></span>
+                        <button type="button" data-dir="reward" class="${dir === 'reward' ? 'is-on' : ''}" aria-pressed="${dir === 'reward'}"><span class="ar">↑</span>Reward</button>
+                        <button type="button" data-dir="punish" class="${dir === 'punish' ? 'is-on' : ''}" aria-pressed="${dir === 'punish'}"><span class="ar">↓</span>Inhibit</button>
+                    </div>
                 </div>
-                <input class="input input-sm tnum" type="number" step="0.01" data-band="threshold_z" value="${band.threshold_z ?? ''}" placeholder="0" aria-label="Threshold Z (blank defaults to 0)">
-                <button type="button" class="pf-band-remove" data-remove-band aria-label="Remove band" title="Remove band">
+                <div><input class="input input-sm tnum" type="number" step="0.01" data-band="threshold_z" value="${band.threshold_z ?? ''}" aria-label="Threshold Z (blank defaults to 0)"></div>
+                <div><button type="button" class="pf-band-remove" data-remove-band aria-label="Remove band" title="Remove band">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M6 6v14a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V6"/></svg>
-                </button>`;
+                </button></div>`;
 
+            const toggle = row.querySelector('.dir-toggle');
             row.querySelectorAll('[data-dir]').forEach(b => b.addEventListener('click', () => {
-                row.querySelectorAll('[data-dir]').forEach(x => x.classList.toggle('is-on', x === b));
+                row.querySelectorAll('[data-dir]').forEach(x => {
+                    const on = x === b;
+                    x.classList.toggle('is-on', on);
+                    x.setAttribute('aria-pressed', String(on));
+                });
+                // Drives the thumb's position.
+                toggle.dataset.on = b.dataset.dir;
             }));
             row.querySelector('[data-remove-band]').addEventListener('click', () => { row.remove(); syncBandAdd(); });
             return row;
@@ -1027,15 +1094,14 @@ nav: clients
                 const refs = Array.isArray(ch.reference) ? ch.reference : [];
                 referenceWrap.querySelectorAll('input').forEach(cb => { cb.checked = refs.includes(cb.value); });
 
-                const mins = protocol.duration_seconds != null ? Math.round(protocol.duration_seconds / 60) : '';
-                document.getElementById('pf-duration').value = mins;
-                // Remember the exact original seconds, so an untouched duration
-                // round-trips without re-rounding.
-                document.getElementById('pf-duration').dataset.originalSeconds = protocol.duration_seconds ?? '';
+                const total = protocol.duration_seconds;
+                document.getElementById('pf-duration').value = total != null ? Math.floor(total / 60) : '';
+                document.getElementById('pf-duration-secs').value = total != null ? total % 60 : '';
                 document.getElementById('pf-calibration').value = protocol.calibration_seconds ?? '';
             } else {
                 setFeedback('AF7');
-                delete document.getElementById('pf-duration').dataset.originalSeconds;
+                document.getElementById('pf-duration').value = '';
+                document.getElementById('pf-duration-secs').value = '';
                 document.getElementById('pf-calibration').value = '';
             }
 
@@ -1044,6 +1110,7 @@ nav: clients
             syncFeedback();
 
             modal.hidden = false;
+            showStep(STEP.DETAILS);   // always reopen on the first step
             autoGrow(); // size description now that it's visible (prefilled edits)
             document.getElementById('pf-name').focus();
         }
@@ -1052,10 +1119,10 @@ nav: clients
         // ── Read the form into a protocol payload (params only) ──────────
         function readForm() {
             const name = document.getElementById('pf-name').value.trim();
-            if (!name) return { error: 'Please enter a protocol name.' };
+            if (!name) return { error: 'Please enter a protocol name.', step: STEP.DETAILS };
 
             const description = document.getElementById('pf-description').value.trim();
-            if (!description) return { error: 'Please enter a description.' };
+            if (!description) return { error: 'Please enter a description.', step: STEP.DETAILS };
 
             const bands = [];
             for (const row of bandsWrap.querySelectorAll('.pf-band')) {
@@ -1063,38 +1130,44 @@ nav: clients
                 const hi = row.querySelector('[data-band="hi"]').value;
                 const zRaw = row.querySelector('[data-band="threshold_z"]').value;
                 const direction = row.querySelector('[data-dir].is-on')?.dataset.dir || 'reward';
-                if (lo === '' || hi === '') return { error: 'Each band needs a low and high frequency.' };
-                if (+lo <= 0) return { error: 'Each band’s low frequency must be above 0 Hz.' };
-                if (+lo >= +hi) return { error: 'Each band’s low frequency must be below its high frequency.' };
-                if (+hi > MAX_BAND_HZ) return { error: `Each band’s high frequency must be ${MAX_BAND_HZ} Hz or below.` };
+                if (lo === '' || hi === '') return { error: 'Each band needs a low and high frequency.', step: STEP.BANDS };
+                if (+lo <= 0) return { error: 'Each band’s low frequency must be above 0 Hz.', step: STEP.BANDS };
+                if (+lo >= +hi) return { error: 'Each band’s low frequency must be below its high frequency.', step: STEP.BANDS };
+                if (+hi > MAX_BAND_HZ) return { error: `Each band’s high frequency must be ${MAX_BAND_HZ} Hz or below.`, step: STEP.BANDS };
                 // Always write a number — never null. The app and the licence
                 // minter both assume an explicit value.
                 bands.push({ lo: +lo, hi: +hi, direction, threshold_z: zRaw === '' ? DEFAULT_THRESHOLD_Z : +zRaw });
             }
-            if (bands.length === 0) return { error: 'Add at least one band.' };
+            if (bands.length === 0) return { error: 'Add at least one band.', step: STEP.BANDS };
 
             const feedback = getFeedback();
             const reference = [...referenceWrap.querySelectorAll('input:checked')].map(cb => cb.value);
             const channels = { feedback, reference };
             if (feedback === 'AUX') channels.aux_position = auxSel.value;
 
-            // Preserve exact original seconds if the minutes field is unchanged.
-            // Blank falls back to the placeholder default (3 minutes).
+            // Minutes + seconds represent the stored value exactly, so nothing
+            // has to be preserved across a round-trip. This replaced a
+            // dataset.originalSeconds hack that existed only because a
+            // minutes-only field could not express 90 seconds without
+            // re-rounding it to 2 minutes on every save.
+            // Both blank falls back to the placeholder default (3 minutes).
             const DEFAULT_DURATION_MIN = 3;
-            const durEl = document.getElementById('pf-duration');
-            const mins = durEl.value;
-            const orig = durEl.dataset.originalSeconds;
+            const minsRaw = document.getElementById('pf-duration').value;
+            const secsRaw = document.getElementById('pf-duration-secs').value;
             let duration_seconds;
-            if (mins === '') {
+            if (minsRaw === '' && secsRaw === '') {
                 duration_seconds = DEFAULT_DURATION_MIN * 60;
             } else {
-                duration_seconds = (orig !== undefined && orig !== '' && Math.round(+orig / 60) === +mins)
-                    ? +orig : Math.round(+mins * 60);
+                duration_seconds = Math.max(0, Math.round(+minsRaw || 0)) * 60
+                                 + Math.max(0, Math.round(+secsRaw || 0));
+                if (duration_seconds <= 0) {
+                    return { error: 'Session length must be more than 0.', step: STEP.DURATION };
+                }
             }
 
             // Blank means "use the app's default", stored as null.
             const calRaw = document.getElementById('pf-calibration').value;
-            if (calRaw !== '' && +calRaw < 0) return { error: 'Calibration can’t be negative.' };
+            if (calRaw !== '' && +calRaw < 0) return { error: 'Calibration can’t be negative.', step: STEP.DURATION };
             const calibration_seconds = calRaw === '' ? null : Math.round(+calRaw);
 
             return { payload: { name, description, bands, channels, duration_seconds, calibration_seconds } };
@@ -1133,8 +1206,15 @@ nav: clients
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             errorEl.classList.add('hidden');
-            const { payload, error } = readForm();
-            if (error) { errorEl.textContent = error; errorEl.classList.remove('hidden'); return; }
+            const { payload, error, step } = readForm();
+            if (error) {
+                // Open the step that owns the failing field before showing the
+                // message, or it describes something currently hidden.
+                if (step != null) showStep(step);
+                errorEl.textContent = error;
+                errorEl.classList.remove('hidden');
+                return;
+            }
 
             const sb = window.consoleAuth.sb;
             setSaving(true);
@@ -1262,11 +1342,12 @@ nav: clients
     }
 
     function renderProtocol(p, sessionCount) {
-        const bands = Array.isArray(p.bands) ? p.bands.slice(0, 2) : [];
-        const channels = p.channels || {};
         return `
             <article class="card p-6">
-                <div class="flex items-start justify-between gap-6">
+                <!-- gap-16 rather than gap-6: the description is free to run its
+                     natural width, and the gutter is what keeps the counts on
+                     the right from being crowded by a long one. -->
+                <div class="flex items-start justify-between gap-16">
                     <div class="min-w-0">
                         <h3 class="text-section">${escapeHtml(p.name || 'Untitled')}</h3>
                         ${p.description ? `<p class="text-caption text-muted mt-1 leading-relaxed">${escapeHtml(p.description)}</p>` : ''}
@@ -1277,23 +1358,15 @@ nav: clients
                     </div>
                 </div>
 
-                <div class="mt-5 flex flex-wrap items-start gap-x-10 gap-y-4">
-                    <div>
-                        <div class="meta-label">Bands</div>
-                        <div class="mt-2 flex flex-col items-start gap-2">
-                            ${bands.length ? bands.map(renderBand).join('') : '<span class="text-caption text-muted">—</span>'}
-                        </div>
+                <!-- Actions sit on the table's baseline rather than a row of
+                     their own. items-end pins them to the bottom of the table
+                     however tall it gets, so they land in the same place on
+                     every card regardless of band count. -->
+                <div class="mt-6 flex items-end justify-between gap-6">
+                    <div class="min-w-0 overflow-x-auto">
+                        ${renderProtocolMeta(p)}
                     </div>
-                    <div>
-                        <div class="meta-label">Channels</div>
-                        <div class="text-caption text-ink mt-2">${renderChannels(channels)}</div>
-                    </div>
-                    <div>
-                        <div class="meta-label">Duration</div>
-                        <div class="text-caption text-ink mt-2">${formatDurationWithCalibration(p)}</div>
-                    </div>
-
-                    <div class="ml-auto self-end flex items-center gap-2">
+                    <div class="flex items-center gap-2 shrink-0">
                         <button type="button" data-action="edit" data-id="${escapeHtml(p.id)}" class="btn btn-secondary btn-sm">Edit</button>
                         <button type="button" data-action="remove" data-id="${escapeHtml(p.id)}" class="btn btn-danger btn-sm">Remove</button>
                     </div>
@@ -1368,6 +1441,7 @@ nav: clients
         const modal = document.getElementById('session-protocol-modal');
         const body = document.getElementById('spm-body');
         const titleEl = document.getElementById('spm-title');
+        const archivedEl = document.getElementById('spm-archived');
         const whenEl = document.getElementById('spm-when');
 
         const close = () => { modal.hidden = true; };
@@ -1380,6 +1454,7 @@ nav: clients
             const id = btn.dataset.viewProtocol;
 
             titleEl.textContent = 'Protocol';
+            archivedEl.hidden = true;
             whenEl.textContent = btn.dataset.when ? `Session · ${btn.dataset.when}` : '';
             body.innerHTML = `<div class="skeleton h-28 rounded-card"></div>`;
             modal.hidden = false;
@@ -1396,32 +1471,20 @@ nav: clients
                 return;
             }
             titleEl.textContent = data.name || 'Untitled';
+            archivedEl.hidden = !data.archived_at;
             body.innerHTML = renderProtocolReadonly(data);
         });
 
+        // The archived marker lives beside the title in the dialog header, not
+        // in the body — it qualifies which protocol this is, so it belongs with
+        // the name rather than below the description.
         function renderProtocolReadonly(p) {
-            const bands = Array.isArray(p.bands) ? p.bands.slice(0, 2) : [];
-            const channels = p.channels || {};
-            const archived = p.archived_at
-                ? `<span class="chip chip-neutral">Archived version</span>` : '';
+            // Centred here but not on the protocol card, where the same table
+            // shares a row with the action buttons and needs to stay left.
             return `
                 ${p.description ? `<p class="text-body text-muted">${escapeHtml(p.description)}</p>` : ''}
-                ${archived ? `<div class="mt-3">${archived}</div>` : ''}
-                <div class="mt-6 pt-6 border-t border-line grid grid-cols-1 sm:grid-cols-3 gap-6">
-                    <div>
-                        <div class="meta-label">Bands</div>
-                        <div class="mt-2 flex flex-col items-start gap-2">
-                            ${bands.length ? bands.map(renderBand).join('') : '<span class="text-caption text-muted">—</span>'}
-                        </div>
-                    </div>
-                    <div>
-                        <div class="meta-label">Channels</div>
-                        <div class="text-caption text-ink mt-2">${renderChannels(channels)}</div>
-                    </div>
-                    <div>
-                        <div class="meta-label">Duration</div>
-                        <div class="text-caption text-ink mt-2">${formatDurationWithCalibration(p)}</div>
-                    </div>
+                <div class="mt-6 flex justify-center">
+                    ${renderProtocolMeta(p)}
                 </div>`;
         }
     })();
@@ -1435,19 +1498,22 @@ nav: clients
         const name = s.assigned_sessions?.name || 'Ad-hoc session';
         const when = formatDateTime(s.started_at);
 
-        // Only sessions tied to a protocol are clickable; ad-hoc ones are plain.
+        // Only sessions tied to a protocol open anything; ad-hoc ones have no
+        // protocol to show, so they stay plain text with no chevron. The
+        // chevron sits beside the name rather than at the row's end, because
+        // the name is the thing that acts.
         const nameCell = s.protocol_id
-            ? `<button type="button" class="text-ink font-medium text-left hover:text-accent transition"
-                       data-view-protocol="${escapeHtml(s.protocol_id)}" data-when="${escapeHtml(when)}">${escapeHtml(name)}</button>`
+            ? `<button type="button" class="cell-link"
+                       data-view-protocol="${escapeHtml(s.protocol_id)}" data-when="${escapeHtml(when)}">${escapeHtml(name)}<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9.3 6.3a1 1 0 0 1 1.4 0l5.3 5.3a.5.5 0 0 1 0 .8l-5.3 5.3a1 1 0 1 1-1.4-1.42L13.18 12 9.3 8.12a1 1 0 0 1 0-1.42Z"/></svg></button>`
             : `<span class="text-muted">${escapeHtml(name)}</span>`;
 
         return `
             <tr>
                 <td>${nameCell}</td>
                 <td class="text-muted tnum">${when}</td>
-                <td class="text-right tnum">${formatDuration(duration)}</td>
-                <td class="text-right tnum">${pct}</td>
-                <td class="text-right tnum">${streak}</td>
+                <td class="is-num">${formatDuration(duration)}</td>
+                <td class="is-num">${pct}</td>
+                <td class="is-num">${streak}</td>
             </tr>`;
     }
 
@@ -1460,32 +1526,57 @@ nav: clients
     function renderBand(b) {
         const dir = (b.direction || '').toLowerCase();
         const cls = dir === 'reward' ? 'reward' : dir === 'punish' ? 'punish' : '';
-        const dirLabel = dir ? dir.charAt(0).toUpperCase() + dir.slice(1) : '';
+        const arrow = dir === 'reward' ? '↑' : dir === 'punish' ? '↓' : '·';
+        // The arrow carries direction visually; aria-label carries it to screen
+        // readers, which would otherwise announce "up arrow" or nothing.
+        const dirLabel = dir ? dir.charAt(0).toUpperCase() + dir.slice(1) : 'No direction';
         // Legacy rows may still hold null; show the same canonical default the
         // editor writes and the app assumes.
         const zVal = b.threshold_z == null ? DEFAULT_THRESHOLD_Z : +b.threshold_z;
-        return `<span class="band-chip ${cls}"><span class="dot"></span>${b.lo}–${b.hi} Hz${dirLabel ? ' · ' + dirLabel : ''} · Z ${zVal.toFixed(2)}</span>`;
+        // Exactly three cells, in .bandlist's column order — a fourth would
+        // silently start a new row.
+        return `<div class="band ${cls}">`
+            + `<span>${b.lo}–${b.hi} Hz</span>`
+            + `<span class="ar" role="img" aria-label="${escapeHtml(dirLabel)}">${arrow}</span>`
+            + `<span class="z">Z ${zVal.toFixed(2)}</span>`
+            + `</div>`;
     }
 
-    function renderChannels(ch) {
+    // The whole parameter block for one protocol. Every parameter is its own
+    // row, so nothing needs a chip label to disambiguate it — the row header
+    // does that job. Rows only appear when they have something to say.
+    function renderProtocolMeta(p) {
+        const bands = Array.isArray(p.bands) ? p.bands.slice(0, 2) : [];
+        const ch = p.channels || {};
+        const rows = [];
+
+        rows.push(['Bands', bands.length
+            ? `<div class="bandlist">${bands.map(renderBand).join('')}</div>`
+            : '<span class="text-muted">—</span>']);
+
         const fb = ch.feedback || '—';
-        const refs = Array.isArray(ch.reference) && ch.reference.length ? ch.reference.join(', ') : 'none';
-        const dot = '<span class="text-muted"> · </span>';
-        let out = `${escapeHtml(fb)}${dot}ref ${escapeHtml(refs)}`;
-        if (ch.feedback === 'AUX' && ch.aux_position) {
-            out += `${dot}${escapeHtml(ch.aux_position.toUpperCase())}`;
+        rows.push(['Signal', escapeHtml(ch.aux_position
+            ? `${fb} (${ch.aux_position.toUpperCase()})`
+            : fb)]);
+
+        const refs = Array.isArray(ch.reference) && ch.reference.length ? ch.reference.join(', ') : 'None';
+        rows.push(['Reference', escapeHtml(refs)]);
+
+        rows.push(['Duration', formatDuration(p.duration_seconds)]);
+        if (p.calibration_seconds != null) {
+            rows.push(['Calibration', formatDuration(p.calibration_seconds)]);
         }
-        return out;
+
+        return `<table class="pmeta">`
+            + `<thead><tr>${rows.map(([k]) => `<th scope="col">${k}</th>`).join('')}</tr></thead>`
+            + `<tbody><tr>${rows.map(([, v]) => `<td>${v}</td>`).join('')}</tr></tbody>`
+            + `</table>`;
     }
+
+
 
     // "20 min · 30 s calibration", or just the duration when calibration is
     // unset (the app falls back to its own default).
-    function formatDurationWithCalibration(p) {
-        const base = formatDuration(p.duration_seconds);
-        return p.calibration_seconds == null
-            ? base
-            : `${base}<span class="text-muted"> · </span>${formatDuration(p.calibration_seconds)} calibration`;
-    }
 
     // 75 → "1 min 15 s", 1200 → "20 min", 5400 → "1 h 30 min"
     function formatDuration(s) {
@@ -1494,9 +1585,10 @@ nav: clients
         const h = Math.floor(s / 3600);
         const m = Math.floor((s % 3600) / 60);
         const sec = s % 60;
+        // Space before the word units, none before the seconds suffix.
         if (h) return m ? `${h} h ${m} min` : `${h} h`;
-        if (m) return sec && m < 5 ? `${m} min ${sec} s` : `${m} min`;
-        return `${sec} s`;
+        if (m) return sec && m < 5 ? `${m} min ${sec}s` : `${m} min`;
+        return `${sec}s`;
     }
 
     function formatDate(iso) {

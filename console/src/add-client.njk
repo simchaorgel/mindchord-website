@@ -12,27 +12,36 @@ nav: clients
     All clients
 </a>
 
-<h1 class="text-display mt-4">Add client</h1>
-<p class="text-body text-muted mt-2 max-w-xl">
-    Create a new client account. They will not receive a welcome email, and they
-    will gain access to the app immediately.
-</p>
+<style>
+    /* Matches every other page masthead: title size, dialled back from the
+       .text-title token's 600. Scoped (0,1,1) so it beats the weight baked
+       into the token without depending on Tailwind's utility ordering. */
+    .masthead h1 { font-weight: 500; }
+</style>
+
+<header class="masthead mt-4">
+    <h1 class="text-title">Add client</h1>
+    <p class="text-body text-muted mt-2 max-w-xl">
+        Create a new client account. No notification will be sent, and they gain
+        access to the app immediately.
+    </p>
+</header>
 
 <form id="add-client-form" class="mt-8 card p-6 md:p-8 max-w-xl" novalidate>
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <label class="field">
             <span class="label">First name</span>
-            <input id="ac-firstname" class="input" type="text" autocomplete="given-name" placeholder="Jane">
+            <input id="ac-firstname" class="input" type="text" autocomplete="given-name" autofocus>
         </label>
         <label class="field">
             <span class="label">Surname</span>
-            <input id="ac-surname" class="input" type="text" autocomplete="family-name" placeholder="Doe">
+            <input id="ac-surname" class="input" type="text" autocomplete="family-name">
         </label>
     </div>
 
     <label class="field block mt-5">
         <span class="label">Email address</span>
-        <input id="ac-email" class="input" type="email" required autocomplete="off" placeholder="jane@example.com">
+        <input id="ac-email" class="input" type="email" required autocomplete="off">
     </label>
 
     <p id="ac-error" class="text-caption text-danger mt-4 hidden"></p>
@@ -61,6 +70,12 @@ nav: clients
     const spinner = submitBtn.querySelector('[data-spinner]');
     const label = submitBtn.querySelector('[data-label]');
 
+    // Mirrors EMAIL_RE in netlify/functions/add-client.js. The function is the
+    // actual gate — this only saves a round-trip to be told something the
+    // browser already knew. Same split as the machine-code check on the client
+    // page. If the server rule changes, change this with it.
+    const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+
     function showError(msg) {
         successEl.classList.add('hidden');
         errorEl.textContent = msg;
@@ -80,7 +95,11 @@ nav: clients
         const email = emailInput.value.trim();
         const display_name = firstNameInput.value.trim();
         const surname = surnameInput.value.trim();
+        // Checked in field order, so focus lands on the first problem rather
+        // than jumping past one the clinician has not reached yet.
+        if (!display_name) { showError('Please enter a first name.'); firstNameInput.focus(); return; }
         if (!email) { showError('Please enter an email address.'); emailInput.focus(); return; }
+        if (!EMAIL_RE.test(email)) { showError('That email address does not look right.'); emailInput.focus(); return; }
 
         const session = await window.consoleAuth.getSession();
         if (!session) { window.location.replace('/console/login/'); return; }

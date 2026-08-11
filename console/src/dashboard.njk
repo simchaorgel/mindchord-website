@@ -3,72 +3,102 @@ layout: sidebar.njk
 title: Mindchord Console
 nav: dashboard
 ---
-<!-- Heading row: org + welcome left, metric tiles right -->
-<div class="flex items-start justify-between gap-10 flex-wrap">
-    <div>
-        <h1 id="org-name" class="text-display">
-            <span class="skeleton inline-block h-9 w-52 align-middle"></span>
+<!-- Two blocks, one column:
+     1. Sessions — delivered per period, bare on the page background.
+     2. Needs attention — the part that actually routes you somewhere. Every
+        row links into a client record. Stretches to the bottom of the viewport
+        and scrolls internally.
+
+     Note the hidden/shown elements below use the `hidden` ATTRIBUTE, not
+     Tailwind's `.hidden` class. Both `.chip` and the flex/grid utilities these
+     elements need set `display` at the same specificity as `.hidden`, so which
+     one wins would come down to stylesheet order. The paired `[hidden]` rules
+     in the <style> block settle it deterministically. -->
+
+<style>
+    /* Masthead: welcome left, org right, same size and ink, baselines aligned.
+       Both are dialled back from the .text-title token's 600 — scoped here
+       (specificity 0,1,1) so it beats the weight baked into the token without
+       depending on Tailwind's utility ordering.
+       ml-auto rather than justify-between so the org stays right-aligned even
+       when the two wrap onto separate lines on narrow viewports. */
+    .masthead p, .masthead h1 { font-weight: 500; }
+
+    /* Fill the viewport down to the bottom edge. The 5rem is main's py-10 in
+       sidebar.njk — the only spacing between this column and the screen. If
+       that padding changes, change this with it. */
+    .dash { display: flex; flex-direction: column; min-height: calc(100dvh - 5rem); }
+
+    /* The panel takes the leftover height; its list scrolls rather than pushing
+       the card past the fold. min-height stops it collapsing on short viewports
+       — below that the page scrolls instead. */
+    .attn { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+    .attn-body { flex: 1; min-height: 7rem; overflow-y: auto; }
+
+    .attn-empty { height: 100%; display: grid; place-items: center; }
+    .attn-empty[hidden] { display: none; }
+    .attn-more { display: flex; align-items: center; justify-content: center; }
+    .attn-more[hidden] { display: none; }
+</style>
+
+<div class="dash">
+
+    <header class="masthead flex items-baseline gap-4 flex-wrap">
+        <p id="welcome-line" class="text-title"></p>
+        <h1 id="org-name" class="text-title ml-auto">
+            <span class="skeleton inline-block h-6 w-44 align-middle"></span>
         </h1>
-        <p id="welcome-line" class="text-body text-muted mt-2">
-            <span class="skeleton inline-block h-4 w-40 align-middle"></span>
-        </p>
-    </div>
+    </header>
 
-    <div class="flex items-center gap-3 flex-wrap">
-        <div class="stat min-w-[150px]">
-            <div class="lbl">Clients</div>
-            <div id="stat-clients" class="num"><span class="skeleton inline-block h-7 w-10 align-middle"></span></div>
+    <!-- Sessions over time — no card, no fill, no baseline; --spark-h sizes it.
+         One label carries the whole legend: metric plus the range it covers. -->
+    <section class="mt-10" style="--spark-h:150px">
+        <div id="growth-label" class="text-caption font-medium text-muted">Sessions</div>
+        <div id="growth-chart" class="mt-5">
+            <div class="skeleton w-full rounded" style="height:var(--spark-h)"></div>
         </div>
-        <div class="stat min-w-[150px]">
-            <div class="lbl">Sessions this week</div>
-            <div id="stat-sessions-week" class="num"><span class="skeleton inline-block h-7 w-10 align-middle"></span></div>
+    </section>
+
+    <!-- Needs attention -->
+    <section class="attn mt-10 card overflow-hidden">
+        <div class="flex items-center justify-between gap-4 px-5 py-4 border-b border-line shrink-0">
+            <span class="text-caption font-medium text-muted">Needs attention</span>
+            <span id="attn-count" class="chip chip-neutral" hidden></span>
         </div>
-        <div class="stat min-w-[150px]">
-            <div class="lbl">Clinicians</div>
-            <div id="stat-clinicians" class="num"><span class="skeleton inline-block h-7 w-10 align-middle"></span></div>
+
+        <div class="attn-body">
+            <ul id="attn-loading" class="divide-y divide-line">
+                <li class="px-5 py-3.5 flex items-center gap-3.5"><span class="skeleton h-9 w-9 rounded-full"></span><span class="skeleton h-4 w-44"></span></li>
+                <li class="px-5 py-3.5 flex items-center gap-3.5"><span class="skeleton h-9 w-9 rounded-full"></span><span class="skeleton h-4 w-36"></span></li>
+                <li class="px-5 py-3.5 flex items-center gap-3.5"><span class="skeleton h-9 w-9 rounded-full"></span><span class="skeleton h-4 w-52"></span></li>
+            </ul>
+
+            <div id="attn-empty" class="attn-empty text-body text-muted px-5" hidden>All clear.</div>
+
+            <ul id="attn-list" class="hidden divide-y divide-line"></ul>
         </div>
-    </div>
+
+        <a id="attn-more" href="/console/clients/"
+           class="attn-more shrink-0 px-5 py-3 border-t border-line text-caption text-muted hover:text-accent transition" hidden>
+        </a>
+    </section>
+
 </div>
-
-<!-- Quick actions -->
-<div class="mt-8 flex flex-wrap gap-3">
-    <a href="/console/add-client/" class="btn btn-primary">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4"><path d="M11 11V5a1 1 0 1 1 2 0v6h6a1 1 0 1 1 0 2h-6v6a1 1 0 1 1-2 0v-6H5a1 1 0 1 1 0-2h6Z"/></svg>
-        Add client
-    </a>
-    <a href="/console/add-clinician/" class="btn btn-secondary">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4"><path d="M11 11V5a1 1 0 1 1 2 0v6h6a1 1 0 1 1 0 2h-6v6a1 1 0 1 1-2 0v-6H5a1 1 0 1 1 0-2h6Z"/></svg>
-        Add clinician
-    </a>
-</div>
-
-<!-- Sessions over time -->
-<section class="mt-10 card p-6">
-    <div class="flex items-baseline justify-between gap-4">
-        <h2 class="text-section">Sessions</h2>
-        <span class="text-caption text-muted">Last 14 days</span>
-    </div>
-
-    <div id="sessions-chart" class="mt-6 h-44 flex items-end gap-1.5">
-        <div class="flex-1 skeleton" style="height:40%"></div>
-        <div class="flex-1 skeleton" style="height:65%"></div>
-        <div class="flex-1 skeleton" style="height:30%"></div>
-        <div class="flex-1 skeleton" style="height:80%"></div>
-        <div class="flex-1 skeleton" style="height:55%"></div>
-        <div class="flex-1 skeleton" style="height:45%"></div>
-        <div class="flex-1 skeleton" style="height:70%"></div>
-    </div>
-
-    <div id="sessions-chart-axis" class="mt-2 flex justify-between text-caption text-muted"></div>
-</section>
 
 <script>
+    const {
+        escapeHtml, fullName, initials, classifyClient,
+        pickStep, seriesPeak, renderSpark,
+    } = window.consoleUI;
+
+    const ATTN_MAX = 8;       // rows shown before collapsing to "+N more"
+
     // Layout already calls requireSession() — this re-await just gives us the
     // session object so we can read user.id without an extra round-trip.
     (async () => {
         const session = await window.consoleAuth.getSession();
         if (!session) return;
-        await Promise.all([loadHeading(session), loadStats(), loadSessionsChart()]);
+        await Promise.all([loadHeading(session), loadGrowth(), loadAttention()]);
     })();
 
     async function loadHeading(session) {
@@ -85,85 +115,139 @@ nav: dashboard
         document.getElementById('welcome-line').textContent = first ? `Welcome, ${first}.` : '';
     }
 
-    // Counts fetched in parallel with count-only queries (head: true, no row
-    // data transferred). RLS scopes everything to the calling clinician's org.
-    async function loadStats() {
-        const sb = window.consoleAuth.sb;
-        const weekStart = startOfWeekISO();
-
-        const [clients, clinicians, sessions] = await Promise.all([
-            sb.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'client'),
-            sb.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'clinician'),
-            sb.from('sessions').select('*', { count: 'exact', head: true }).gte('started_at', weekStart),
-        ]);
-
-        setStat('stat-clients', clients);
-        setStat('stat-sessions-week', sessions);
-        setStat('stat-clinicians', clinicians);
-    }
-
-    function setStat(id, result) {
-        const el = document.getElementById(id);
-        el.textContent = result.error ? '—' : (result.count ?? 0);
-    }
-
-    // Daily session counts for the last 14 days, rendered as flexbox bars.
+    // ── Sessions over time ──────────────────────────────────────────────────
+    // Sessions actually delivered per period, across the org's whole history.
     // RLS scopes rows to the calling clinician's org.
-    async function loadSessionsChart() {
-        const DAYS = 14;
-        const chart = document.getElementById('sessions-chart');
-        const axis = document.getElementById('sessions-chart-axis');
-
-        const start = new Date();
-        start.setHours(0, 0, 0, 0);
-        start.setDate(start.getDate() - (DAYS - 1));
+    async function loadGrowth() {
+        const chart = document.getElementById('growth-chart');
+        const label = document.getElementById('growth-label');
 
         const { data, error } = await window.consoleAuth.sb
             .from('sessions')
-            .select('started_at')
-            .gte('started_at', start.toISOString());
+            .select('started_at');
 
-        // Bucket by day index from `start`.
-        const buckets = new Array(DAYS).fill(0);
-        if (!error && data) {
-            for (const row of data) {
-                if (!row.started_at) continue;
-                const d = new Date(row.started_at);
-                d.setHours(0, 0, 0, 0);
-                const idx = Math.round((d - start) / 86400000);
-                if (idx >= 0 && idx < DAYS) buckets[idx]++;
-            }
+        if (error) return growthMessage(chart, 'Could not load sessions.');
+
+        const times = (data || [])
+            .map(r => Date.parse(r.started_at))
+            .filter(Number.isFinite)
+            .sort((a, b) => a - b);
+
+        if (times.length === 0) return growthMessage(chart, 'No sessions recorded yet.');
+
+        // Bucket from the start of the first session's day so buckets land on
+        // day boundaries rather than on whatever time that session began.
+        const first = new Date(times[0]);
+        first.setHours(0, 0, 0, 0);
+        const t0 = first.getTime();
+
+        const step = pickStep(Date.now() - t0);
+
+        // Only whole buckets. The current period is still in progress, and
+        // including it would draw a dip at the right edge every single time —
+        // the chart would permanently look like the org is falling off.
+        const n = Math.floor((Date.now() - t0) / step.ms);
+        if (n < 2) return growthMessage(chart, 'Not enough history yet.');
+
+        const counts = new Array(n).fill(0);
+        for (const t of times) {
+            const idx = Math.floor((t - t0) / step.ms);
+            if (idx >= 0 && idx < n) counts[idx]++;
         }
 
-        const total = buckets.reduce((a, b) => a + b, 0);
-        if (error || total === 0) {
-            chart.classList.remove('items-end');
-            chart.classList.add('items-center', 'justify-center');
-            chart.innerHTML = `<span class="text-caption text-muted">${error ? 'Could not load sessions.' : 'No sessions in the last 14 days.'}</span>`;
+        // One bare series, scaled to its own peak — no axis here, so no need to
+        // round the top of the scale to tick-friendly values.
+        const series = [{ values: counts, cls: 'line' }];
+        chart.innerHTML = renderSpark(series, seriesPeak(series), `Sessions ${step.label.toLowerCase()}`);
+
+        // The end date is the close of the last *whole* bucket, not today —
+        // that is genuinely the range plotted.
+        const fmt = (ms) => new Date(ms).toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
+        label.textContent = `Sessions (${fmt(t0)} – ${fmt(t0 + n * step.ms)})`;
+    }
+
+    function growthMessage(chart, text) {
+        chart.innerHTML = `<div class="grid place-items-center text-caption text-muted" style="height:var(--spark-h)">${text}</div>`;
+    }
+
+    // ── Needs attention ─────────────────────────────────────────────────────
+    async function loadAttention() {
+        const sb = window.consoleAuth.sb;
+        const loading = document.getElementById('attn-loading');
+        const empty = document.getElementById('attn-empty');
+        const list = document.getElementById('attn-list');
+        const countEl = document.getElementById('attn-count');
+        const more = document.getElementById('attn-more');
+
+        const { data: clients, error } = await sb
+            .from('profiles')
+            .select('id, display_name, surname, licence_issued_at, licence_expires_at')
+            .eq('role', 'client');
+
+        loading.classList.add('hidden');
+
+        if (error || !clients) {
+            empty.textContent = 'Could not load clients.';
+            empty.hidden = false;
+            return;
+        }
+        if (clients.length === 0) {
+            empty.textContent = 'No clients yet.';
+            empty.hidden = false;
             return;
         }
 
-        const max = Math.max(...buckets);
-        chart.innerHTML = buckets.map((count, i) => {
-            const d = new Date(start);
-            d.setDate(start.getDate() + i);
-            const label = d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
-            const pct = count === 0 ? 2 : Math.max(6, Math.round((count / max) * 100));
-            const tip = `${count} session${count === 1 ? '' : 's'} · ${label}`;
-            const tone = count === 0 ? 'background:var(--surface-2)' : 'background:var(--accent)';
-            return `<div class="flex-1 rounded-t hover:brightness-95 transition" style="height:${pct}%;${tone}" title="${tip}"></div>`;
-        }).join('');
+        const ids = clients.map(c => c.id);
+        const [protoRes, sessRes] = await Promise.all([
+            sb.from('assigned_sessions').select('client_id').in('client_id', ids).is('archived_at', null),
+            sb.from('sessions').select('user_id, ended_at').in('user_id', ids).not('ended_at', 'is', null),
+        ]);
 
-        const fmt = (d) => d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
-        axis.innerHTML = `<span>${fmt(start)}</span><span>Today</span>`;
-    }
+        const hasProtocol = new Set((protoRes.data || []).map(r => r.client_id));
+        const lastSession = new Map();
+        for (const row of sessRes.data || []) {
+            const d = new Date(row.ended_at);
+            const cur = lastSession.get(row.user_id);
+            if (!cur || d > cur) lastSession.set(row.user_id, d);
+        }
 
-    // ISO week starts Monday.
-    function startOfWeekISO() {
-        const d = new Date();
-        const daysSinceMonday = (d.getDay() + 6) % 7;
-        d.setHours(0, 0, 0, 0);
-        d.setDate(d.getDate() - daysSinceMonday);
-        return d.toISOString();
+        const items = clients
+            .map(c => {
+                const flag = classifyClient(c, hasProtocol.has(c.id), lastSession.get(c.id));
+                return flag && { ...flag, client: c };
+            })
+            .filter(Boolean)
+            .sort((a, b) => a.rank - b.rank
+                || a.urgency - b.urgency
+                || fullName(a.client).localeCompare(fullName(b.client)));
+
+        if (items.length === 0) {
+            empty.hidden = false;
+            return;
+        }
+
+        countEl.textContent = items.length;
+        countEl.hidden = false;
+
+        list.innerHTML = items.slice(0, ATTN_MAX).map(item => `
+            <li>
+                <a href="/console/client/?id=${encodeURIComponent(item.client.id)}"
+                   class="flex items-center justify-between gap-4 px-5 py-3.5 group hover:bg-surface-2 transition">
+                    <div class="flex items-center gap-3.5 min-w-0">
+                        <span class="w-9 h-9 rounded-full bg-accent-weak text-accent-ink grid place-items-center text-caption font-semibold shrink-0">${escapeHtml(initials(item.client))}</span>
+                        <div class="min-w-0">
+                            <div class="text-body font-medium text-ink group-hover:text-accent transition truncate">${escapeHtml(fullName(item.client))}</div>
+                            <div class="text-caption text-muted truncate">${escapeHtml(item.detail)}</div>
+                        </div>
+                    </div>
+                    <span class="chip ${item.chip} shrink-0">${escapeHtml(item.label)}</span>
+                </a>
+            </li>`).join('');
+        list.classList.remove('hidden');
+
+        if (items.length > ATTN_MAX) {
+            more.textContent = `${items.length - ATTN_MAX} more · view all clients`;
+            more.hidden = false;
+        }
     }
 </script>

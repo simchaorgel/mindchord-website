@@ -47,9 +47,11 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/console/styles/global_style.css">
-    <!-- Auth helpers load in <head> so page-level inline <script> can use
-         window.consoleAuth as soon as the parser reaches them. -->
+    <!-- Auth and shared UI helpers load in <head> so page-level inline <script>
+         can use window.consoleAuth / window.consoleUI as soon as the parser
+         reaches them. -->
     <script src="/console/scripts/console_auth.js"></script>
+    <script src="/console/scripts/console_ui.js"></script>
 </head>
 <body class="page-bg min-h-screen text-ink antialiased">
 

@@ -12,12 +12,18 @@ nav: organization
     Organization
 </a>
 
-<h1 class="text-display mt-4">Add clinician</h1>
-<p class="text-body text-muted mt-2 max-w-xl">
-    Clinicians can see every client in your organization, so accounts are created
-    by the Mindchord team after a quick review. Send the details below and we'll
-    set them up and be in touch.
-</p>
+<style>
+    /* Matches every other page masthead — see add-client.njk. */
+    .masthead h1 { font-weight: 500; }
+</style>
+
+<header class="masthead mt-4">
+    <h1 class="text-title">Add clinician</h1>
+    <p class="text-body text-muted mt-2 max-w-xl">
+        Clinicians have access to all clients in your organization, so accounts are
+        only added after confirmation by the Mindchord team.
+    </p>
+</header>
 
 <!-- Netlify Forms: the form is real static HTML (rendered at build time), so
      Netlify detects it on deploy — no hidden decoy form needed. We submit via
@@ -42,21 +48,21 @@ nav: organization
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <label class="field">
             <span class="label">First name</span>
-            <input name="first_name" class="input" type="text" autocomplete="given-name" placeholder="Jane">
+            <input name="first_name" id="acl-firstname" class="input" type="text" autocomplete="given-name" autofocus>
         </label>
         <label class="field">
             <span class="label">Surname</span>
-            <input name="surname" class="input" type="text" autocomplete="family-name" placeholder="Doe">
+            <input name="surname" class="input" type="text" autocomplete="family-name">
         </label>
     </div>
 
     <label class="field block mt-5">
         <span class="label">Email address</span>
-        <input name="email" id="acl-email" class="input" type="email" required autocomplete="off" placeholder="jane@clinic.com">
+        <input name="email" id="acl-email" class="input" type="email" required autocomplete="off">
     </label>
 
     <p id="acl-error" class="text-caption text-danger mt-4 hidden"></p>
-    <p id="acl-success" class="text-body text-ok mt-4 hidden"></p>
+    <p id="acl-success" class="text-caption text-ok mt-4 hidden"></p>
 
     <div class="mt-7 flex items-center gap-4">
         <button type="submit" id="acl-submit" class="btn btn-primary min-w-[160px]">
@@ -72,6 +78,7 @@ nav: organization
 
 <script>
     const form = document.getElementById('add-clinician-form');
+    const firstNameInput = document.getElementById('acl-firstname');
     const emailInput = document.getElementById('acl-email');
     const errorEl = document.getElementById('acl-error');
     const successEl = document.getElementById('acl-success');
@@ -89,6 +96,10 @@ nav: organization
         document.getElementById('acl-org').value = data?.name || '';
     })();
 
+    // Same rule as add-client.njk and its Netlify function, kept in step so the
+    // two forms accept exactly the same addresses.
+    const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+
     function showError(msg) {
         successEl.classList.add('hidden');
         errorEl.textContent = msg;
@@ -104,7 +115,15 @@ nav: organization
         e.preventDefault();
         errorEl.classList.add('hidden');
 
-        if (!emailInput.value.trim()) { showError('Please enter an email address.'); emailInput.focus(); return; }
+        // This form posts to Netlify Forms, so unlike add-client there is no
+        // server-side validation behind it at all — whatever passes here lands
+        // in the team's inbox as-is. These checks are the only gate.
+        // Checked in field order so focus lands on the first problem.
+        const firstName = firstNameInput.value.trim();
+        const email = emailInput.value.trim();
+        if (!firstName) { showError('Please enter a first name.'); firstNameInput.focus(); return; }
+        if (!email) { showError('Please enter an email address.'); emailInput.focus(); return; }
+        if (!EMAIL_RE.test(email)) { showError('That email address does not look right.'); emailInput.focus(); return; }
 
         setLoading(true);
         try {
