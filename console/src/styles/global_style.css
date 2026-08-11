@@ -405,6 +405,39 @@ select.input {
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 24%, transparent);
 }
 
+/* ── Desktop-only notice ─────────────────────────────────────────────────────
+   Every sidebar page assumes a desktop width — a fixed 240px rail plus wide
+   tables — so below 768px an opaque interstitial offers to render the page at a
+   desktop viewport instead. Login is deliberately outside this: it uses
+   base.njk directly and has a real mobile layout.
+
+   The notice is driven by the media query alone, with no separate "dismissed"
+   flag. Continuing rewrites the viewport meta to a fixed 1280px, so the query
+   stops matching and the notice hides itself. That leaves the stored key with
+   exactly one job — replaying the viewport change on the next load. */
+.mobile-notice { display: none; }
+@media (max-width: 767px) {
+    .mobile-notice {
+        position: fixed; inset: 0; z-index: 300;   /* above modals (200) */
+        display: grid; place-items: center;
+        padding: 14px; background: var(--bg);
+    }
+}
+/* Same surface treatment as .modal .dialog — it can't reuse that rule, which is
+   scoped under .modal and carries the [hidden] transition machinery this has no
+   use for. Padding is the one intentional difference: the gutter and the panel
+   stack, so every px costs 4px of text width on the narrowest phones. */
+.mobile-notice .panel {
+    width: 100%; max-width: 380px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--r-lg); box-shadow: var(--shadow); padding: 24px 18px;
+}
+
+/* The rail's "Exit desktop view" escape hatch, shown only while the override is
+   actually in force. Paired [hidden] rule because .side-link sets `display` at
+   the same specificity — see the toggle gotcha at the top of this file. */
+.side-link[hidden] { display: none; }
+
 /* ── Dropdown menu ──────────────────────────────────────────────────────── */
 .menu { position: relative; }
 .menu-panel {

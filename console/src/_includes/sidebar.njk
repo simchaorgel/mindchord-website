@@ -1,6 +1,16 @@
 ---
 layout: base.njk
 ---
+<script>
+    // First thing in the body, so a phone that already opted into the desktop
+    // view gets it on the initial paint rather than flashing the notice and
+    // snapping. Only sidebar pages do this — login has a real mobile layout.
+    if (localStorage.getItem('mc-desktop-view') === '1') {
+        document.querySelector('meta[name="viewport"]').content = 'width=1280';
+        document.documentElement.classList.add('forced-desktop');
+    }
+</script>
+
 <div class="flex min-h-screen">
     <aside class="sidebar w-60 shrink-0 flex flex-col px-4 py-5 sticky top-0 h-screen">
         <a href="/" class="side-brand flex items-center gap-2.5 h-10 px-2 shrink-0">
@@ -28,6 +38,10 @@ layout: base.njk
         </nav>
 
         <div class="mt-auto">
+            <button type="button" id="exit-desktop" class="side-link w-full text-left" hidden>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor"><path d="M280-40q-33 0-56.5-23.5T200-120v-720q0-33 23.5-56.5T280-920h400q33 0 56.5 23.5T760-840v720q0 33-23.5 56.5T680-40H280Zm0-120v40h400v-40H280Zm0-80h400v-480H280v480Zm0-560h400v-40H280v40Z"/></svg>
+                Exit desktop view
+            </button>
             <button type="button" id="sign-out-btn" class="side-link w-full text-left">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor"><path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h240q17 0 28.5 11.5T480-800q0 17-11.5 28.5T440-760H200v560h240q17 0 28.5 11.5T480-160q0 17-11.5 28.5T440-120H200Zm487-320H400q-17 0-28.5-11.5T360-480q0-17 11.5-28.5T400-520h287l-75-75q-11-11-11-27t11-28q11-12 28-12.5t29 11.5l143 143q12 12 12 28t-12 28L669-309q-12 12-28.5 11.5T612-310q-11-12-10.5-28.5T613-366l74-74Z"/></svg>
                 Sign out
@@ -55,6 +69,21 @@ layout: base.njk
     </div>
 </div>
 
+<!-- Desktop-only notice. Shown purely by media query (see global_style.css);
+     continuing swaps the viewport so the query stops matching. -->
+<div class="mobile-notice">
+    <div class="panel">
+        <h2 class="text-section">Desktop only</h2>
+        <p class="text-body text-muted mt-2">
+            This console is designed for desktop and will not act as intended on phone
+            size screens.
+        </p>
+        <div class="mt-6 flex items-center justify-end">
+            <button type="button" id="use-desktop-view" class="btn btn-primary">Continue anyways</button>
+        </div>
+    </div>
+</div>
+
 <script>
     // Every sidebar-using page is gated. Page-specific scripts can still call
     // getSession() / requireSession() to get the session object.
@@ -67,6 +96,25 @@ layout: base.njk
     // them; listeners attached by the page's inline scripts move with the node.
     // Runs after those scripts, since this is the last script in the body.
     document.querySelectorAll('.enter .modal').forEach(m => document.body.appendChild(m));
+
+    // Desktop-view opt-in. The exit link only appears once the override is on,
+    // so the choice never becomes a one-way door on someone's phone.
+    (function () {
+        const viewport = document.querySelector('meta[name="viewport"]');
+        const exitBtn = document.getElementById('exit-desktop');
+        exitBtn.hidden = !document.documentElement.classList.contains('forced-desktop');
+
+        document.getElementById('use-desktop-view').addEventListener('click', () => {
+            localStorage.setItem('mc-desktop-view', '1');
+            viewport.content = 'width=1280';
+            document.documentElement.classList.add('forced-desktop');
+            exitBtn.hidden = false;
+        });
+        exitBtn.addEventListener('click', () => {
+            localStorage.removeItem('mc-desktop-view');
+            location.reload();   // cheapest way back to width=device-width
+        });
+    })();
 
     // Sign-out confirmation modal.
     (function () {
