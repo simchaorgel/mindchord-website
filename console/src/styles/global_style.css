@@ -405,23 +405,28 @@ select.input {
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 24%, transparent);
 }
 
-/* ── Desktop-only notice ─────────────────────────────────────────────────────
-   Every sidebar page assumes a desktop width — a fixed 240px rail plus wide
-   tables — so below 768px an opaque interstitial offers to render the page at a
-   desktop viewport instead. Login is deliberately outside this: it uses
-   base.njk directly and has a real mobile layout.
+/* ── Small-screen notice ─────────────────────────────────────────────────────
+   Sidebar pages pin the viewport to a static width=1280 (see base.njk), so
+   phones always render the desktop layout scaled down to fit. The notice is an
+   overlay warning sub-768 devices about that, dismissable with a class flip —
+   nothing about the viewport ever changes. Login is outside all of this: it
+   uses base.njk directly and has a real mobile layout.
 
-   The notice is driven by the media query alone, with no separate "dismissed"
-   flag. Continuing rewrites the viewport meta to a fixed 1280px, so the query
-   stops matching and the notice hides itself. That leaves the stored key with
-   exactly one job — replaying the viewport change on the next load. */
+   Two non-obvious pieces:
+   · Shown by class, not media query. Media queries evaluate against the
+     LAYOUT viewport, which is always 1280 here, so (max-width: 767px) can
+     never match on a phone. base.njk classifies via screen.width instead:
+     `small-screen` = sub-768 device, `forced-desktop` = dismissed.
+   · The overlay counter-zooms by --notice-zoom (1280 / screen width, set in
+     base.njk). Inside the zoomed coordinate space the viewport measures one
+     screen-width across, so the panel lays out exactly as it would on a real
+     phone-sized viewport while the page behind stays fitted desktop. */
 .mobile-notice { display: none; }
-@media (max-width: 767px) {
-    .mobile-notice {
-        position: fixed; inset: 0; z-index: 300;   /* above modals (200) */
-        display: grid; place-items: center;
-        padding: 14px; background: var(--bg);
-    }
+html.small-screen:not(.forced-desktop) .mobile-notice {
+    position: fixed; inset: 0; z-index: 300;   /* above modals (200) */
+    display: grid; place-items: center;
+    padding: 14px; background: var(--bg);
+    zoom: var(--notice-zoom, 1);
 }
 /* Same surface treatment as .modal .dialog — it can't reuse that rule, which is
    scoped under .modal and carries the [hidden] transition machinery this has no
@@ -432,11 +437,6 @@ select.input {
     background: var(--surface); border: 1px solid var(--border);
     border-radius: var(--r-lg); box-shadow: var(--shadow); padding: 24px 18px;
 }
-
-/* The rail's "Exit desktop view" escape hatch, shown only while the override is
-   actually in force. Paired [hidden] rule because .side-link sets `display` at
-   the same specificity — see the toggle gotcha at the top of this file. */
-.side-link[hidden] { display: none; }
 
 /* ── Dropdown menu ──────────────────────────────────────────────────────── */
 .menu { position: relative; }

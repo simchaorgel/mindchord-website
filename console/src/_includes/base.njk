@@ -2,7 +2,35 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    {% if desktopOnly %}
+    <!-- Sidebar pages are desktop-only, so the viewport is pinned to a fixed
+         1280px layout width for EVERY visitor. Phones render the desktop
+         layout scaled to fit — the same treatment browsers give any
+         pre-responsive desktop site — and small screens get an overlay notice
+         (see sidebar.njk) rather than a different viewport.
+
+         Deliberately a static tag that no script ever rewrites. Every dynamic
+         variant of this had a zoom bug: viewport updates are cumulative (a
+         rewrite inherits the already-processed initial-scale) and updates
+         after first layout don't re-zoom at all. The script below only
+         classifies the screen — it never touches the viewport.
+
+         The 1280 here and in --notice-zoom below are the same number. -->
+    <meta name="viewport" content="width=1280">
+    <script>
+        (function () {
+            var doc = document.documentElement;
+            if (screen.width < 768) doc.classList.add('small-screen');
+            if (localStorage.getItem('mc-desktop-view') === '1') doc.classList.add('forced-desktop');
+            // The notice lives inside the 1280px layout, so it counter-zooms
+            // by layout/screen width to render at natural phone size.
+            var fit = function () { doc.style.setProperty('--notice-zoom', 1280 / screen.width); };
+            fit(); addEventListener('resize', fit);
+        })();
+    </script>
+    {% else %}
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    {% endif %}
     <title>{{ title }}</title>
     <link rel="icon" type="image/png" href="/console/media/favicon.png">
     <script src="https://cdn.tailwindcss.com"></script>
