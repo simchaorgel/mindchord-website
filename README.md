@@ -6,8 +6,9 @@ Source is in `src/`, and builds to `dist/`.
 
 The provider dashboard used to live in this repo under `console/`, served at
 `/console/`. It moved to its own repo and domain in August 2026 — see
-https://dash.mindchord.net. `netlify.toml` keeps a 301 from `/console/*` so old
-bookmarks still work. Nothing here talks to Supabase any more.
+https://dash.mindchord.net. Nothing here talks to Supabase any more, and
+`/console/*` is simply gone (no redirect — there were no clients yet to have
+bookmarked it).
 
 The website is deployed to Netlify, and is built automatically on pushes to the `main` branch.
 

@@ -3,13 +3,6 @@
     command = "npm run build"
     publish = "dist"
 
-# The provider dashboard moved to its own repo and domain (dash.mindchord.net)
-# in August 2026. Keeps old bookmarks and any links in the wild working.
-[[redirects]]
-    from = "/console/*"
-    to = "https://dash.mindchord.net/:splat"
-    status = 301
-
 # CORS for app-facing JSON endpoints — the Mindchord app fetches these from a
 # different origin and would otherwise be blocked by the browser.
 [[headers]]
