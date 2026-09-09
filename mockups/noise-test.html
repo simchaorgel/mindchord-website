@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en" data-mode="new" data-hero="fractal">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>noise test</title>
+<style>
+/* ═══════════════════════════════════════════════════════════════════════
+   NOISE TEST — compares the current index.html approach ("old") with a
+   tiled, desaturated, blended version ("new"). The toggles in the corner
+   flip between them so the difference can be judged in place.
+
+   What changed in "new":
+     1. The SVG has a fixed width/height and the layer repeats, so the
+        filter rasterizes one tile once, regardless of viewport, DPR, or
+        number of bands. stitchTiles now actually does something.
+     2. feColorMatrix saturate=0 strips the random RGB so the noise is
+        grayscale, and background-blend-mode: soft-light lets it modulate
+        the green instead of painting over it.
+     3. Bands drop from 6 octaves to 4 (the top two were sub-pixel).
+     4. Each panel has its own seed so the two bands differ.
+     5. Hero can use fractalNoise (softer clouds) or turbulence (veins).
+   ═══════════════════════════════════════════════════════════════════════ */
+
+:root {
+  color-scheme: dark;
+
+  --flat:      #243629;
+  --ink:       #f2fff7;
+  --ink-body:  rgba(242, 255, 247, .85);
+  --ink-dim:   rgba(242, 255, 247, .6);
+
+  --base:      linear-gradient(160deg, #12452c 0%, #0b2a1c 100%);
+  --highlight: radial-gradient(120% 90% at 25% 15%, #1d6b41 0%, transparent 55%);
+
+  /* ── OLD: no intrinsic size, raw RGB, 6 octaves everywhere, same seed ── */
+  --old-hero: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.005' numOctaves='6' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --old-band: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.02' numOctaves='6' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+
+  /* ── NEW: 1024px hero tile, 512px band tiles, grayscale, seeded ── */
+  --new-hero-fractal: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1024' height='1024'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.005' numOctaves='6' seed='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --new-hero-turb:    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1024' height='1024'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.005' numOctaves='6' seed='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --new-band-1:       url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='512' height='512'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.02' numOctaves='4' seed='11' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --new-band-2:       url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='512' height='512'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.02' numOctaves='4' seed='29' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+
+  --sans: ui-sans-serif, -apple-system, "Segoe UI", system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--flat);
+  color: var(--ink);
+  font: 16px/1.7 var(--sans);
+}
+
+.hero,
+.band {
+  position: relative;
+  isolation: isolate;
+}
+.hero::before,
+.band::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+}
+
+/* ── NEW (default) ── */
+.hero::before {
+  background-image: var(--new-hero-fractal), var(--highlight), var(--base);
+  background-repeat: repeat, no-repeat, no-repeat;
+  background-blend-mode: soft-light, normal, normal;
+}
+html[data-hero="turbulence"] .hero::before {
+  background-image: var(--new-hero-turb), var(--highlight), var(--base);
+}
+.band::before {
+  background-image: var(--new-band-1), var(--base);
+  background-repeat: repeat, no-repeat;
+  background-blend-mode: soft-light, normal;
+}
+.band.alt::before {
+  background-image: var(--new-band-2), var(--base);
+}
+
+/* ── OLD ── */
+html[data-mode="old"] .hero::before {
+  background-image: var(--old-hero), var(--highlight), var(--base);
+  background-repeat: no-repeat;
+  background-blend-mode: normal;
+}
+html[data-mode="old"] .band::before,
+html[data-mode="old"] .band.alt::before {
+  background-image: var(--old-band), var(--base);
+  background-repeat: no-repeat;
+  background-blend-mode: normal;
+}
+
+/* ── hero ── */
+.hero {
+  height: 100vh;
+  display: grid;
+  place-content: center;
+  text-align: center;
+  padding: 40px;
+}
+.hero h1 {
+  margin: 0;
+  font: 600 clamp(44px, 10vw, 130px)/.95 var(--sans);
+  letter-spacing: -.045em;
+  text-shadow: 0 2px 50px rgba(0, 20, 10, .5);
+}
+.hero > p {
+  margin: 22px 0 0;
+  font-size: 15px;
+  color: var(--ink-dim);
+  letter-spacing: .02em;
+}
+
+/* ── flat copy sections ── */
+.copy {
+  max-width: 660px;
+  margin: 0 auto;
+  padding: 14vh 32px;
+}
+.copy h2 {
+  font: 600 30px/1.25 var(--sans);
+  letter-spacing: -.02em;
+  margin: 0 0 20px;
+}
+.copy p { margin: 0 0 22px; color: var(--ink-body); }
+.copy p:last-child { margin-bottom: 0; }
+
+/* ── bands ── */
+.band { padding: 18vh 32px; }
+.band > * { max-width: 780px; margin-inline: auto; }
+.band blockquote {
+  margin: 0;
+  font: 600 clamp(26px, 4.2vw, 46px)/1.22 var(--sans);
+  letter-spacing: -.028em;
+  text-shadow: 0 2px 34px rgba(0, 20, 10, .45);
+}
+.band cite {
+  display: block;
+  margin-top: 22px;
+  font: 500 13px/1.5 var(--sans);
+  font-style: normal;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+/* ── test controls (not part of the design) ── */
+.controls {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 10;
+  display: flex;
+  gap: 6px;
+  font: 500 12px/1 var(--sans);
+}
+.controls button {
+  appearance: none;
+  border: 1px solid rgba(242, 255, 247, .3);
+  background: rgba(0, 0, 0, .55);
+  color: var(--ink);
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+}
+.controls button:hover { border-color: rgba(242, 255, 247, .7); }
+.controls button[disabled] { opacity: .4; cursor: default; }
+</style>
+</head>
+<body>
+
+<div class="controls">
+  <button id="mode">mode: new</button>
+  <button id="hero">hero: fractalNoise</button>
+</div>
+
+<section class="hero">
+  <h1>your site here</h1>
+  <p>scroll ↓</p>
+</section>
+
+<section class="copy">
+  <h2>What to look for</h2>
+  <p>Flip "mode" to compare. In old mode the hero has magenta and yellow speckles because the raw turbulence colour is painted over the green. In new mode the noise is grayscale and blended, so it only pushes the green lighter and darker, and the radial highlight in the top left becomes visible.</p>
+  <p>Resize the window in old mode and the panels re-rasterize every time. In new mode the tile is rendered once and cached.</p>
+</section>
+
+<section class="band">
+  <blockquote>Textured panels carry the statements. Flat sections carry the reading.</blockquote>
+  <cite>first band · seed 11</cite>
+</section>
+
+<section class="copy">
+  <h2>Bands</h2>
+  <p>The two bands now use different seeds, so they are no longer the same patch of noise. They also run 4 octaves instead of 6. The dropped octaves were at 0.32 and 0.64 cycles per pixel, finer than a pixel, so nothing visible is lost.</p>
+  <p>The hero toggle switches between fractalNoise (soft clouds) and turbulence (sharp veins). Both are the tiled, blended version.</p>
+</section>
+
+<section class="band alt">
+  <blockquote>The same material at a different grain — loud enough to mark a section, quiet enough to read across.</blockquote>
+  <cite>second band · seed 29</cite>
+</section>
+
+<section class="copy">
+  <h2>Tiling</h2>
+  <p>The hero tile is 1024px and the band tiles are 512px. At baseFrequency 0.005 the hero blobs are about 200px across, so on a very wide screen the tile repeats a couple of times. If that ever reads as a pattern, raise the tile to 2048.</p>
+</section>
+
+<script>
+  const root = document.documentElement;
+  const modeBtn = document.getElementById('mode');
+  const heroBtn = document.getElementById('hero');
+
+  modeBtn.addEventListener('click', () => {
+    const next = root.dataset.mode === 'new' ? 'old' : 'new';
+    root.dataset.mode = next;
+    modeBtn.textContent = 'mode: ' + next;
+    heroBtn.disabled = next === 'old';
+  });
+
+  heroBtn.addEventListener('click', () => {
+    const next = root.dataset.hero === 'fractal' ? 'turbulence' : 'fractal';
+    root.dataset.hero = next;
+    heroBtn.textContent = 'hero: ' + (next === 'fractal' ? 'fractalNoise' : 'turbulence');
+  });
+</script>
+
+</body>
+</html>

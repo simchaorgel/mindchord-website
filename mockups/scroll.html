@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>scroll morph</title>
+<style>
+  :root {
+    --ink: #f2fff7;
+    --ink-dim: rgba(242, 255, 247, .72);
+    --sans: ui-sans-serif, -apple-system, "Segoe UI", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: #0b2a1c;
+    color: var(--ink);
+    font: 16px/1.7 var(--sans);
+  }
+
+  /* ── texture stack ──────────────────────────────────────────────────
+     SCALE mode:    one layer, scaled continuously. Magnifying noise by k
+                    is identical to dividing baseFrequency by k, so this is
+                    a true unbroken frequency sweep.
+     DISSOLVE mode: N opaque layers cross-fading. Each carries its own
+                    green so fading one in replaces the one below. ─────── */
+  #bg {
+    position: fixed;
+    inset: -10%;
+    z-index: -2;
+    transform-origin: 50% 42%;
+    will-change: transform;
+  }
+  #bg .layer {
+    position: absolute;
+    inset: 0;
+    background-repeat: no-repeat;
+    background-size: cover;
+    will-change: opacity;
+  }
+
+  #scrim {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background: linear-gradient(180deg, transparent 0%, rgba(4, 16, 10, .55) 100%);
+    opacity: 0;
+    will-change: opacity;
+  }
+
+  /* ── content ── */
+  .hero {
+    height: 100vh;
+    display: grid;
+    place-content: center;
+    text-align: center;
+    padding: 40px;
+  }
+  .hero h1 {
+    margin: 0;
+    font: 600 clamp(44px, 10vw, 130px)/.95 var(--sans);
+    letter-spacing: -.045em;
+    text-shadow: 0 2px 50px rgba(0, 20, 10, .5);
+  }
+  .hero p { margin: 22px 0 0; font-size: 15px; color: var(--ink-dim); letter-spacing: .02em; }
+
+  article { max-width: 660px; margin: 0 auto; padding: 12vh 32px 30vh; }
+  article h2 { font: 600 30px/1.25 var(--sans); letter-spacing: -.02em; margin: 0 0 20px; }
+  article p { margin: 0 0 22px; color: rgba(242, 255, 247, .85); }
+  article p:last-child { margin-bottom: 0; }
+
+  /* ── panel ── */
+  .panel {
+    position: fixed;
+    top: 14px; right: 14px;
+    z-index: 20;
+    width: 244px;
+    padding: 13px 15px;
+    background: rgba(6, 20, 13, .82);
+    backdrop-filter: blur(14px);
+    border: 1px solid rgba(120, 200, 155, .22);
+    border-radius: 11px;
+    font-size: 12px;
+  }
+  .panel h3 {
+    margin: 0 0 11px;
+    font-size: 10.5px; font-weight: 600;
+    letter-spacing: .09em; text-transform: uppercase;
+    color: #7fb99a;
+  }
+  .panel label { display: block; margin-bottom: 11px; color: #9dc4ae; }
+  .panel label b { float: right; color: #eafff2; font-variant-numeric: tabular-nums; }
+  .panel input[type=range] { width: 100%; accent-color: #45cd87; margin-top: 4px; }
+  .modes { display: flex; gap: 6px; margin-bottom: 13px; }
+  .modes button {
+    flex: 1;
+    background: rgba(69, 205, 135, .1);
+    border: 1px solid rgba(120, 200, 155, .26);
+    color: #b6d9c6;
+    border-radius: 6px; padding: 7px;
+    font: inherit; font-size: 11.5px; cursor: pointer;
+  }
+  .modes button[aria-pressed="true"] {
+    background: #2c8f5d; border-color: #45cd87; color: #f2fff7; font-weight: 600;
+  }
+  .stat { color: #82a993; font-size: 11px; line-height: 1.55; margin: 0; }
+  .stat b { color: #7dffc0; font-weight: 600; }
+  #stepRow[hidden] { display: none; }
+</style>
+</head>
+<body>
+
+<div id="bg"></div>
+<div id="scrim"></div>
+
+<section class="hero">
+  <h1>your site here</h1>
+  <p>scroll ↓</p>
+</section>
+
+<article>
+  <h2>The texture settles down here</h2>
+  <p>Above the fold the noise runs at a low frequency — big, dramatic, molten blobs that fill the screen and do the work of a hero image without being one.</p>
+  <p>As you scroll it sweeps continuously toward a much higher frequency. The same green, the same technique, but the features shrink to a fine mottle that behaves like a background instead of competing with the words sitting on top of it.</p>
+  <p>Nothing is recomputed while you scroll. In scale mode a single texture is magnified — and because magnifying noise is arithmetically the same as lowering its frequency, the sweep is genuinely continuous rather than a set of cross-fades.</p>
+  <p>Scroll position is also damped: the texture eases toward where you are rather than tracking the wheel one-to-one, which removes the jitter that input alone would introduce.</p>
+</article>
+
+<div class="panel">
+  <h3>Morph</h3>
+  <div class="modes">
+    <button id="mScale"    aria-pressed="true">Scale</button>
+    <button id="mDissolve" aria-pressed="false">Dissolve</button>
+  </div>
+  <label>Hero frequency <b id="vA">0.0050</b>
+    <input type="range" id="cA" min="0.001" max="0.02" step="0.0005" value="0.005">
+  </label>
+  <label>Settled frequency <b id="vB">0.0200</b>
+    <input type="range" id="cB" min="0.001" max="0.04" step="0.0005" value="0.02">
+  </label>
+  <label>Damping <b id="vD">0.10</b>
+    <input type="range" id="cD" min="0.02" max="1" step="0.01" value="0.1">
+  </label>
+  <label id="stepRow" hidden>Steps <b id="vS">3</b>
+    <input type="range" id="cS" min="2" max="6" step="1" value="3">
+  </label>
+  <p class="stat" id="stat">—</p>
+</div>
+
+<script>
+const bg     = document.getElementById('bg');
+const scrim  = document.getElementById('scrim');
+const el     = id => document.getElementById(id);
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+let mode = 'scale';      // 'scale' | 'dissolve'
+let layers = [];
+let zoom = 1;            // magnification applied in scale mode
+let cur = 0, target = 0; // damped scroll progress
+let running = false;
+
+function texture(freq) {
+  const svg =
+    `<svg xmlns='http://www.w3.org/2000/svg'>` +
+      `<filter id='n'>` +
+        `<feTurbulence type='turbulence' baseFrequency='${freq.toFixed(4)}' numOctaves='6' stitchTiles='stitch'/>` +
+      `</filter>` +
+      `<rect width='100%' height='100%' filter='url(#n)'/>` +
+    `</svg>`;
+  const enc = svg.replace(/%/g, '%25').replace(/#/g, '%23')
+                 .replace(/</g, '%3C').replace(/>/g, '%3E');
+  return `url("data:image/svg+xml,${enc}"), ` +
+         `radial-gradient(120% 90% at 25% 15%, #1d6b41 0%, transparent 55%), ` +
+         `linear-gradient(160deg, #12452c 0%, #0b2a1c 100%)`;
+}
+
+function addLayer(freq, opacity) {
+  const d = document.createElement('div');
+  d.className = 'layer';
+  d.style.backgroundImage = texture(freq);
+  d.style.opacity = String(opacity);
+  bg.appendChild(d);
+  layers.push(d);
+}
+
+function build() {
+  const a = +el('cA').value, b = +el('cB').value;
+  el('vA').textContent = a.toFixed(4);
+  el('vB').textContent = b.toFixed(4);
+  el('vD').textContent = (+el('cD').value).toFixed(2);
+
+  bg.innerHTML = '';
+  layers = [];
+
+  if (mode === 'scale') {
+    // Bake at the SETTLED frequency, then magnify to reach the hero one.
+    // zoom = b/a, so at full zoom the texture reads exactly as frequency a.
+    zoom = b / a;
+    addLayer(b, 1);
+    el('stat').innerHTML =
+      `<b>1</b> layer at ${b.toFixed(4)}, magnified up to <b>${zoom.toFixed(1)}×</b>.<br>` +
+      `Continuous — no steps. Hero is upscaled, so it reads softer.`;
+  } else {
+    const steps = +el('cS').value;
+    zoom = 1;
+    const freqs = [];
+    for (let i = 0; i < steps; i++) {
+      const t = steps === 1 ? 0 : i / (steps - 1);
+      const f = a * Math.pow(b / a, t);   // geometric — frequency reads multiplicatively
+      freqs.push(f.toFixed(4));
+      addLayer(f, i === 0 ? 1 : 0);
+    }
+    el('stat').innerHTML =
+      `<b>${steps}</b> layers · ${freqs.join(' → ')}<br>` +
+      `Every layer stays crisp, but handoffs are visible.`;
+  }
+
+  el('stepRow').hidden = mode !== 'dissolve';
+  el('vS').textContent = el('cS').value;
+  apply(cur);
+}
+
+// ease-in-out: slow at both ends so the sweep feels intentional
+const ease = t => t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+
+function apply(p) {
+  const e = ease(p);
+
+  if (mode === 'scale') {
+    // magnify from `zoom` down to 1 — always >= 1, so no edges are ever exposed
+    const s = zoom * Math.pow(1 / zoom, e);
+    bg.style.transform = `scale(${s.toFixed(4)})`;
+  } else {
+    const span = layers.length - 1;
+    for (let i = 1; i < layers.length; i++) {
+      layers[i].style.opacity = String(Math.min(Math.max(e * span - (i - 1), 0), 1));
+    }
+    bg.style.transform = reduce ? 'none' : `scale(${(1 + e * 0.14).toFixed(4)})`;
+  }
+
+  scrim.style.opacity = String(e);
+}
+
+function tick() {
+  const k = +el('cD').value;
+  cur += (target - cur) * k;
+  if (Math.abs(target - cur) < 0.0005) { cur = target; running = false; }
+  apply(cur);
+  if (running) requestAnimationFrame(tick);
+}
+
+function onScroll() {
+  const hero = document.querySelector('.hero').offsetHeight;
+  target = Math.min(Math.max(scrollY / hero, 0), 1);
+  if (reduce) { cur = target; apply(cur); return; }
+  if (!running) { running = true; requestAnimationFrame(tick); }
+}
+
+addEventListener('scroll', onScroll, { passive: true });
+addEventListener('resize', onScroll, { passive: true });
+
+el('mScale').addEventListener('click', () => setMode('scale'));
+el('mDissolve').addEventListener('click', () => setMode('dissolve'));
+function setMode(m) {
+  mode = m;
+  el('mScale').setAttribute('aria-pressed', String(m === 'scale'));
+  el('mDissolve').setAttribute('aria-pressed', String(m === 'dissolve'));
+  build();
+}
+
+['cA', 'cB', 'cS'].forEach(id => el(id).addEventListener('change', build));
+el('cD').addEventListener('input', () => el('vD').textContent = (+el('cD').value).toFixed(2));
+
+onScroll();
+build();
+</script>
+</body>
+</html>

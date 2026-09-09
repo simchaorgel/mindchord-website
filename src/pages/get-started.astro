@@ -1,0 +1,237 @@
+---
+import Base from '../layouts/Base.astro';
+import icon from '../assets/favicon.png';
+---
+
+<Base title="Get started — Mindchord" description="Get started with Mindchord.">
+  <section class="start">
+    <div class="start__grid">
+      <div class="start__copy">
+        <h1>Get started</h1>
+        <p>
+          Mindchord is in closed beta and is not yet publicly available. If you
+          would like to join as a user or as a provider, please reach out to us
+          and we will be happy to answer any questions you have.
+        </p>
+      </div>
+
+      <div class="start__box">
+        {/* Plain <img>, not <Image>, for the reason the header gives: Astro's
+            pipeline converts to WebP and strips the source PNG's ICC profile,
+            which shifts the icon's green.
+            alt="" — decorative: the title below it names the thing. */}
+        <img
+          class="start__icon"
+          src={icon.src}
+          alt=""
+          width={icon.width}
+          height={icon.height}
+        />
+
+        <h2 class="start__title">Download Mindchord</h2>
+
+        <p class="start__meta">
+          <span>v1.1.2</span>
+          <span class="start__sep" aria-hidden="true">·</span>
+          <span>Windows 10 / 11</span>
+        </p>
+
+        {/* A <button>, not an <a>, because there is no artifact to point at
+            yet — an anchor without an href is not focusable and not a control.
+            Swap it for <a class="start__btn" href="..." download> once there
+            is a file; the styling is written to suit either. */}
+        <button class="start__btn" type="button">Download for Windows</button>
+
+        <p class="start__notice">Only beta-testers can sign in</p>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  /* Flat green, no hero — the first route on the site that opens straight onto
+     --flat. That makes it also the first that has to clear the header itself:
+     the bar is position:absolute, and everywhere else a full-bleed .hero sits
+     underneath it taking the overlap.
+
+     84px is the bar's own height, read off its tokens: --bar-pad-y 22 twice
+     plus --brand-h 40, the tallest thing in it. 69px below 560px, where those
+     drop to 18 and 33. If the header's metrics are retuned, these follow.
+
+     Padding is capped rather than a bare vh — on phones `vh` resolves against
+     the LARGE viewport, so it is always more room than it reads as. */
+  .start {
+    /* Wider than the site's 660px text column: that width is sized for a
+       single column of prose, and two of them will not fit in it. */
+    --start-w: 1080px;
+    /* Takes the slack main is holding (see global.css) and centres in it,
+       so the section sits on the middle of the screen rather than under the
+       header. `safe` is load-bearing: on a short viewport plain centring
+       overflows in both directions and would slide the heading up under the
+       bar, where safe falls back to start and the padding above holds. */
+    flex-grow: 1;
+    display: grid;
+    align-content: center;
+    align-content: safe center;
+    padding: calc(84px + clamp(28px, 8vh, 96px)) 32px clamp(48px, 12vh, 140px);
+  }
+
+  /* Uneven columns — the copy takes the larger share. At the 1080px cap that
+     is roughly 560px of text against a 440px box, which keeps the paragraph
+     near 60 characters a line, inside the comfortable measure. */
+  .start__grid {
+    display: grid;
+    grid-template-columns: 1fr .78fr;
+    align-items: center;
+    gap: clamp(40px, 6vw, 80px);
+    max-width: var(--start-w);
+    margin: 0 auto;
+  }
+
+  /* Matches the About heading on the home page: serif at 400, since Pagella
+     ships 400 and 700 only and a heavier weight would be synthesized. */
+  .start__copy h1 {
+    margin: 0 0 24px;
+    font: 400 clamp(30px, 4vw, 46px)/1.1 var(--serif);
+    letter-spacing: -.02em;
+    text-wrap: balance;
+  }
+  /* Serif body, at the size the bands already use for it — 18/1.6 rather than
+     the sans 16/1.7, because Pagella needs the extra size to hold its weight
+     against the same measure. */
+  .start__copy p {
+    margin: 0;
+    font: 400 18px/1.6 var(--serif);
+    color: var(--ink-body);
+    text-wrap: pretty;
+  }
+
+  /* ── the download box ─────────────────────────────────────────────────
+     A pale panel inside a textured frame. The frame is a transparent border
+     with the band recipe painted under it: --noise-band over --base, clipped
+     to the border box, while the fill is clipped to the padding box. One
+     element, and the browser derives the inner corner from border-radius
+     minus border-width rather than us guessing at a second radius that would
+     drift every time the frame thickness changed.
+
+     Both noise values are :root variables, so referencing them from a scoped
+     style costs a var() and does not copy the data URI into this page's CSS —
+     which is what the rule in global.css is protecting.
+
+     The band noise (0.02, fine mottle) rather than the hero's (0.005, big
+     blobs): the frame is ~12px, far narrower than one hero blob, so that
+     texture would read as a plain gradient edging rather than as texture.
+
+     The fill is --ink with #10301f on it — the exact pair the band button and
+     the header pill already use, measured 13.94:1. It has to be this pale
+     rather than a lighter green: the icon is an app tile with its own
+     mid-sage ground (~#4b5d50), and on anything near that it stops reading
+     as a tile and leaves the waveform floating. On --ink it sits at 6.85:1. */
+  .start__box {
+    --frame: clamp(8px, 1vw, 12px);
+    /* Dimmed ink for the secondary lines. .7 rather than the .6 the dark
+       theme uses for --ink-dim: composited on --ink this lands at #546e60 and
+       holds 5.41:1, where .6 would give 3.99 and fail the 13px notice. */
+    --panel-dim: rgba(16, 48, 31, .7);
+    display: grid;
+    justify-items: center;
+    align-content: center;
+    min-height: clamp(300px, 44vh, 420px);
+    padding: 40px 32px;
+    border: var(--frame) solid transparent;
+    /* Inner corner comes out at 18 minus the frame: 6px at the desktop
+       thickness, 10px at the phone floor. */
+    border-radius: 18px;
+    background-image:
+      linear-gradient(var(--ink), var(--ink)),
+      var(--noise-band),
+      var(--base);
+    background-clip: padding-box, border-box, border-box;
+    background-origin: border-box;
+    background-repeat: no-repeat;
+    color: #10301f;
+    text-align: center;
+  }
+
+  /* Spacing is per item rather than one grid `gap`: the five rows are three
+     groups — the mark, the name with its version, then the action with its
+     caveat — and a single gap cannot say that. */
+  .start__icon {
+    display: block;
+    width: 64px;
+    height: auto;
+    /* No drop-shadow filter here either — the header's note applies: it
+       re-rasterizes on every zoom step and made zooming visibly laggy. */
+  }
+
+  /* No text-shadow, unlike the band headings. That shadow exists to lift the
+     glyph edges off the brightest noise flecks; there is no noise under this
+     one, and on a flat ground a blurred shadow only adds a third tone between
+     the ink and the panel — the smudge the header's note warns about. */
+  .start__title {
+    margin: 18px 0 0;
+    font: 400 clamp(24px, 2.6vw, 30px)/1.2 var(--serif);
+    letter-spacing: -.01em;
+    text-wrap: balance;
+  }
+
+  /* Version and platform on one row. The separator is aria-hidden, so this
+     reads as "v1.1.2, Windows 10 / 11" rather than announcing a stray dot,
+     and it wraps to two lines rather than overflowing on a narrow card. */
+  .start__meta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0 10px;
+    margin: 9px 0 0;
+    font: 400 15px/1.45 var(--serif);
+    color: var(--panel-dim);
+  }
+  .start__sep { opacity: .7; }
+
+  /* The band button inverted — that one is --ink on green because it sits on
+     the page; this one sits on an --ink panel, where the same fill would be
+     invisible. The hover is the site's, unchanged: accent behind #2b1226,
+     measured 7.39:1.
+
+     3px and square, like the band action rather than the header's pill. The
+     rounded card is furniture; this is still a page action, so it keeps the
+     hard-cut language. */
+  .start__btn {
+    margin: 26px 0 0;
+    padding: 13px 26px;
+    border: 0;
+    border-radius: 3px;
+    background: #10301f;
+    color: var(--ink);
+    font: 400 16px/1 var(--serif);
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color .18s ease, color .18s ease;
+  }
+  .start__btn:hover,
+  .start__btn:focus-visible {
+    background: var(--accent);
+    color: #2b1226;
+  }
+
+  .start__notice {
+    margin: 15px 0 0;
+    font: 400 13px/1.45 var(--serif);
+    color: var(--panel-dim);
+  }
+
+  /* One column below 800px — the same width at which the header gives its nav
+     up to the burger. Two still just about work above it. */
+  @media (max-width: 800px) {
+    .start__grid { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 560px) {
+    .start {
+      padding: calc(69px + clamp(22px, 5vh, 56px)) 20px clamp(40px, 10vh, 110px);
+    }
+    .start__box { min-height: clamp(260px, 36vh, 340px); padding: 34px 22px; }
+    .start__icon { width: 56px; }
+  }
+</style>

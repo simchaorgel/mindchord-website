@@ -1,0 +1,261 @@
+---
+import Base from '../layouts/Base.astro';
+import Hero from '../components/Hero.astro';
+import Band from '../components/Band.astro';
+import Gallery from '../components/Gallery.astro';
+import type { Shot } from '../components/Gallery.astro';
+import SectionNav from '../components/SectionNav.astro';
+import type { Section } from '../components/SectionNav.astro';
+import shot1 from '../assets/app-screenshot-1.jpg';
+import shot2 from '../assets/app-screenshot-2.jpg';
+import shot3 from '../assets/app-screenshot-3.jpg';
+import shot4 from '../assets/app-screenshot-4.jpg';
+import shot5 from '../assets/app-screenshot-5.jpg';
+import shot6 from '../assets/app-screenshot-6.jpg';
+import dash1 from '../assets/dash-screenshot-1.jpg';
+import dash2 from '../assets/dash-screenshot-2.jpg';
+
+/* Single source of truth for the section list — both navs and the scroll
+   spy derive from the DOM order this produces. */
+const sections: Section[] = [
+  { id: 'neurofeedback', label: 'What is neurofeedback?' },
+  { id: 'mindchord', label: 'What is Mindchord?' },
+  { id: 'app', label: 'The App' },
+  { id: 'technical', label: 'Technical info' },
+  { id: 'dashboard', label: 'Mindchord Dashboard' },
+];
+
+/* Alt text says what each screen shows rather than that it is a screenshot —
+   the heading above them already establishes that. Between them they cover
+   the three feedback types named in "What is Mindchord?": preset video,
+   local video, and interactive visualisations. */
+const shots: Shot[] = [
+  {
+    src: shot1,
+    alt: 'The Mindchord sign-in screen: a watercolour lake and mountains behind a card asking for an email address, with a Send code button.',
+  },
+  {
+    src: shot2,
+    alt: 'A session running, with a slow teal cloud filling the window as feedback and a bar below reading 7 mins left, beside pause and stop controls.',
+  },
+  {
+    src: shot3,
+    alt: 'Video feedback during calibration: aerial footage of a glacier above a braided river valley, the bar below counting down Calibrating 26s.',
+  },
+  {
+    src: shot4,
+    alt: 'An interactive visualisation: magenta and violet ribbons rippling across a black field, the bar below reading Calibrating 29s.',
+  },
+  {
+    src: shot5,
+    alt: 'An interactive visualisation: a magenta geometric web radiating from a bright centre point, with 8 mins left on the bar below.',
+  },
+  {
+    src: shot6,
+    alt: 'The Live EEG Plots screen: raw microvolt traces for the TP9, AF7, AF8, TP10 and AUX channels above a band powers chart for delta, theta, alpha, beta and gamma, with a connected Muse headset named in the corner.',
+  },
+];
+
+const dashShots: Shot[] = [
+  {
+    src: dash1,
+    alt: 'A client in the Mindchord Dashboard, showing the protocols assigned to them. Each lists its frequency bands with reward or punish thresholds, the channels it reads, its duration, and how many sessions have been completed against it.',
+  },
+  {
+    src: dash2,
+    alt: 'The sessions table for the same client: one row per completed session with its date, duration, percentage of time spent above threshold, and best streak, paged ten at a time out of seventy-nine.',
+  },
+];
+
+---
+
+<Base title="Mindchord" description="Neurofeedback at home.">
+  <Hero title="Neurofeedback at home." tagline="find out more ↓" taglineHref="#more" />
+
+  <div class="about" id="more">
+    <h2 class="about__heading">About</h2>
+
+    {/* below 1200px only — spans full width, so it sits outside the grid */}
+    <SectionNav sections={sections} variant="chips" />
+
+    <div class="about__grid">
+      <SectionNav sections={sections} variant="rail" />
+
+      <div class="about__body">
+        <article id="neurofeedback">
+          <h3>What is neurofeedback?</h3>
+          <p>
+            Neurofeedback uses real-time measurements of brain EEG activity to
+            provide feedback. A target band of brain activity and a location of the
+            brain are chosen, and the user gets rewarded or inhibited when they go
+            above or below their baseline activity in this section – for example, a
+            video playing gets brighter or darker.
+          </p>
+          <p>
+            Over time, the brain subconsciously learns greater control over the
+            activity strength in the desired section and receives more reward. This
+            process is designed to train the brain to be better at controlling and
+            shifting states of mind, whether what's being trained is calm, focus, or
+            anything else.
+          </p>
+          <p>
+            The research on neurofeedback's effectiveness is mixed and inconclusive
+            so it is often regarded as more of a trial that seems to work for some
+            than as a mainstream aid to a more controlled mind.
+          </p>
+        </article>
+
+        <article id="mindchord">
+          <h3>What is Mindchord?</h3>
+          <p>
+            Mindchord is a neurofeedback app designed to be used at home with
+            portable EEG headsets like Muse devices. Mindchord providers set
+            protocols based on what their client wants to address and any readings or
+            examinations they perform (see <a href="#technical">Technical Feedback
+            Info</a> for more details about what settings can be configured by
+            providers). The app offers a variety of feedback types, including preset
+            video feedback, local video feedback, and interactive visualisations.
+          </p>
+          <p>
+            Providers set protocols and manage clients using the separate Mindchord
+            Dashboard app.
+          </p>
+          <p>
+            Mindchord is still in closed beta, so updates are being made regularly.
+            If you are interested in joining as a client or provider,
+            please <a href="/contact">reach out to us</a> and we would love to answer any
+            questions you have or add you as a beta-tester.
+          </p>
+        </article>
+
+        <article id="app">
+          <h3>The App</h3>
+          <Gallery shots={shots} />
+        </article>
+
+        <article id="technical">
+          <h3>Technical info</h3>
+          <p>
+            Each session begins with a short calibration period in which Mindchord
+            records the brain's natural activity in the target frequency bands to
+            establish a personal baseline. Once calibrated, the app continuously
+            measures your live brainwave power, (using Welch's method to estimate the
+            spectral density of the EEG signal, with artifact rejection to discard
+            moments contaminated by blinks, jaw movement, or electrode noise), and
+            compares it against the user's baseline as a z-score (how many standard
+            deviations above or below their resting state they are right now).
+          </p>
+          <p>
+            Feedback runs throughout the session, reflecting whether the user is
+            currently above or below the protocol's threshold: the longer they stay
+            above, the more the feedback intensifies, and the longer they stay below,
+            the more it fades.
+          </p>
+          <p>
+            Protocols can combine up to two bands at once (for example, increasing
+            one frequency while decreasing another), and clinicians can configure
+            which electrode drives the feedback – any of the Muse headband’s standard
+            channels (TP9, AF7, AF8, TP10) or the optional AUX electrode plugged into
+            the headband – along with an optional reference channel for software
+            re-referencing to better isolate the region of interest.
+          </p>
+        </article>
+
+        <article id="dashboard">
+          <h3>Mindchord Dashboard</h3>
+          <p>
+            Mindchord Providers use the Mindchord Dashboard to manage their clients,
+            design and assign training protocols, and review their clients completed
+            sessions.
+          </p>
+
+          <Gallery shots={dashShots} />
+        </article>
+      </div>
+    </div>
+  </div>
+
+  <Band title="Get in touch" action={{ label: "Contact us", href: "/contact" }}>
+    <p>
+      Mindchord is in beta. Whether you're a clinic looking to offer it to your
+      clients or someone interested in trying neurofeedback yourself, we'd love
+      to hear from you.
+    </p>
+  </Band>
+</Base>
+
+<style>
+  .about {
+    /* One source of truth for the three widths. SectionNav reads --rail-w and
+       --rail-gap by inheritance, so the rail, the grid and the heading can
+       never drift apart. */
+    --content-w: 660px;
+    --rail-w: 200px;
+    --rail-gap: 64px;
+    padding: 7vh 0 16vh;
+  }
+
+  /* Sits above the nav AND the content, left edge flush with the rail:
+     centre line, minus half the text column, minus the gap, minus the rail. */
+  .about__heading {
+    margin: 0 0 clamp(46px, 7vh, 84px);
+    margin-left: calc(50% - var(--content-w) / 2 - var(--rail-gap) - var(--rail-w));
+    font: 400 clamp(30px, 4vw, 46px)/1.1 var(--serif);
+    letter-spacing: -.02em;
+    color: var(--ink);
+  }
+
+  /* Three columns: the middle one is the page's centre line, so the text
+     stays centred in the viewport no matter how wide the rail is. The rail
+     lives in column 1 (see SectionNav.astro) — it is margin furniture, not
+     part of the content column. */
+  .about__grid {
+    display: grid;
+    grid-template-columns: 1fr min(var(--content-w), calc(100% - 40px)) 1fr;
+  }
+  .about__body { grid-column: 2; }
+
+  .about__body > article + article { margin-top: 12vh; }
+
+  /* Keeps a jumped-to heading clear of the top of the viewport. The header
+     scrolls away rather than being fixed, so this is breathing room only. */
+  .about__body article { scroll-margin-top: 48px; }
+
+  .about__body h3 {
+    margin: 0 0 20px;
+    font: 400 clamp(26px, 3vw, 34px)/1.2 var(--serif);
+    letter-spacing: -.01em;
+  }
+  .about__body p { margin: 0 0 22px; color: var(--ink-body); }
+  .about__body p:last-child { margin-bottom: 0; }
+  .about__body a {
+    color: var(--ink);
+    text-decoration: underline;
+    text-decoration-color: rgba(242, 255, 247, .38);
+    text-underline-offset: 3px;
+    transition: text-decoration-color .18s ease;
+  }
+  .about__body a:hover,
+  .about__body a:focus-visible { text-decoration-color: var(--ink); }
+
+  @media (max-width: 1200px) {
+    /* Top padding is capped rather than a bare 9vh. On phones `vh` resolves
+       against the LARGE viewport — the one with browser chrome retracted —
+       so 9vh is a good deal more space than 9% of what is actually on screen,
+       and it opened a gap above the heading out of proportion to the tight
+       heading-to-chips gap below it. */
+    .about { padding: clamp(30px, 4.5vh, 56px) 0 12vh; }
+    .about__heading {
+      width: min(var(--content-w), calc(100% - 40px));
+      margin-left: auto;
+      margin-right: auto;
+      /* Much tighter than desktop: the chip bar sits directly beneath, so a
+         large gap here reads as the heading floating away from its own nav.
+         The chip bar carries the space down to the content instead. */
+      margin-bottom: clamp(18px, 2.5vh, 26px);
+    }
+    /* the chip bar is sticky at the top, so headings must clear it */
+    .about__body article { scroll-margin-top: 84px; }
+    .about__body > article + article { margin-top: 9vh; }
+  }
+</style>

@@ -1,0 +1,20 @@
+---
+interface Props {
+  title: string;
+  tagline?: string;
+  /** If given, the tagline renders as a link — e.g. "#more" to jump to the
+      first section below the fold. Without it, it is plain text. */
+  taglineHref?: string;
+}
+
+const { title, tagline, taglineHref } = Astro.props;
+---
+
+<section class="hero">
+  <h1>{title}</h1>
+  {tagline && (
+    taglineHref
+      ? <a class="hero__tagline" href={taglineHref}>{tagline}</a>
+      : <p class="hero__tagline">{tagline}</p>
+  )}
+</section>

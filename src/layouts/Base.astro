@@ -1,0 +1,58 @@
+---
+import { ClientRouter } from 'astro:transitions';
+import { Font } from 'astro:assets';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import Lightbox from '../components/Lightbox.astro';
+import icon from '../assets/favicon.png';
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = 'Mindchord' } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" href={icon.src} />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+
+    {/* Emits the @font-face rules and metric-matched fallbacks for all four
+        variants. Preload is narrowed to regular-normal — the only face the
+        wordmark uses; `preload` (bare) would preload every variant, which is
+        ~288KB of OTF fetched eagerly to render one word. */}
+    <Font cssVariable="--font-pagella" preload={[{ weight: 400, style: 'normal' }]} />
+
+    <ClientRouter />
+  </head>
+  <body>
+    {/* target for the footer’s "back to top" */}
+    <span id="top"></span>
+
+    {/* transition:persist keeps the header alive across navigations instead
+        of tearing it down and rebuilding it, so it doesn't flicker. */}
+    <Header transition:persist />
+
+    {/* Wraps the slot so the footer can be pushed to the bottom of the
+        viewport on a page shorter than it — body is a flex column and this is
+        the item that grows (see global.css). It is also the main landmark,
+        which the site did not previously have. */}
+    <main>
+      <slot />
+    </main>
+
+    <Footer />
+
+    {/* One viewer for every <Gallery> on the route — see Lightbox.astro for
+        why it sits here rather than inside the galleries themselves. */}
+    <Lightbox />
+  </body>
+</html>

@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>mind1</title>
+<style>
+  /* ── the whole background. one rule. ──────────────────────────────── */
+  body {
+    min-height: 100vh;
+    margin: 0;
+    background-color: #0b2a1c;
+    background-image:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.005' numOctaves='6' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+      radial-gradient(120% 90% at 25% 15%, #1d6b41 0%, transparent 55%),
+      linear-gradient(160deg, #12452c 0%, #0b2a1c 100%);
+    background-repeat: no-repeat;
+    background-attachment: fixed;   /* texture stays put while content scrolls */
+  }
+  /* ─────────────────────────────────────────────────────────────────── */
+
+  /* everything below is just so there's something to look at */
+  main {
+    min-height: 100vh;
+    display: grid;
+    place-content: center;
+    text-align: center;
+    padding: 40px;
+  }
+  h1 {
+    margin: 0;
+    font: 600 clamp(40px, 9vw, 120px)/1 ui-sans-serif, -apple-system, "Segoe UI", system-ui, sans-serif;
+    letter-spacing: -.04em;
+    color: #f2fff7;
+    text-shadow: 0 2px 40px rgba(0, 20, 10, .55);
+  }
+  p {
+    margin: 18px 0 0;
+    font: 15px/1.6 ui-sans-serif, -apple-system, "Segoe UI", system-ui, sans-serif;
+    color: rgba(242, 255, 247, .75);
+    text-shadow: 0 1px 20px rgba(0, 20, 10, .6);
+  }
+</style>
+</head>
+<body>
+  <main>
+    <h1>your site here</h1>
+    <p>scroll — the texture holds still</p>
+  </main>
+</body>
+</html>

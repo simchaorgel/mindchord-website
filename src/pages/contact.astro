@@ -1,0 +1,281 @@
+---
+import Base from '../layouts/Base.astro';
+---
+
+<Base title="Contact — Mindchord" description="Get in touch with Mindchord.">
+  <section class="contact">
+    <div class="contact__inner">
+      {/* "Get in touch" rather than "Contact us", which is what all four
+          links pointing here say. The closing band on the home page already
+          uses this phrasing for the same idea, and a page whose first line
+          repeats the nav item you just clicked reads as a label rather than
+          an opening. */}
+      <h1>Get in touch</h1>
+
+      {/* ── Netlify form ────────────────────────────────────────────────
+          Netlify's build bot parses the deployed HTML, finds any form with
+          data-netlify, and wires up an endpoint for it. So there is nothing
+          to write here beyond the attributes, and no script:
+
+            name           what the form is called in the Netlify UI, and
+                           the value of the form-name field the bot injects
+                           into this markup at deploy time. Not written out
+                           by hand — the bot adds it, and a second copy
+                           would submit the field twice.
+            method="POST"  required; Netlify only intercepts POST.
+            action         where a successful submission lands. Without it
+                           Netlify shows its own generic success page.
+
+          data-astro-reload is load-bearing. ClientRouter transitions from
+          <form> elements as well as links, for POST as much as GET, so
+          without this the submission goes out as the router's own fetch and
+          never becomes the browser navigation Netlify answers with its
+          redirect. This is Astro's documented opt-out and forces a real
+          page load for this one form.
+
+          enctype is the browser default and only matters as insurance: it
+          is what ClientRouter would otherwise change (it posts multipart),
+          so writing it down means removing the line above degrades to a
+          form Netlify still accepts rather than one it silently drops.
+
+          Validation is native — required and type="email" do the work. */}
+      {/* The placeholder is the only visible label, so each control carries
+          an aria-label as well. That is not belt and braces: a placeholder
+          is not a reliable accessible name, and it is gone the moment the
+          field has anything in it — the aria-label is what the field is
+          still called while it is being filled in and while it is being
+          checked afterwards. */}
+      <form
+        class="form"
+        name="contact"
+        method="POST"
+        action="/contact/sent"
+        data-netlify="true"
+        data-netlify-honeypot="bot-field"
+        enctype="application/x-www-form-urlencoded"
+        data-astro-reload
+      >
+        {/* Netlify's honeypot: a field no person sees and every bot fills,
+            which quietly bins anything that arrives with it set. display:
+            none rather than the site's visually-hidden pattern — this one
+            has to be out of the tab order and unreadable to a screen reader
+            too, not just off screen. The label is for the case where the
+            CSS never arrives and it is visible after all. */}
+        <p class="form__bot">
+          <label>Do not fill this in if you are human: <input name="bot-field" /></label>
+        </p>
+
+        <input
+          class="form__input"
+          name="name"
+          type="text"
+          placeholder="Name"
+          aria-label="Name"
+          autocomplete="name"
+          required
+        />
+
+        <input
+          class="form__input"
+          name="email"
+          type="email"
+          placeholder="Email"
+          aria-label="Email"
+          autocomplete="email"
+          required
+        />
+
+        <textarea
+          class="form__input form__message"
+          name="message"
+          rows="8"
+          placeholder="Message"
+          aria-label="Message"
+          required></textarea>
+
+        <button class="form__btn" type="submit">Send message</button>
+      </form>
+    </div>
+  </section>
+</Base>
+
+<style>
+  /* ── full-bleed texture, form on top ──────────────────────────────────
+     The hero recipe over the whole section, with the form sitting on it.
+     Texture in ::before rather than on the element, which is the same
+     reason .hero and .band do it — the section has content, and a
+     background on the element itself would take the element's own painting
+     order with it. isolation keeps the z-index:-1 layer inside this section.
+
+     The vars are referenced from :root rather than restated: a var() costs
+     nothing, where pasting the data URI in here would copy it into this
+     page's CSS, which is exactly what the rule in global.css protects.
+
+     Hero noise (0.005, big blobs) and not the band's fine mottle — this is
+     a full-viewport panel, which is the size that noise was chosen for. The
+     highlight comes with it for the same reason bands drop it: with the
+     highlight a band's top and bottom edges are 13 luma apart and no single
+     flat green meets both, and this panel meets flat green only where the
+     footer starts.
+
+     Identical to the hero's, deliberately — same var, same frequency, same
+     (default) seed. feTurbulence is deterministic, so this is byte-identical
+     to the texture on every other route and the root crossfade has nothing
+     to dissolve: the background holds still while the content changes.
+     /contact/sent uses the same recipe, so arriving there changes nothing
+     either. */
+  .contact {
+    --form-w: 440px;
+    position: relative;
+    isolation: isolate;
+    flex-grow: 1;   /* takes the slack main is holding — see global.css */
+    display: grid;
+    /* safe is load-bearing: on a viewport too short for the form, plain
+       centring overflows both ways and slides the heading up under the
+       header. safe falls back to start there and the top padding holds. */
+    align-content: center;
+    align-content: safe center;
+    /* Top floor is 104px against a bar 84px tall (--bar-pad-y 22 twice plus
+       --brand-h 40) — the header is position:absolute and overlays this the
+       way it overlays a hero, so this is clearance rather than layout. The
+       asymmetry with the bottom is deliberate: it seats the form slightly
+       below true centre, which is where it reads as centred under a bar.
+
+       Capped rather than a bare vh: on phones vh resolves against the large
+       viewport, so it is always more room than it reads as. */
+    padding: clamp(104px, 14vh, 168px) 32px clamp(56px, 10vh, 120px);
+  }
+  .contact::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background-image: var(--noise-hero), var(--highlight), var(--base);
+    background-repeat: no-repeat;
+    /* The panel is a footer shorter than the hero, but its texture must not
+       be. --highlight is a radial at 120% 90% at 25% 15%, and --base a 160deg
+       linear: both resolve against the box they are painted into, so a
+       shorter box lifts the bloom, shrinks it, and re-ramps the green. That
+       is what read as the hero squashed into less room. The noise was never
+       the problem -- feTurbulence works in fixed user units, so a shorter box
+       only ever cropped it.
+
+       Pinning all three layers to 100svh hands them the hero's exact box.
+       They anchor top-left, so this panel shows the top of the identical
+       image and the footer covers what is left. vh first as the fallback. */
+    background-size: 100% 100vh;
+    background-size: 100% 100svh;
+  }
+
+  .contact__inner {
+    width: 100%;
+    max-width: var(--form-w);
+    margin: 0 auto;
+  }
+
+  /* The hero h1's shadow exactly — the wide ambient one only, no tight edge
+     shadow. Which of the two is right follows the noise underneath rather
+     than the size of the text: over 0.005 the blobs are far larger than a
+     glyph, so there is nothing bright inside the letterforms to lift. The
+     band's tight shadow is the answer to 0.02 mottle, where the measured
+     0.34% of pixels at 2.08:1 are exactly those flecks — over this one it
+     would only add a third tone. If this panel's frequency ever changes,
+     this changes with it. */
+  .contact__inner h1 {
+    margin: 0 0 36px;
+    font: 400 clamp(30px, 4vw, 46px)/1.1 var(--serif);
+    letter-spacing: -.02em;
+    text-wrap: balance;
+    text-shadow: 0 2px 50px rgba(0, 20, 10, .5);
+  }
+
+  /* Every item stretches — grid's default, so the fields and the button all
+     take the full column with nothing opting out. */
+  .form {
+    display: grid;
+    gap: 16px;
+  }
+
+  /* display:none, so it is not a grid item either and the gap above does
+     not open around nothing. */
+  .form__bot { display: none; }
+
+  /* The white is --ink, the site's white, rather than #fff — and the ink on
+     it is #10301f, so this is the pair the band button, the header pill and
+     the get-started panel already use, measured 13.94:1.
+
+     No border. A pale field on dark texture is already fully defined by its
+     own edge; a light hairline on top of that is a second boundary saying
+     the same thing, and a dark one would read as a shadow. This is also
+     what puts the typed text on a flat ground — what someone writes here is
+     body copy, and body copy does not go on texture.
+
+     16px is a floor rather than a preference: iOS Safari zooms the page in
+     on any focused control under 16px and does not zoom back out. */
+  .form__input {
+    width: 100%;
+    padding: 14px 15px;
+    border: 0;
+    border-radius: 3px;   /* square, like the band action — not the header pill */
+    background: var(--ink);
+    color: #10301f;
+    font: 400 16px/1.4 var(--serif);
+  }
+
+  /* The placeholder is carrying the label, so it has to be readable rather
+     than a hint: this is get-started's --panel-dim, dark ink at .7, which
+     composites on --ink to #546e60 and holds 5.41:1. At .6 — the alpha the
+     dark theme uses for --ink-dim — it would be 3.99 and fail. */
+  .form__input::placeholder {
+    color: rgba(16, 48, 31, .7);
+    /* Firefox dims placeholders to .54 on top of whatever colour is set,
+       which would undo the measurement above. */
+    opacity: 1;
+  }
+
+  /* :focus-visible, and it is not keyboard-only here — browsers match it on
+     a text entry however it was reached, mouse included.
+
+     The ring sits OUTSIDE the field with a gap, rather than on its edge:
+     against the white fill the accent is a pale pink on near-white and does
+     not carry, but against the texture behind it that is the same 5.50:1
+     the accent measures on --flat. The 2px offset is what guarantees it is
+     read against the dark side. A real outline rather than a box-shadow, so
+     forced-colors mode still draws one, and it does not affect layout, so
+     nothing shifts when it appears. */
+  .form__input:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .form__message {
+    min-height: 220px;
+    /* vertical only — horizontal resize drags it out past the column */
+    resize: vertical;
+  }
+
+  /* The band action unchanged: --ink behind #10301f, square at 3px. Full
+     width, and on the form's own gap like everything else — the centred
+     label and the hover are what separate it from the fields above. */
+  .form__btn {
+    padding: 15px 28px;
+    border: 0;
+    border-radius: 3px;
+    background: var(--ink);
+    color: #10301f;
+    font: 400 16px/1 var(--serif);
+    cursor: pointer;
+    transition: background-color .18s ease, color .18s ease;
+  }
+  .form__btn:hover,
+  .form__btn:focus-visible {
+    background: var(--accent);
+    color: #2b1226;
+  }
+
+  /* The bar drops to 69px here (--bar-pad-y 18 twice, --brand-h 33), so the
+     clearance floor follows it down. */
+  @media (max-width: 560px) {
+    .contact { padding: clamp(88px, 12vh, 132px) 20px clamp(48px, 9vh, 96px); }
+  }
+</style>

@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>tune the green</title>
+<style>
+  body {
+    min-height: 100vh;
+    margin: 0;
+    background-color: #0b2a1c;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    font: 13px/1.5 ui-sans-serif, -apple-system, "Segoe UI", system-ui, sans-serif;
+  }
+
+  main {
+    min-height: 100vh;
+    display: grid;
+    place-content: center;
+    text-align: center;
+    padding: 40px;
+  }
+  h1 {
+    margin: 0;
+    font: 600 clamp(40px, 9vw, 120px)/1 inherit;
+    letter-spacing: -.04em;
+    color: #f2fff7;
+    text-shadow: 0 2px 40px rgba(0, 20, 10, .55);
+  }
+
+  /* ── control panel ── */
+  .panel {
+    position: fixed;
+    top: 16px; right: 16px;
+    width: 310px;
+    background: rgba(6, 20, 13, .82);
+    backdrop-filter: blur(14px);
+    border: 1px solid rgba(120, 200, 155, .22);
+    border-radius: 12px;
+    color: #dfeee4;
+    z-index: 10;
+    max-height: calc(100vh - 32px);
+    overflow-y: auto;
+  }
+  .panel section { padding: 14px 16px; border-bottom: 1px solid rgba(120, 200, 155, .14); }
+  .panel section:last-child { border-bottom: 0; }
+  .panel h2 {
+    margin: 0 0 12px;
+    font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .09em;
+    color: #7fb99a;
+  }
+  label { display: block; margin-bottom: 12px; }
+  label:last-child { margin-bottom: 0; }
+  label span { display: block; margin-bottom: 5px; color: #9dc4ae; font-size: 12px; }
+  label span b { float: right; color: #eafff2; font-weight: 500; font-variant-numeric: tabular-nums; }
+  input[type=range] { width: 100%; accent-color: #45cd87; margin: 0; }
+
+  .presets { display: flex; gap: 6px; flex-wrap: wrap; }
+  button {
+    flex: 1 1 auto;
+    background: rgba(69, 205, 135, .13);
+    border: 1px solid rgba(120, 200, 155, .3);
+    color: #cdeddb;
+    border-radius: 6px;
+    padding: 7px 9px;
+    font: inherit; font-size: 12px;
+    cursor: pointer;
+  }
+  button:hover { background: rgba(69, 205, 135, .24); }
+  button.primary { background: #2c8f5d; border-color: #45cd87; color: #f2fff7; }
+  button.primary:hover { background: #34a56c; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th, td { text-align: left; padding: 4px 0; }
+  th { color: #7fb99a; font-weight: 500; }
+  td:last-child, th:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+  tr.current td { color: #7dffc0; font-weight: 600; }
+  .hint { color: #82a993; font-size: 11.5px; line-height: 1.5; margin: 10px 0 0; }
+
+  pre {
+    margin: 0;
+    font: 11px/1.55 ui-monospace, "Cascadia Code", Consolas, monospace;
+    color: #9fd8b8;
+    white-space: pre-wrap;
+    word-break: break-all;
+    max-height: 190px;
+    overflow-y: auto;
+  }
+</style>
+</head>
+<body>
+  <main><h1>your site here</h1></main>
+
+  <div class="panel">
+    <section>
+      <h2>Texture</h2>
+      <label>
+        <span>Feature size <b id="vFreq">0.003</b></span>
+        <input type="range" id="cFreq" min="0.001" max="0.02" step="0.0005" value="0.003">
+      </label>
+      <label>
+        <span>Octaves <b id="vOct">4</b></span>
+        <input type="range" id="cOct" min="1" max="6" step="1" value="4">
+      </label>
+      <div class="presets">
+        <button data-f="0.0025" data-o="4">Big &amp; soft</button>
+        <button data-f="0.005"  data-o="6">Your screenshot</button>
+        <button data-f="0.009"  data-o="4">Tighter</button>
+      </div>
+    </section>
+
+    <section>
+      <h2>Cost at this viewport</h2>
+      <button class="primary" id="bench">Measure all octaves</button>
+      <table id="results" hidden>
+        <thead><tr><th>Octaves</th><th>Rasterize</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <p class="hint" id="benchHint">
+        Times how long the filter takes to produce one full-viewport image on
+        <em>this</em> machine. Paid once at first paint, not per frame.
+        For reference, 6 octaves at 2560×1440 measured ~41&nbsp;ms elsewhere.
+      </p>
+    </section>
+
+    <section>
+      <h2>CSS</h2>
+      <pre id="out"></pre>
+    </section>
+  </div>
+
+<script>
+const el = id => document.getElementById(id);
+
+/* Build the data-URI. Pass w/h only for benchmarking, where the image needs
+   an intrinsic size; the background version omits them so it fills the
+   viewport at 1 unit = 1px. */
+function svgURL(freq, oct, w, h) {
+  const size = w ? ` width='${w}' height='${h}'` : '';
+  const svg =
+    `<svg xmlns='http://www.w3.org/2000/svg'${size}>` +
+      `<filter id='n'>` +
+        `<feTurbulence type='turbulence' baseFrequency='${freq}' numOctaves='${oct}' stitchTiles='stitch'/>` +
+      `</filter>` +
+      `<rect width='100%' height='100%' filter='url(#n)'/>` +
+    `</svg>`;
+  const enc = svg.replace(/%/g, '%25').replace(/#/g, '%23')
+                 .replace(/</g, '%3C').replace(/>/g, '%3E');
+  return `url("data:image/svg+xml,${enc}")`;
+}
+
+const GRADIENTS =
+  `radial-gradient(120% 90% at 25% 15%, #1d6b41 0%, transparent 55%),\n` +
+  `    linear-gradient(160deg, #12452c 0%, #0b2a1c 100%)`;
+
+function render() {
+  const freq = (+el('cFreq').value).toFixed(4);
+  const oct  = el('cOct').value;
+
+  el('vFreq').textContent = freq;
+  el('vOct').textContent  = oct;
+
+  const url = svgURL(freq, oct);
+  document.body.style.backgroundImage =
+    `${url}, radial-gradient(120% 90% at 25% 15%, #1d6b41 0%, transparent 55%), ` +
+    `linear-gradient(160deg, #12452c 0%, #0b2a1c 100%)`;
+
+  el('out').textContent =
+`body {
+  min-height: 100vh;
+  background-color: #0b2a1c;
+  background-image:
+    ${url},
+    ${GRADIENTS};
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}`;
+
+  // highlight the row matching the current octave count
+  document.querySelectorAll('#results tbody tr').forEach(tr =>
+    tr.classList.toggle('current', tr.dataset.oct === oct));
+}
+
+/* Browsers defer SVG rasterization until the image is actually drawn, so
+   timing onload alone reports ~0ms. The filter cost lands in drawImage, and
+   getImageData forces that work to complete before we stop the clock. */
+function timeOnce(freq, oct, w, h) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      const c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      const ctx = c.getContext('2d');
+      const t0 = performance.now();
+      ctx.drawImage(img, 0, 0);
+      ctx.getImageData(0, 0, 64, 64);   // flush the pipeline
+      resolve(performance.now() - t0);
+    };
+    img.onerror = () => resolve(NaN);
+    img.src = svgURL(freq, oct, w, h).slice(5, -2); // strip url(" ")
+  });
+}
+
+el('bench').addEventListener('click', async () => {
+  const btn = el('bench');
+  btn.disabled = true;
+  btn.textContent = 'Measuring…';
+
+  const w = Math.round(innerWidth  * devicePixelRatio);
+  const h = Math.round(innerHeight * devicePixelRatio);
+  const freq = (+el('cFreq').value).toFixed(4);
+  const tbody = document.querySelector('#results tbody');
+  tbody.innerHTML = '';
+  el('results').hidden = false;
+
+  for (let oct = 1; oct <= 6; oct++) {
+    const runs = [];
+    for (let i = 0; i < 3; i++) runs.push(await timeOnce(freq, oct, w, h));
+    runs.sort((a, b) => a - b);
+    const median = runs[1];
+
+    const tr = document.createElement('tr');
+    tr.dataset.oct = String(oct);
+    tr.innerHTML = `<td>${oct}</td><td>${isNaN(median) ? '—' : median.toFixed(0) + ' ms'}</td>`;
+    tbody.appendChild(tr);
+    render();
+  }
+
+  el('benchHint').innerHTML =
+    `Measured at <b>${w}×${h}</b> (viewport × ${devicePixelRatio} DPR), median of 3. ` +
+    `Paid once at first paint and again on resize — never during scroll.`;
+  btn.disabled = false;
+  btn.textContent = 'Measure again';
+});
+
+document.querySelectorAll('.presets button').forEach(b =>
+  b.addEventListener('click', () => {
+    el('cFreq').value = b.dataset.f;
+    el('cOct').value  = b.dataset.o;
+    render();
+  }));
+
+['cFreq', 'cOct'].forEach(id => el(id).addEventListener('input', render));
+render();
+</script>
+</body>
+</html>

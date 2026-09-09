@@ -1,0 +1,370 @@
+---
+/* One dialog for every gallery on the page. Openers are the links inside a
+   [data-gallery] (see Gallery.astro) and the dialog swaps their href in, so
+   a page with dozens of shots still ships one dialog and one listener rather
+   than markup per image.
+
+   Lives in Base.astro, which means a <Gallery> works on any route with no
+   second step. It renders an empty dialog and binds one delegated click, so
+   a page without a gallery pays almost nothing for it. */
+---
+
+<dialog id="lightbox" class="lb" aria-label="Image viewer">
+  <button class="lb__close" type="button" data-lb-close aria-label="Close image">
+    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+      <path d="M5 5 19 19M19 5 5 19" />
+    </svg>
+  </button>
+
+  <button class="lb__step lb__step--prev" type="button" data-lb-step="-1" aria-label="Previous image">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+      <path d="M15 5 8 12l7 7" />
+    </svg>
+  </button>
+
+  <div class="lb__stage">
+    {/* src and alt are filled in on open */}
+    <img class="lb__img" alt="" />
+  </div>
+
+  <button class="lb__step lb__step--next" type="button" data-lb-step="1" aria-label="Next image">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+      <path d="m9 5 7 7-7 7" />
+    </svg>
+  </button>
+
+  {/* The count is no longer drawn, but stepping still needs to announce where
+      you are — swapping the image does not tell a screen reader anything by
+      itself. Kept as a visually hidden live region. polite, not assertive:
+      moving through a gallery is not worth interrupting over. */}
+  <p class="lb__count" aria-live="polite"></p>
+</dialog>
+
+<style>
+  .lb {
+    width: 100%;
+    max-width: none;
+    /* dvh, so the viewer tracks the visible viewport as a mobile toolbar
+       retracts — the same reason the menu uses it. 100% first as fallback. */
+    height: 100%;
+    height: 100dvh;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: var(--flat);
+    color: var(--ink);
+
+    /* The image cannot be capped with `max-height: 100%` — a percentage there
+       has no definite height to resolve against and silently does nothing, so
+       a landscape shot overflowed (measured: 663px of image in a 590px box).
+       Percentage WIDTH is fine; only the height is derived from the viewport,
+       which is always definite. Everything it subtracts therefore has to be a
+       known quantity, which is why the arrow row below is a fixed height
+       rather than sizing to its contents. */
+    --lb-top: 76px;        /* clears the close button */
+    --lb-bottom: 52px;
+    --lb-gutter: 96px;     /* clears the arrows sitting either side */
+    --lb-arrows-h: 0px;    /* they are beside the image, not under it */
+    --lb-arrow: 24px;
+    --lb-fade: 150ms;
+  }
+
+  /* display belongs in [open] only. A bare `display: block` on .lb would beat
+     the UA's `dialog:not([open]) { display: none }` and the viewer would sit
+     on the page permanently. */
+  .lb[open] { display: block; }
+
+  /* No dim, for the same reason as the menu: the panel covers the page
+     rather than tinting it, so a backdrop is only a tone that has to leave
+     again — and it leaves in one step, which reads as a brightness pop. */
+  .lb::backdrop { background: none; }
+
+  /* The one deliberate exception to the site's no-fades rule. A wipe would be
+     wrong here — it would say the viewer arrived from a direction, when it is
+     really the same image getting bigger in place — and a hard cut to a
+     full-screen panel over content you are still reading is a jolt. Kept
+     short so it reads as a settle rather than a transition.
+
+     Guarded, so reduced-motion still gets the cut. The opacity rules have to
+     live inside the guard too: a bare `opacity: 0` on .lb would leave the
+     viewer invisible for anyone who never gets the transition. */
+  @media (prefers-reduced-motion: no-preference) {
+    .lb {
+      opacity: 0;
+      /* display and overlay hold the dialog in the top layer for the length
+         of the fade, instead of it vanishing on the first frame of the close */
+      transition:
+        opacity var(--lb-fade) cubic-bezier(.4, 0, .2, 1),
+        display var(--lb-fade) allow-discrete,
+        overlay var(--lb-fade) allow-discrete;
+    }
+    .lb[open] { opacity: 1; }
+    /* the from-state for the way in; without it the fade only plays on close */
+    @starting-style {
+      .lb[open] { opacity: 0; }
+    }
+  }
+
+  .lb__stage {
+    display: grid;
+    place-items: center;
+    height: 100%;
+    padding: var(--lb-top) var(--lb-gutter) var(--lb-bottom);
+  }
+  .lb__img {
+    display: block;
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    /* vh first as the fallback; dvh so the cap follows a retracting toolbar,
+       the same reason the dialog itself is sized in dvh. */
+    max-height: calc(100vh - var(--lb-top) - var(--lb-bottom) - var(--lb-arrows-h));
+    max-height: calc(100dvh - var(--lb-top) - var(--lb-bottom) - var(--lb-arrows-h));
+    border-radius: 3px;
+  }
+
+  /* Screen readers only — the count is not drawn any more. */
+  .lb__count {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .lb__step,
+  .lb__close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+    border: 0;
+    border-radius: 3px;
+    background: none;
+    color: var(--ink);
+    cursor: pointer;
+    line-height: 0;
+    transition: color .18s ease;
+  }
+  .lb__step svg { width: var(--lb-arrow); height: var(--lb-arrow); }
+  .lb__step:hover,
+  .lb__step:focus-visible,
+  .lb__close:hover,
+  .lb__close:focus-visible { color: var(--accent); }
+
+  .lb__close {
+    position: absolute;
+    top: 14px;
+    right: 16px;
+  }
+
+  /* Either side of the image, riding the vertical centre. Absolute rather
+     than in the flow, so the stage stays the full height of the dialog and
+     the image is centred in the viewer rather than in a leftover column. */
+  .lb__step {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+  .lb__step--prev { left: 10px; }
+  .lb__step--next { right: 10px; }
+
+  /* Phones put the arrows UNDER the image instead of beside it. A phone is
+     portrait and the shots are landscape, so width is the scarce dimension
+     and height is not — side arrows would cost ~15% of the image's width to
+     buy space there is already plenty of. Below, they cost only height.
+
+     Hence the grid: two half-width columns for the arrows on the bottom row,
+     each pushed toward the middle, with the stage spanning both above. The
+     arrow row is a fixed height because the image's cap is derived from it,
+     and --lb-gutter collapses now that nothing sits beside the image. */
+  @media (max-width: 560px) {
+    .lb {
+      --lb-top: 50px;
+      --lb-bottom: 4px;
+      --lb-gutter: 12px;
+      --lb-arrows-h: 54px;
+      --lb-arrow: 22px;
+    }
+    .lb[open] {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr var(--lb-arrows-h);
+    }
+    .lb__stage { grid-column: 1 / -1; grid-row: 1; }
+    .lb__step {
+      position: static;
+      transform: none;
+      grid-row: 2;
+      align-self: center;
+    }
+    .lb__step--prev { grid-column: 1; justify-self: end; margin-right: 14px; }
+    .lb__step--next { grid-column: 2; justify-self: start; margin-left: 14px; }
+    .lb__close { top: 10px; right: 12px; }
+  }
+</style>
+
+<script>
+  /* Delegated from document and bound once at module scope, so it survives
+     view transitions without re-registering. Nothing is collected up front:
+     the gallery is resolved from whichever opener was clicked, which means
+     galleries added later need no wiring. */
+  const DIALOG_ID = 'lightbox';
+  const LOCK = 'overlay-open';
+
+  const dialog = () =>
+    document.getElementById(DIALOG_ID) as HTMLDialogElement | null;
+
+  let group: HTMLAnchorElement[] = [];
+  let index = 0;
+
+  function render() {
+    const d = dialog();
+    const opener = group[index];
+    if (!d || !opener) return;
+
+    const img = d.querySelector<HTMLImageElement>('.lb__img');
+    if (img) {
+      // width/height come from the opener so the box is correct before the
+      // file arrives — otherwise the image lands and shoves the bar down
+      img.width = Number(opener.dataset.w) || 0;
+      img.height = Number(opener.dataset.h) || 0;
+      img.src = opener.href;
+      // reuse the thumbnail's alt rather than duplicating it in a data
+      // attribute, so the two can never disagree
+      img.alt = opener.querySelector('img')?.alt ?? '';
+    }
+
+    // spoken, not shown — phrase it as a sentence rather than "3 / 6"
+    const count = d.querySelector('.lb__count');
+    if (count) count.textContent = `Image ${index + 1} of ${group.length}`;
+
+    // a single-image gallery has nothing to step through
+    const solo = group.length < 2;
+    d.querySelectorAll<HTMLElement>('[data-lb-step]').forEach((b) => {
+      b.hidden = solo;
+    });
+  }
+
+  function openFrom(opener: HTMLAnchorElement) {
+    const d = dialog();
+    if (!d || d.open) return;
+
+    const gallery = opener.closest('[data-gallery]');
+    group = gallery
+      ? Array.from(gallery.querySelectorAll<HTMLAnchorElement>('a[href]'))
+      : [opener];
+    index = Math.max(0, group.indexOf(opener));
+
+    render();
+    d.showModal();
+    document.documentElement.classList.add(LOCK);
+  }
+
+  function step(delta: number) {
+    if (group.length < 2) return;
+    index = (index + delta + group.length) % group.length;
+    render();
+  }
+
+  /* Openers are handled in the CAPTURE phase, and the event is stopped dead
+     there. ClientRouter listens for link clicks on document too, and being
+     in <head> its bubble-phase listener runs first — it would already have
+     started a view transition to the .webp by the time a bubble-phase
+     preventDefault here ran, so the page navigated to the bare image file
+     even though the event ended up defaultPrevented. Capture puts this
+     ahead of it; stopPropagation is what keeps it from seeing the click. */
+  document.addEventListener(
+    'click',
+    (event) => {
+      const opener = (event.target as Element | null)?.closest<HTMLAnchorElement>(
+        '[data-gallery] a[href]',
+      );
+      if (!opener) return;
+
+      // Leave the real link alone for the gestures that mean "somewhere
+      // else": new tab, new window, save. Only a plain left click is ours.
+      if (
+        event.button !== 0 ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.shiftKey ||
+        event.altKey
+      ) {
+        return;
+      }
+
+      // and if the dialog is somehow absent, let the href do its job
+      if (!dialog()) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+      openFrom(opener);
+    },
+    true,
+  );
+
+  document.addEventListener('click', (event) => {
+    const target = event.target as Element | null;
+    if (!target) return;
+
+    if (target.closest('[data-lb-close]')) {
+      dialog()?.close();
+      return;
+    }
+
+    const stepper = target.closest<HTMLElement>('[data-lb-step]');
+    if (stepper) {
+      step(Number(stepper.dataset.lbStep));
+      return;
+    }
+
+    // the surround dismisses, as it does in the menu — but not the image
+    // itself, so a mistimed tap while stepping does not close the viewer
+    if (target.closest('.lb') && !target.closest('button, .lb__img')) {
+      dialog()?.close();
+    }
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (!dialog()?.open) return;
+    if (event.key === 'ArrowRight') {
+      event.preventDefault();
+      step(1);
+    } else if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      step(-1);
+    }
+    // Esc is the dialog's own, and fires 'close' below
+  });
+
+  // Fires however it was dismissed, Esc included. The dialog restores focus
+  // to the opener by itself, so there is nothing to do about that here.
+  document.addEventListener(
+    'close',
+    (event) => {
+      if ((event.target as Element | null)?.id !== DIALOG_ID) return;
+      const d = dialog();
+      document.documentElement.classList.remove(LOCK);
+
+      /* Drop the source, or reopening a different gallery shows the previous
+         image until the new one has decoded — but not until the fade has
+         finished, or the image blanks while the panel is still on screen.
+         The delay is read from --lb-fade so the two cannot drift apart. */
+      const img = d?.querySelector<HTMLImageElement>('.lb__img');
+      const fade = d ? parseFloat(getComputedStyle(d).getPropertyValue('--lb-fade')) || 0 : 0;
+      window.setTimeout(() => {
+        // reopened in the meantime — leave the new source alone
+        if (!dialog()?.open) img?.removeAttribute('src');
+      }, fade);
+    },
+    true,
+  );
+
+  // never leave the viewer open across a navigation
+  document.addEventListener('astro:before-preparation', () => dialog()?.close());
+</script>

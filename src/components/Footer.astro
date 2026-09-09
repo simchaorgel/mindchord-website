@@ -1,0 +1,28 @@
+---
+const year = new Date().getFullYear();
+---
+
+{/* Three children in visual order: left / middle / right. The bar spreads
+    them with space-between, so no `order` and no wrapper tracks. */}
+<footer class="footer">
+  <span>© {year} Mindchord</span>
+
+  <a class="footer__terms" href="/terms">Terms and privacy</a>
+
+  <a class="footer__top" href="#top">
+    Back to top
+    <svg
+      width="13"
+      height="13"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2.2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+    >
+      <path d="m18 15-6-6-6 6" />
+    </svg>
+  </a>
+</footer>

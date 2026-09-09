@@ -1,0 +1,545 @@
+---
+import icon from '../assets/favicon.png';
+
+const links = [
+  { href: '/about', label: 'About' },
+  { href: '/get-started', label: 'Get started' },
+  { href: '/contact', label: 'Contact Us' },
+];
+
+/* The modal gets an explicit Home link the bar does not. In the bar the
+   wordmark is the way home and is always visible; inside the modal it is
+   covered up, leaving no route back without dismissing first. */
+const menuLinks = [{ href: '/', label: 'Home' }, ...links];
+
+/* Trailing-slash-tolerant compare. With Astro's default `format: 'directory'`
+   build, /about is emitted as /about/index.html and Astro.url.pathname comes
+   back as `/about/` — which never equals the `/about` in the list above. So
+   the current-page state rendered in dev, where the path has no trailing
+   slash, and then silently vanished from every production build. Normalise
+   both sides; `|| '/'` keeps the home path from collapsing to an empty
+   string, which would make no route ever match it. */
+const trim = (path: string) => path.replace(/\/+$/, '') || '/';
+const here = trim(Astro.url.pathname);
+const isCurrent = (href: string) => trim(href) === here;
+---
+
+<header class="header">
+  <div class="left">
+    <a class="brand" href="/">
+      {/* Deliberately a plain <img>, not <Image>. Astro's pipeline converts to
+          WebP and strips the source PNG's ICC profile, which shifted the icon's
+          green by ~2.4/255 — visible on a green mark over a green background.
+          Serving the 342px original (11.8KB) also stays crisp under deep browser
+          zoom, where even a 3x variant softens.
+          alt="" — decorative: the wordmark beside it already names the site. */}
+      <img
+        src={icon.src}
+        alt=""
+        width={icon.width}
+        height={icon.height}
+        loading="eager"
+      />
+      <span class="brand__name">Mindchord</span>
+    </a>
+
+    <nav class="links" aria-label="Main">
+      {links.map(({ href, label }) => (
+        <a href={href} aria-current={isCurrent(href) ? 'page' : undefined}>
+          {label}
+        </a>
+      ))}
+    </nav>
+  </div>
+
+  <nav class="right" aria-label="Dashboard">
+    <a href="/dashboard">Mindchord Dashboard</a>
+  </nav>
+
+  <button
+    class="burger"
+    type="button"
+    data-menu-open
+    aria-label="Open menu"
+    aria-expanded="false"
+    aria-controls="site-menu"
+  >
+    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+      <path d="M2.5 6.25h19M2.5 12h19M2.5 17.75h19" />
+    </svg>
+  </button>
+
+  {/* Nested inside <header> so transition:persist keeps it across navigations.
+      showModal() promotes it to the top layer, so the header's absolute
+      positioning and z-index have no bearing on it. */}
+  <dialog id="site-menu" class="menu" aria-label="Menu">
+    <button class="menu__close" type="button" data-menu-close aria-label="Close menu">
+      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path d="M5 5 19 19M19 5 5 19" />
+      </svg>
+    </button>
+
+    <nav class="menu__nav" aria-label="Main">
+      {menuLinks.map(({ href, label }) => (
+        <a href={href} aria-current={isCurrent(href) ? 'page' : undefined}>
+          {label}
+        </a>
+      ))}
+      <a class="menu__dash" href="/dashboard">Mindchord Dashboard</a>
+    </nav>
+  </dialog>
+</header>
+
+<style>
+  /* ── static transparent header ─────────────────────────────────────────
+     Absolutely positioned rather than fixed, so it overlays the hero at the
+     top of the page and then scrolls away with it. No background, no
+     scroll-triggered state change.
+
+     To make it stick instead, change `position: absolute` to `fixed` — but
+     then it crosses from the textured hero onto flat green as you scroll,
+     which is the case that needs a background treatment decided.          */
+  .header {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px 28px;
+    /* One source of truth for the bar's metrics. The modal's close button is
+       positioned from these same values, so the X lands exactly on top of the
+       burger it replaced — and the two stay together if the bar is retuned. */
+    --bar-pad-x: 32px;
+    --bar-pad-y: 22px;
+    --brand-h:   40px;   /* tallest item in the bar; what align-items resolves to */
+    --icon:      30px;   /* burger and X share one box */
+    --icon-pad:   4px;   /* touch padding on each, pulled back out by margin */
+    padding: var(--bar-pad-y) var(--bar-pad-x);
+    /* the hero is full-bleed; only the controls should catch the pointer */
+    pointer-events: none;
+  }
+
+  .left {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    /* generous gap so the wordmark reads as a mark, not the first nav item */
+    gap: 12px 46px;
+  }
+
+  .brand {
+    pointer-events: auto;
+    display: inline-flex;
+    align-items: center;   /* icon and wordmark share a centre line */
+    gap: 13px;
+    text-decoration: none;
+    color: var(--ink);
+  }
+  .brand img {
+    display: block;
+    height: var(--brand-h);
+    width: auto;
+    /* No drop-shadow here. filter: drop-shadow() re-rasterizes on every zoom
+       step, which made zooming visibly laggy on this one element. If the icon
+       needs separation from bright noise, prefer a shadow baked into the
+       source image over a live filter. */
+  }
+  .brand__name {
+    font-family: var(--font-pagella);
+    font-size: 27px;
+    letter-spacing: .005em;
+    /* line-height 1 makes the box hug the glyphs, so flex centring lines the
+       wordmark up with the icon instead of centring a taller line box. */
+    line-height: 1;
+  }
+
+  /* ── No text-shadow anywhere in the header ────────────────────────────
+     A blurred dark shadow behind light text does not add contrast — it
+     introduces a third tone between the glyph and the texture, which reads
+     as a smudge at nav sizes. Full-strength ink is the readable choice:
+     measured over the header strip, white sits at 5.18:1 mean on the left
+     (where the hero's radial highlight peaks) and 6.63:1 on the right.
+     Links are NOT dimmed for the same reason — opacity was costing real
+     contrast in the exact zone that needed it most.                      */
+  .links,
+  .right {
+    display: flex;
+    align-items: center;
+    gap: 26px;
+  }
+
+  .links a,
+  .right a {
+    pointer-events: auto;
+    color: var(--ink);
+    text-decoration: none;
+    white-space: nowrap;
+    /* serif, matching the wordmark. 15px rather than 14 — Pagella has a
+       generous x-height, and the extra size helps the strokes survive the
+       noise underneath. */
+    font-family: var(--font-pagella);
+    font-size: 15px;
+    line-height: 1;
+  }
+
+  .links a {
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    text-underline-offset: 5px;
+    transition: text-decoration-color .18s ease;
+  }
+  .links a:hover,
+  .links a:focus-visible {
+    text-decoration-color: rgba(242, 255, 247, .6);
+  }
+  .links a[aria-current='page'] {
+    text-decoration-color: rgba(242, 255, 247, .5);
+  }
+
+  /* ── dashboard: solid pill ────────────────────────────────────────────
+     Filled rather than outlined, and fully rounded — the one element in the
+     header that reads as a control rather than a link. It is the only place
+     the site uses a pill; the hard-cut language everywhere else is what
+     makes that legible as "this is a button".
+     The border is kept at the same colour as the fill so the box does not
+     resize on hover, when both swap to the accent.                       */
+  .right a {
+    padding: 9px 19px;
+    border: 1px solid var(--ink);
+    border-radius: 999px;
+    background-color: var(--ink);
+    color: #10301f;
+    transition: background-color .18s ease, color .18s ease, border-color .18s ease;
+  }
+  .right a:hover,
+  .right a:focus-visible {
+    background-color: var(--accent);
+    border-color: var(--accent);
+    color: #2b1226;
+  }
+
+  /* ── burger ── */
+  .burger {
+    display: none;            /* desktop already shows the links */
+    pointer-events: auto;
+    padding: var(--icon-pad);
+    margin: calc(var(--icon-pad) * -1);
+    border: 0;
+    background: none;
+    color: var(--ink);
+    cursor: pointer;
+    line-height: 0;
+  }
+
+  /* Both icons: drawn butt-capped on the same 24-unit grid and sized from
+     --icon, so swapping one for the other changes nothing but the glyph. */
+  .burger svg,
+  .menu__close svg {
+    display: block;
+    width: var(--icon);
+    height: var(--icon);
+  }
+
+  /* ── modal menu ───────────────────────────────────────────────────────
+     A real <dialog>: Esc closes it, focus is trapped and the page behind is
+     inert, none of which is free with a hand-rolled overlay div.
+     pointer-events has to be restored explicitly, since .header sets none. */
+  .menu {
+    /* reset the UA dialog box */
+    width: 100%;
+    max-width: none;
+    /* dvh, so the panel tracks the visible viewport as the mobile browser's
+       toolbar retracts. `height: 100%` resolves once against the box the
+       dialog opened into and does not grow with it, which left a strip of
+       live page showing along the bottom. 100% first as the fallback. */
+    height: 100%;
+    height: 100dvh;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    pointer-events: auto;
+    /* The two halves below carry the green now, not the dialog itself. */
+    background: none;
+    color: var(--ink);
+    /* keeps the z-index:-1 halves inside the dialog's own stacking context,
+       the same trick .hero/.band use for their texture layers */
+    isolation: isolate;
+    /* The right half sits a full viewport-half past the right edge while it
+       is off-screen, and a modal in the top layer is not clipped by the
+       `overflow-x: clip` on html — so without this the document gains a
+       horizontal scrollbar for the length of the wipe. clip, not hidden: it
+       does not make the dialog a scroll container. */
+    overflow-x: clip;
+
+    --half: 50.5%;
+    --menu-in:  280ms;
+    --menu-out: 160ms;
+    --menu-ease: cubic-bezier(.4, 0, .2, 1);
+  }
+  /* The page lock while the menu is up is `html.overlay-open` in global.css,
+     shared with the image viewer — dvh above keeps the panel covering
+     whatever is visible, but on its own it does not stop the scroll that
+     retracts the toolbar in the first place. */
+
+  /* No dim. The halves cover the page rather than tinting it, so a backdrop
+     only adds a tone that has to leave again — and it leaves in one step when
+     the dialog drops out of the top layer, which lands as a brightness pop
+     just after the wipe has finished. Without it the live page simply shows
+     in the closing gap, which is the split doing its own work. */
+  .menu::backdrop { background: none; }
+
+  /* ── the two halves ───────────────────────────────────────────────────
+     50.5% each, not 50: two exact halves leave a hairline of the page
+     showing down the centre at fractional device pixel ratios, so they
+     overlap by a hair instead. z-index:-1 puts them behind the dialog's
+     real children — ::after would otherwise paint over the nav. */
+  .menu::before,
+  .menu::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    z-index: -1;
+    width: var(--half);
+    background: var(--flat);
+  }
+  .menu::before { left: 0; }
+  .menu::after  { right: 0; }
+
+  /* Lands on the burger's position. The bar centres its controls on the
+     brand (align-items:center), so the icon's top is the bar's padding plus
+     half the height left over; both offsets then back off by the button's own
+     padding. Modal dialogs resolve against the viewport, which is the same
+     box the header spans, so these read across from one to the other. */
+  .menu__close {
+    position: absolute;
+    top: calc(var(--bar-pad-y) + (var(--brand-h) - var(--icon)) / 2 - var(--icon-pad));
+    right: calc(var(--bar-pad-x) - var(--icon-pad));
+    padding: var(--icon-pad);
+    border: 0;
+    background: none;
+    color: var(--ink);
+    cursor: pointer;
+    line-height: 0;
+  }
+
+  .menu__nav {
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    /* stretch, so each link fills the row and the whole line is tappable.
+       The pill opts back out — see .menu__dash. */
+    align-items: stretch;
+    justify-content: center;
+    gap: 4px;
+    padding: 96px 28px 48px;
+  }
+  .menu__nav a {
+    font: 400 clamp(28px, 7.5vw, 40px)/1.35 var(--serif);
+    letter-spacing: -.01em;
+    color: var(--ink);
+    text-decoration: none;
+    /* Pushes the hit area out through the nav's own gutter to the screen
+       edges, then puts the text back where it was — so the row is tappable
+       edge to edge and nothing moves. Nothing here paints, so the widened
+       box is invisible during the wipe as well as at rest. */
+    padding-inline: 28px;
+    margin-inline: -28px;
+  }
+  .menu__nav a[aria-current='page'] { color: var(--accent); }
+
+  /* Has to out-specify `.menu__nav a` (0,1,1) above. As a bare .menu__dash
+     (0,1,0) it lost, and that rule's `font` shorthand rendered the pill at the
+     28–40px link size — a button most of a screen wide. */
+  .menu__nav a.menu__dash {
+    /* The pill is the one item that must not stretch — it has a background,
+       so a full-width row would be a full-width button. It keeps its own
+       padding, which also cancels the edge-to-edge box above. */
+    align-self: flex-start;
+    margin-top: 28px;
+    margin-inline: 0;
+    padding: 11px 22px;
+    border-radius: 999px;
+    background: var(--ink);
+    color: #10301f;
+    /* the pill carries its own scale — it must not inherit the big link size */
+    font: 400 17px/1 var(--serif);
+  }
+
+  /* ── open animation ──────────────────────────────────────────────────
+     The two halves wipe in from the outside and meet in the middle. No
+     opacity anywhere: the green never blends with the page behind it, it
+     just covers it, which is the same argument the hard section cuts make.
+
+     The nav rides in with the left half rather than living inside it. Same
+     appearance, but it dodges the two costs of nesting: the pill overhangs
+     the half's right edge and would be clipped, and content inside a
+     transformed box cannot paint above the other half.
+
+     Only the panels and the nav move. Small fixed controls do NOT ride their
+     half in — see the X at the bottom of this block for why.
+
+     Everything here is inside no-preference: the halves themselves are not
+     motion and must exist either way, and the visibility rule below would
+     otherwise leave the pill permanently hidden for reduced-motion users. */
+  @media (prefers-reduced-motion: no-preference) {
+    .menu::before,
+    .menu::after,
+    .menu__nav {
+      /* closing reads the non-[open] rule, so the shorter duration lives
+         here and [open] overrides it for the way in */
+      transition: transform var(--menu-out) var(--menu-ease);
+    }
+    /* A percentage translate resolves against the element's OWN width, so the
+       panels and the nav need different numbers to travel the same distance:
+       ±100% of a 50.5%-wide panel, and ∓--half of the viewport-wide nav.
+       Both come out at 50.5vw. */
+    .menu::before { transform: translateX(-100%); }
+    .menu::after  { transform: translateX(100%); }
+    .menu__nav    { transform: translateX(calc(var(--half) * -1)); }
+
+    .menu[open]::before,
+    .menu[open]::after,
+    .menu[open] .menu__nav {
+      transform: none;
+      transition-duration: var(--menu-in);
+    }
+
+    /* Entry needs an explicit from-state: the dialog goes display:none ->
+       block, and without this the transform starts at its [open] value and
+       nothing animates. Unsupported browsers simply open instantly. */
+    @starting-style {
+      .menu[open]::before { transform: translateX(-100%); }
+      .menu[open]::after  { transform: translateX(100%); }
+      .menu[open] .menu__nav { transform: translateX(calc(var(--half) * -1)); }
+    }
+
+    /* Holds the dialog in the top layer long enough for the halves to wipe
+       back out, instead of it vanishing on the first frame of the close. */
+    .menu {
+      transition: display var(--menu-out) allow-discrete,
+                  overlay var(--menu-out) allow-discrete;
+    }
+
+    /* The pill is the only nav item wide enough to cross the centre on a
+       phone, so on the way IN it would hang over the gap the halves have not
+       closed yet. It cuts in — no fade — on the frame they meet.
+
+       On the way OUT it does not need hiding at all: it rides left with the
+       nav, inside its own half, which is why the delay below is asymmetric.
+       The base rule holds it visible for the whole close and drops it only as
+       the dialog leaves, so it exits with the panel instead of blinking off
+       under a menu that is still on screen. */
+    .menu__nav a.menu__dash {
+      visibility: hidden;
+      transition: visibility 0s linear var(--menu-out);
+    }
+    .menu[open] a.menu__dash {
+      visibility: visible;
+      transition: visibility 0s linear var(--menu-in);
+    }
+
+    /* The X cuts in and out instead of travelling. It sits in the right
+       half's territory, but it is a 30px box: riding in on the half's own
+       translate means it stays off-screen until that half is nearly home,
+       so the right side reads as arriving late while the left brings the nav
+       in from the first frame. A cut costs nothing and keeps the two halves
+       reading as one movement. */
+    .menu__close { visibility: hidden; }
+    .menu[open] .menu__close {
+      visibility: visible;
+      transition: visibility 0s linear var(--menu-in);
+    }
+  }
+
+  @media (max-width: 800px) {
+    /* every nav item moves into the modal; the bar keeps brand + burger */
+    .links,
+    .right { display: none; }
+    .burger { display: inline-flex; }
+  }
+
+  @media (max-width: 560px) {
+    .header {
+      --bar-pad-x: 20px;
+      --bar-pad-y: 18px;
+      --brand-h:  33px;
+    }
+    .brand__name { font-size: 23px; }
+  }
+</style>
+
+<script>
+  /* Delegated from document, so this binds once at module scope and keeps
+     working across view transitions without re-registering (which would
+     double-fire). The header is transition:persist, so the dialog element
+     itself survives navigation too. */
+  const DIALOG_ID = 'site-menu';
+
+  const dialog = () =>
+    document.getElementById(DIALOG_ID) as HTMLDialogElement | null;
+  const burger = () =>
+    document.querySelector<HTMLButtonElement>('[data-menu-open]');
+
+  /* showModal() makes the page inert but does not reliably stop it scrolling
+     on mobile, so the class carries the lock. Removed in the 'close' handler
+     rather than in closeMenu(), because that fires however the dialog was
+     dismissed — Esc and the backdrop included — and must never be left on. */
+  const LOCK = 'overlay-open';
+
+  function openMenu() {
+    const d = dialog();
+    if (!d || d.open) return;
+    d.showModal();
+    document.documentElement.classList.add(LOCK);
+    burger()?.setAttribute('aria-expanded', 'true');
+  }
+
+  function closeMenu() {
+    const d = dialog();
+    if (!d || !d.open) return;
+    d.close();
+  }
+
+  document.addEventListener('click', (event) => {
+    const target = event.target as Element | null;
+    if (!target) return;
+
+    if (target.closest('[data-menu-open]')) {
+      openMenu();
+      return;
+    }
+    // the X, and any link inside the menu, so the modal is already gone by
+    // the time the next page renders
+    if (target.closest('[data-menu-close]') || target.closest('.menu a')) {
+      closeMenu();
+      return;
+    }
+    // Anything else inside the menu dismisses it: the padding around the
+    // links, the gaps between them, the empty column beside them. Only the
+    // controls are exempt, and every one of those is handled above.
+    if (target.closest('.menu') && !target.closest('a, button')) {
+      closeMenu();
+    }
+  });
+
+  // Esc and the backdrop fire 'close' natively — keep aria-expanded and the
+  // scroll lock in step. Captured, because 'close' does not bubble.
+  document.addEventListener(
+    'close',
+    (event) => {
+      if ((event.target as Element | null)?.id === DIALOG_ID) {
+        document.documentElement.classList.remove(LOCK);
+        burger()?.setAttribute('aria-expanded', 'false');
+      }
+    },
+    true,
+  );
+
+  // belt and braces: never leave the modal open across a navigation
+  document.addEventListener('astro:before-preparation', closeMenu);
+</script>

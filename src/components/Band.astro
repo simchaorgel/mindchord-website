@@ -1,0 +1,19 @@
+---
+/* A textured band. Carries a heading, optionally one short paragraph, and
+   optionally an action. Long-form body copy belongs in a flat
+   <section class="copy"> instead — texture competes with reading. */
+interface Props {
+  title?: string;
+  action?: { label: string; href: string };
+}
+
+const { title, action } = Astro.props;
+---
+
+<section class="band">
+  <div class="band__inner">
+    {title && <h2>{title}</h2>}
+    <slot />
+    {action && <a class="band__btn" href={action.href}>{action.label}</a>}
+  </div>
+</section>

@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>mind1</title>
+<style>
+/* ═══════════════════════════════════════════════════════════════════════
+   TEXTURED BANDS
+   Hero and occasional bands carry turbulence over green; everything else
+   sits on flat green. Cuts are hard — sections butt together, no fades.
+   No JavaScript: the textures are static background-images.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+:root {
+  color-scheme: dark;
+
+  /* ── palette ── */
+  --flat:      #243629;   /* plain green under all copy */
+  --ink:       #f2fff7;
+  --ink-body:  rgba(242, 255, 247, .85);
+  --ink-dim:   rgba(242, 255, 247, .6);
+
+  /* ── the green beneath the noise ── */
+  --base:      linear-gradient(160deg, #12452c 0%, #0b2a1c 100%);
+  --highlight: radial-gradient(120% 90% at 25% 15%, #1d6b41 0%, transparent 55%);
+
+  /* ── noise. baseFrequency 0.005 = big molten blobs (hero),
+         0.02 = fine mottle (bands). numOctaves 6 = full roughness.
+         Rasterized once per panel; ~40ms at 2560×1440. ── */
+  --noise-hero: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.005' numOctaves='6' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --noise-band: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.02' numOctaves='6' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+
+  --sans: ui-sans-serif, -apple-system, "Segoe UI", system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--flat);
+  color: var(--ink);
+  font: 16px/1.7 var(--sans);
+}
+
+/* ── textured panels ──────────────────────────────────────────────────
+   The texture lives in ::before so markup stays clean — a band is just
+   <section class="band">. isolation:isolate keeps the z-index:-1 layer
+   inside its own section.                                             */
+.hero,
+.band {
+  position: relative;
+  isolation: isolate;
+}
+.hero::before,
+.band::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-repeat: no-repeat;
+}
+/* hero keeps the radial highlight — it should be the loudest panel */
+.hero::before { background-image: var(--noise-hero), var(--highlight), var(--base); }
+/* bands drop it: with the highlight their top and bottom edges differ by
+   13 luma and no single flat green meets both cleanly */
+.band::before { background-image: var(--noise-band), var(--base); }
+
+/* ── hero ── */
+.hero {
+  /* svh, not vh: on mobile `100vh` measures the viewport with browser chrome
+     retracted, so the hero would overflow and the hard cut would land below
+     the fold instead of on it. vh first as the fallback for old browsers. */
+  height: 100vh;
+  height: 100svh;
+  display: grid;
+  place-content: center;
+  text-align: center;
+  padding: 40px;
+}
+.hero h1 {
+  margin: 0;
+  font: 600 clamp(44px, 10vw, 130px)/.95 var(--sans);
+  letter-spacing: -.045em;
+  text-shadow: 0 2px 50px rgba(0, 20, 10, .5);
+}
+.hero > p {
+  margin: 22px 0 0;
+  font-size: 15px;
+  color: var(--ink-dim);
+  letter-spacing: .02em;
+}
+
+/* ── flat copy sections ── */
+.copy {
+  max-width: 660px;
+  margin: 0 auto;
+  padding: 14vh 32px;
+}
+.copy h2 {
+  font: 600 30px/1.25 var(--sans);
+  letter-spacing: -.02em;
+  margin: 0 0 20px;
+}
+.copy p { margin: 0 0 22px; color: var(--ink-body); }
+.copy p:last-child { margin-bottom: 0; }
+.copy code {
+  font: 13px/1.4 ui-monospace, "Cascadia Code", Consolas, monospace;
+  background: rgba(0, 0, 0, .25);
+  border: 1px solid rgba(120, 200, 155, .16);
+  border-radius: 4px;
+  padding: .15em .4em;
+}
+
+/* ── bands: statement type only ───────────────────────────────────────
+   If a band ever needs paragraphs, it should be a flat section instead. */
+.band { padding: 18vh 32px; }
+.band > * { max-width: 780px; margin-inline: auto; }
+.band blockquote {
+  margin: 0;
+  font: 600 clamp(26px, 4.2vw, 46px)/1.22 var(--sans);
+  letter-spacing: -.028em;
+  /* Measured: mean contrast over the 0.02 texture is 8.7:1, but ~0.34% of
+     pixels — the brightest noise flecks — drop to 2.08:1. The tight dark
+     shadow sits directly under the glyph edges and lifts those; the wide
+     one is the ambient depth. */
+  text-shadow:
+    0 1px 3px  rgba(0, 18, 9, .55),
+    0 2px 34px rgba(0, 20, 10, .45);
+}
+.band cite {
+  display: block;
+  margin-top: 22px;
+  font: 500 13px/1.5 var(--sans);
+  font-style: normal;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+</style>
+</head>
+<body>
+
+<section class="hero">
+  <h1>your site here</h1>
+  <p>scroll ↓</p>
+</section>
+
+<section class="copy">
+  <h2>First section</h2>
+  <p>Body copy sits on flat green with nothing behind it. The hero has already done the loud work and stopped dead — no fade, no blend, the panel simply ends.</p>
+  <p>The flat green is deliberately darker than the texture it cuts against. That step is what makes the edge read as a decision rather than a near-miss, and it buys a little text contrast at the same time.</p>
+</section>
+
+<section class="band">
+  <blockquote>Textured panels carry the statements. Flat sections carry the reading.</blockquote>
+  <cite>first band</cite>
+</section>
+
+<section class="copy">
+  <h2>Second section</h2>
+  <p>Bands appear occasionally — twice on a typical page, more on a long one — and never so often that one is always in view. The texture returns as a punctuation mark, not as atmosphere.</p>
+  <p>Because each band rasterizes its own filter, the cost scales with how many you use and how tall they are. Two or three per page is comfortable. A band behind every section would be both slower and less effective.</p>
+</section>
+
+<section class="band">
+  <blockquote>The same material at a different grain — loud enough to mark a section, quiet enough to read across.</blockquote>
+  <cite>second band</cite>
+</section>
+
+<section class="copy">
+  <h2>Closing section</h2>
+  <p>To add another band anywhere on the page, write <code>&lt;section class="band"&gt;</code> and put statement type inside it. Nothing else is required — no wrapper element, no script, no per-section configuration.</p>
+</section>
+
+</body>
+</html>

@@ -1,0 +1,27 @@
+---
+import Base from '../layouts/Base.astro';
+import Hero from '../components/Hero.astro';
+---
+
+<Base title="About — Mindchord" description="About Mindchord.">
+  <Hero title="About." />
+
+  <section class="copy">
+    <h2>Placeholder</h2>
+    <p>
+      The full about content now lives on the home page under the hero. This
+      route is kept so the header's About link is not broken – decide whether
+      it should stay as its own page or point at <a href="/#more">the section
+      on the home page</a> instead.
+    </p>
+  </section>
+</Base>
+
+<style>
+  .copy a {
+    color: var(--ink);
+    text-decoration-color: rgba(242, 255, 247, .4);
+    text-underline-offset: 3px;
+  }
+  .copy a:hover { text-decoration-color: var(--ink); }
+</style>

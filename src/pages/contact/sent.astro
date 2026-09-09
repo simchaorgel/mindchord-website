@@ -1,0 +1,93 @@
+---
+/* Where a successful Netlify submission lands — the `action` on the form in
+   ../contact.astro points here. Netlify's own success page is generic and
+   Netlify-branded, so this exists mainly to keep someone on the site.
+
+   It sits at /contact/sent while the form is at /contact: a page file and a
+   directory of the same name coexist, since Astro emits contact/index.html
+   for one and contact/sent/index.html for the other. */
+import Base from '../../layouts/Base.astro';
+---
+
+<Base title="Message sent — Mindchord" description="Your message has been sent.">
+  <section class="sent">
+    <div class="sent__inner">
+      <h1>Message sent</h1>
+      <p>Thank you for getting in touch. We will come back to you by email.</p>
+      {/* .band__btn is global, not the band's own — it is the site's page
+          action wherever one is needed, and global.css is where it lives. */}
+      <a class="band__btn" href="/">Back to home</a>
+    </div>
+  </section>
+</Base>
+
+<style>
+  /* Deliberately the contact page's panel, unchanged: same full-bleed hero
+     texture in a ::before, same centring, same clearance. Arriving here is a
+     step within one task, and a different-looking page would read as having
+     been thrown somewhere else. */
+  .sent {
+    position: relative;
+    isolation: isolate;
+    flex-grow: 1;   /* takes the slack main is holding — see global.css */
+    display: grid;
+    align-content: center;
+    align-content: safe center;
+    padding: clamp(104px, 14vh, 168px) 32px clamp(56px, 10vh, 120px);
+    text-align: center;
+  }
+  .sent::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background-image: var(--noise-hero), var(--highlight), var(--base);
+    background-repeat: no-repeat;
+    /* The panel is a footer shorter than the hero, but its texture must not
+       be. --highlight is a radial at 120% 90% at 25% 15%, and --base a 160deg
+       linear: both resolve against the box they are painted into, so a
+       shorter box lifts the bloom, shrinks it, and re-ramps the green. That
+       is what read as the hero squashed into less room. The noise was never
+       the problem -- feTurbulence works in fixed user units, so a shorter box
+       only ever cropped it.
+
+       Pinning all three layers to 100svh hands them the hero's exact box.
+       They anchor top-left, so this panel shows the top of the identical
+       image and the footer covers what is left. vh first as the fallback. */
+    background-size: 100% 100vh;
+    background-size: 100% 100svh;
+  }
+
+  .sent__inner {
+    width: 100%;
+    max-width: 440px;
+    margin: 0 auto;
+  }
+
+  /* The hero h1's shadow — the wide ambient one only. Over 0.005 noise the
+     blobs are far larger than a glyph, so there are no bright flecks inside
+     the letterforms for a tight shadow to lift. */
+  .sent h1 {
+    margin: 0 0 18px;
+    font: 400 clamp(30px, 4vw, 46px)/1.1 var(--serif);
+    letter-spacing: -.02em;
+    text-wrap: balance;
+    text-shadow: 0 2px 50px rgba(0, 20, 10, .5);
+  }
+
+  /* Full-strength ink and a tight shadow, which is the band's treatment for
+     a short line on texture rather than the header's for nav-sized text —
+     at 18px the glyphs are heavy enough that lifting their edges reads as
+     contrast rather than as a smudge. */
+  .sent p {
+    margin: 0 0 32px;
+    font: 400 18px/1.6 var(--serif);
+    color: var(--ink);
+    text-wrap: pretty;
+    text-shadow: 0 1px 3px rgba(0, 18, 9, .5);
+  }
+
+  @media (max-width: 560px) {
+    .sent { padding: clamp(88px, 12vh, 132px) 20px clamp(48px, 9vh, 96px); }
+  }
+</style>

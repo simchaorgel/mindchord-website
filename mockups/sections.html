@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>banded sections</title>
+<style>
+  :root {
+    /* Measured across all three seams (hero bottom 83, band top 80, band
+       bottom 76 luma). One value serves every cut. */
+    --flat: #3e5749;
+    --ink: #f2fff7;
+    --ink-dim: rgba(242, 255, 247, .72);
+    --sans: ui-sans-serif, -apple-system, "Segoe UI", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--flat);
+    color: var(--ink);
+    font: 16px/1.7 var(--sans);
+  }
+
+  /* ── any textured panel ───────────────────────────────────────────────
+     Sections butt directly together — no margins, no fades. The cut is the
+     edge of the element. ─────────────────────────────────────────────── */
+  .tex { position: relative; isolation: isolate; }
+  .tex__bg {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background-repeat: no-repeat;
+    background-size: cover;
+  }
+
+  /* ── hero ── */
+  .hero {
+    height: 100vh;
+    display: grid;
+    place-content: center;
+    text-align: center;
+    padding: 40px;
+  }
+  .hero h1 {
+    margin: 0;
+    font: 600 clamp(44px, 10vw, 130px)/.95 var(--sans);
+    letter-spacing: -.045em;
+    text-shadow: 0 2px 50px rgba(0, 20, 10, .5);
+  }
+  .hero p { margin: 22px 0 0; font-size: 15px; color: var(--ink-dim); letter-spacing: .02em; }
+
+  /* ── flat copy sections ── */
+  .copy { max-width: 660px; margin: 0 auto; padding: 14vh 32px; }
+  .copy h2 { font: 600 30px/1.25 var(--sans); letter-spacing: -.02em; margin: 0 0 20px; }
+  .copy p { margin: 0 0 22px; color: rgba(242, 255, 247, .85); }
+  .copy p:last-child { margin-bottom: 0; }
+
+  /* ── the recurring band: statement type on texture ── */
+  .band { padding: 18vh 32px; }
+  .band__inner { max-width: 780px; margin: 0 auto; }
+  .band blockquote {
+    margin: 0;
+    font: 600 clamp(26px, 4.2vw, 46px)/1.22 var(--sans);
+    letter-spacing: -.028em;
+    text-shadow: 0 2px 34px rgba(0, 20, 10, .45);
+  }
+  .band cite {
+    display: block;
+    margin-top: 22px;
+    font: 500 13px/1.5 var(--sans);
+    font-style: normal;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: rgba(242, 255, 247, .6);
+  }
+
+  /* ── panel ── */
+  .panel {
+    position: fixed;
+    top: 14px; right: 14px;
+    z-index: 20;
+    width: 246px;
+    padding: 13px 15px;
+    background: rgba(6, 20, 13, .84);
+    backdrop-filter: blur(14px);
+    border: 1px solid rgba(120, 200, 155, .22);
+    border-radius: 11px;
+    font-size: 12px;
+  }
+  .panel h3 {
+    margin: 0 0 11px;
+    font-size: 10.5px; font-weight: 600;
+    letter-spacing: .09em; text-transform: uppercase;
+    color: #7fb99a;
+  }
+  .panel label { display: block; margin-bottom: 11px; color: #9dc4ae; }
+  .panel label b { float: right; color: #eafff2; font-variant-numeric: tabular-nums; }
+  .panel input[type=range] { width: 100%; accent-color: #45cd87; margin-top: 4px; }
+  .panel input[type=color] {
+    width: 100%; height: 30px; margin-top: 4px; padding: 2px;
+    background: #0d2a1c; border: 1px solid rgba(120, 200, 155, .26);
+    border-radius: 6px; cursor: pointer;
+  }
+  .check { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; color: #9dc4ae; }
+  .check input { accent-color: #45cd87; }
+  .stat { color: #82a993; font-size: 11px; line-height: 1.55; margin: 0; }
+  .stat b { color: #7dffc0; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<!-- 1 · hero: low frequency, radial highlight, the loudest panel -->
+<section class="tex hero" id="hero">
+  <div class="tex__bg" id="heroBg"></div>
+  <h1>your site here</h1>
+  <p>scroll ↓</p>
+</section>
+
+<!-- 2 · flat -->
+<section class="copy">
+  <h2>The texture becomes a system</h2>
+  <p>The hero does the loud work and then stops dead. No fade, no blend — the panel simply ends and the page continues on flat green, so the copy has nothing competing behind it.</p>
+  <p>What keeps the site feeling like one object is that the texture comes back. Not continuously, and not as atmosphere, but as a recurring band that carries the statements while the flat sections carry the reading.</p>
+</section>
+
+<!-- 3 · band: high frequency, no radial, statement type -->
+<section class="tex band" id="band">
+  <div class="tex__bg" id="bandBg"></div>
+  <div class="band__inner">
+    <blockquote>The same material, a different grain — loud enough to mark the section, quiet enough to read across.</blockquote>
+    <cite>the 0.02 band</cite>
+  </div>
+</section>
+
+<!-- 4 · flat -->
+<section class="copy">
+  <h2>Why the band drops the highlight</h2>
+  <p>The hero carries a radial highlight in its top-left corner, which is what gives it depth. Measured, that highlight makes the hero's top edge 13 luma brighter than its bottom — fine for a panel with only one seam at the bottom.</p>
+  <p>A band has two seams. With the highlight, its top edge measured 93 luma and its bottom 80, so no single flat green could meet both cleanly. Without it, the two edges come within 4 of each other and one green serves every cut on the page.</p>
+  <p>So the highlight is a hero-only device. That is also the right call hierarchically: the panel you land on should be the most dramatic thing here, and the bands that follow should be quieter echoes of it.</p>
+</section>
+
+<div class="panel">
+  <h3>Bands</h3>
+  <label>Hero frequency <b id="vH">0.0050</b>
+    <input type="range" id="cH" min="0.001" max="0.03" step="0.0005" value="0.005">
+  </label>
+  <label>Band frequency <b id="vB">0.0200</b>
+    <input type="range" id="cB" min="0.001" max="0.04" step="0.0005" value="0.02">
+  </label>
+  <label>Flat green
+    <input type="color" id="cFlat" value="#3e5749">
+  </label>
+  <label class="check">
+    <input type="checkbox" id="cRadial"> Highlight on band
+  </label>
+  <p class="stat">Seams measured at <b>76–83</b> luma; local noise varies by <b>~150</b>, so the cuts read clean. Tick the box to see why the band drops the highlight.</p>
+</div>
+
+<script>
+const el = id => document.getElementById(id);
+
+function texture(freq, radial) {
+  const svg =
+    `<svg xmlns='http://www.w3.org/2000/svg'>` +
+      `<filter id='n'>` +
+        `<feTurbulence type='turbulence' baseFrequency='${freq.toFixed(4)}' numOctaves='6' stitchTiles='stitch'/>` +
+      `</filter>` +
+      `<rect width='100%' height='100%' filter='url(#n)'/>` +
+    `</svg>`;
+  const enc = svg.replace(/%/g, '%25').replace(/#/g, '%23')
+                 .replace(/</g, '%3C').replace(/>/g, '%3E');
+  const highlight = radial
+    ? `radial-gradient(120% 90% at 25% 15%, #1d6b41 0%, transparent 55%), `
+    : '';
+  return `url("data:image/svg+xml,${enc}"), ${highlight}` +
+         `linear-gradient(160deg, #12452c 0%, #0b2a1c 100%)`;
+}
+
+function render() {
+  const h = +el('cH').value, b = +el('cB').value;
+  el('vH').textContent = h.toFixed(4);
+  el('vB').textContent = b.toFixed(4);
+  el('heroBg').style.backgroundImage = texture(h, true);              // hero keeps the highlight
+  el('bandBg').style.backgroundImage = texture(b, el('cRadial').checked);
+  document.documentElement.style.setProperty('--flat', el('cFlat').value);
+}
+
+['cH', 'cB', 'cFlat'].forEach(id => el(id).addEventListener('input', render));
+el('cRadial').addEventListener('change', render);
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,298 @@
+---
+/* Scroll-spy navigation for a long page section.
+
+   Rendered twice — `variant="rail"` for the sticky desktop column and
+   `variant="chips"` for the horizontally-scrolling mobile bar. Astro hoists
+   the <script> below once per page, so using this component twice does not
+   duplicate the listener.
+
+   Every link carries both href (native anchor jumping, no JS) and
+   data-target (what the spy matches on, so the highlight logic never parses
+   hrefs). Either nav can be dropped and the other still works. */
+
+export interface Section {
+  id: string;
+  label: string;
+}
+
+interface Props {
+  sections: Section[];
+  variant: 'rail' | 'chips';
+}
+
+const { sections, variant } = Astro.props;
+const isRail = variant === 'rail';
+---
+
+{isRail ? (
+  <aside id="section-nav-rail" class="rail" aria-label="Section navigation">
+    <ul>
+      {sections.map(({ id, label }) => (
+        <li>
+          <a href={`#${id}`} data-target={id}>{label}</a>
+        </li>
+      ))}
+    </ul>
+  </aside>
+) : (
+  <nav id="section-nav-chips" class="chips" aria-label="Section navigation">
+    {sections.map(({ id, label }) => (
+      <a href={`#${id}`} data-target={id}>{label}</a>
+    ))}
+  </nav>
+)}
+
+<style>
+  /* ── desktop rail ──────────────────────────────────────────────────────
+     Sticky within the grid column, so it travels down with the reader and
+     parks when the container ends. Deliberately no `position` on the #id
+     rule — the marker anchors to the inner <ul> instead, which is what
+     `position: relative` below is for.                                   */
+  .rail {
+    /* Column 1 of the page's 1fr / content / 1fr grid — the LEFT MARGIN, not
+       a sidebar beside the text. The text column stays centred in the
+       viewport; this floats out in the margin and reads as separate.
+       align-self:start is load-bearing: it shrinks the item to content height
+       so sticky has the full grid area to travel through. */
+    grid-column: 1;
+    justify-self: end;
+    align-self: start;
+    position: sticky;
+    top: 48px;
+    width: var(--rail-w, 200px);
+    margin-right: var(--rail-gap, 64px);
+  }
+  .rail ul {
+    position: relative;   /* marker anchor — not the sticky element */
+    list-style: none;
+    margin: 0;
+    padding: 0 0 0 20px;
+    /* Single source of truth for the tab's height — the CSS centres the tab
+       with it and the script reads it to work out where the rail should
+       start and stop. */
+    --tab-h: 22px;
+  }
+
+  /* The always-there rail. Its extent is measured, not the list's full
+     height: it runs from the tab's topmost position to its bottommost, so
+     no line shows above the tab when it is on the first item. */
+  .rail ul::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: var(--rail-top, 0px);
+    height: var(--rail-height, 0px);
+    width: 2px;
+    background: var(--rule);
+  }
+  /* Single sliding tab rather than a border per link. ::after, so it paints
+     over the rule above it without needing a z-index. Centred in the link's
+     band — the script reports the link box, the centring maths lives here. */
+  .rail ul::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: calc(var(--marker-top, 0px) + (var(--marker-height, 0px) - var(--tab-h)) / 2);
+    height: var(--tab-h);
+    width: 2px;
+    background: var(--accent);
+    opacity: 0;
+    transition: top .24s cubic-bezier(.4, 0, .2, 1),
+                height .24s cubic-bezier(.4, 0, .2, 1),
+                opacity .2s ease;
+  }
+  .rail.has-active ul::after { opacity: 1; }
+
+  .rail li + li { margin-top: 2px; }
+  .rail a {
+    display: block;
+    padding: 7px 0;
+    font-family: var(--serif);
+    font-size: 15px;
+    line-height: 1.35;
+    color: var(--ink-body);
+    text-decoration: none;
+    transition: color .18s ease;
+  }
+  .rail a:hover,
+  .rail a:focus-visible {
+    color: var(--ink);
+  }
+  /* active is a colour change, not a brightness change — it pairs with the
+     accent tab so the two read as one state */
+  .rail a.is-active {
+    color: var(--accent);
+  }
+
+  /* ── mobile chip bar ──────────────────────────────────────────────────
+     Sticks to the very top: this site's header scrolls away rather than
+     being fixed, so there is nothing above it to offset against.        */
+  .chips {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    display: flex;
+    gap: 8px;
+    /* Aligns with the heading and text column: 20px at narrow widths,
+       matching the centred content's gutter once there is room. */
+    padding-block: 12px;
+    padding-inline: max(20px, calc((100% - var(--content-w, 660px)) / 2));
+    margin: 0 0 28px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    background: var(--flat);
+    scrollbar-width: none;
+  }
+  .chips::-webkit-scrollbar { display: none; }
+
+  .chips a {
+    flex: 0 0 auto;
+    padding: 7px 14px;
+    border: 1px solid rgba(242, 255, 247, .25);
+    border-radius: 3px;
+    font-family: var(--serif);
+    font-size: 14px;
+    white-space: nowrap;
+    color: var(--ink-body);
+    text-decoration: none;
+    transition: color .18s ease, border-color .18s ease, background-color .18s ease;
+  }
+  .chips a.is-active {
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+
+  /* ── which nav is shown ───────────────────────────────────────────────
+     Placed last so these win over the display values in the rules above. */
+  .chips { display: none; }
+  /* 660 content + 2 x (200 rail + 64 gap) = 1188. Below ~1200px there is no
+     margin left to put the rail in, so it gives way to the chip bar. */
+  @media (max-width: 1200px) {
+    .rail  { display: none; }
+    .chips { display: flex; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .rail ul::after { transition: none; }
+  }
+</style>
+
+<script>
+  /* Reference-line scroll spy. Deliberately not IntersectionObserver: the
+     active section is simply the LAST one whose top has crossed a line 25%
+     down the viewport. That can never be ambiguous (never two active, never
+     a gap with none), it handles a short final section that never fills the
+     viewport, and -1 naturally means "above the section entirely". */
+  const REF_LINE = 0.25;
+
+  let sections: HTMLElement[] = [];
+  let links: HTMLAnchorElement[] = [];
+  let rail: HTMLElement | null = null;
+  let chips: HTMLElement | null = null;
+  let ticking = false;
+
+  const smooth = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function collect() {
+    rail = document.getElementById('section-nav-rail');
+    chips = document.getElementById('section-nav-chips');
+    links = Array.from(document.querySelectorAll<HTMLAnchorElement>('a[data-target]'));
+
+    // Order comes from DOM order of [data-target], so the section list is
+    // never duplicated in JS. Both navs list the same ids, hence the Set.
+    const ids = [...new Set(links.map((l) => l.dataset.target!))];
+    sections = ids
+      .map((id) => document.getElementById(id))
+      .filter((el): el is HTMLElement => el !== null);
+  }
+
+  /* The rule runs from the centre of the first link minus half a tab, to
+     the centre of the last plus half a tab — i.e. exactly the span the tab
+     can occupy. Relative offsets, so it is scroll-invariant and only needs
+     recomputing on layout change. */
+  function layoutRail() {
+    const ul = rail?.querySelector<HTMLElement>('ul');
+    if (!ul) return;
+    const items = Array.from(ul.querySelectorAll<HTMLElement>('a[data-target]'));
+    if (!items.length) return;
+
+    const tabH = parseFloat(getComputedStyle(ul).getPropertyValue('--tab-h')) || 22;
+    const ulTop = ul.getBoundingClientRect().top;
+    const centreOf = (el: HTMLElement) => {
+      const r = el.getBoundingClientRect();
+      return r.top - ulTop + r.height / 2;
+    };
+    const first = centreOf(items[0]);
+    const last = centreOf(items[items.length - 1]);
+
+    ul.style.setProperty('--rail-top', `${first - tabH / 2}px`);
+    ul.style.setProperty('--rail-height', `${last - first + tabH}px`);
+  }
+
+  function setActive(index: number) {
+    const activeId = index >= 0 ? sections[index]?.id : undefined;
+
+    // one flat list across both navs, so they stay in sync for free
+    for (const link of links) {
+      link.classList.toggle('is-active', link.dataset.target === activeId);
+    }
+
+    // desktop: slide the marker to the active link
+    const ul = rail?.querySelector<HTMLElement>('ul');
+    if (rail && ul) {
+      const active = rail.querySelector<HTMLElement>('a.is-active');
+      if (active) {
+        const ulTop = ul.getBoundingClientRect().top;
+        const rect = active.getBoundingClientRect();
+        ul.style.setProperty('--marker-top', `${rect.top - ulTop}px`);
+        ul.style.setProperty('--marker-height', `${rect.height}px`);
+      }
+      rail.classList.toggle('has-active', Boolean(active));
+    }
+
+    // mobile: pull the active chip back into view if it has drifted out
+    if (chips) {
+      const chip = chips.querySelector<HTMLElement>('a.is-active');
+      if (chip) {
+        const bar = chips.getBoundingClientRect();
+        const box = chip.getBoundingClientRect();
+        if (box.left < bar.left || box.right > bar.right) {
+          chips.scrollTo({
+            left: chip.offsetLeft - 16,
+            behavior: smooth ? 'smooth' : 'auto',
+          });
+        }
+      }
+    }
+  }
+
+  function update() {
+    if (!sections.length) return;
+    const refY = window.innerHeight * REF_LINE;
+    let activeIdx = -1;
+    sections.forEach((section, i) => {
+      if (section.getBoundingClientRect().top <= refY) activeIdx = i;
+    });
+    setActive(activeIdx);
+  }
+
+  function onScroll() {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(() => {
+      update();
+      ticking = false;
+    });
+  }
+
+  // Listeners are registered once (module scope); elements are re-collected
+  // on every navigation, since ClientRouter swaps the DOM without re-running
+  // this module.
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', () => { layoutRail(); onScroll(); }, { passive: true });
+  document.addEventListener('astro:page-load', () => {
+    collect();
+    layoutRail();
+    update();
+  });
+</script>

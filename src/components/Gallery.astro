@@ -1,0 +1,85 @@
+---
+import { Image, getImage } from 'astro:assets';
+
+export interface Shot {
+  src: ImageMetadata;
+  alt: string;
+}
+
+interface Props {
+  shots: Shot[];
+}
+
+const { shots } = Astro.props;
+
+/* sizes has to track the grid below, or the browser fetches for a full-width
+   image and throws most of the pixels away: a 322px cell once the column is
+   at its 660px cap, half the gutter width above the single-column
+   breakpoint, and full width below it. */
+const WIDTHS = [330, 440, 660, 880, 1320];
+const SIZES =
+  '(min-width: 700px) 322px, (min-width: 576px) calc((100vw - 56px) / 2), calc(100vw - 40px)';
+
+/* The viewer needs a source the thumbnail grid never asks for — at a 322px
+   cell the browser rightly picks the 330w file. Built here at the shot's
+   native width so opening one fetches an optimised webp rather than the
+   original JPEG, which is three to five times the size. */
+const full = await Promise.all(
+  shots.map(({ src }) => getImage({ src, width: src.width, format: 'webp' })),
+);
+---
+
+{/* Each opener is a real link to the full image, so this degrades to "opens
+    the picture" with no JS and is keyboard-operable for free. Lightbox.astro
+    intercepts the click. data-gallery is what bounds the previous/next set —
+    stepping never leaves the gallery you opened from. */}
+<div class="shots" data-gallery>
+  {shots.map(({ src, alt }, i) => (
+    <a
+      class="shot"
+      href={full[i].src}
+      data-w={src.width}
+      data-h={src.height}
+    >
+      <Image class="shot__img" src={src} alt={alt} widths={WIDTHS} sizes={SIZES} />
+    </a>
+  ))}
+</div>
+
+<style>
+  /* Screenshots two up. They are landscape at roughly 2:1, so a cell in the
+     660px text column comes out about 322x165: enough to read the shape of
+     each screen, not the text on it — hence the viewer. auto-fit with a
+     260px floor drops to one column below about 576px of viewport, where two
+     would be too narrow to show anything at all. */
+  .shots {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+    margin-top: 28px;
+  }
+
+  .shot {
+    display: block;
+    padding: 0;
+    border: 1px solid rgba(242, 255, 247, .12);
+    border-radius: 4px;
+    /* clips the image to the rounded corner */
+    overflow: hidden;
+    /* the shots run light and dark in turn; the hairline above stops the pale
+       ones dissolving into the flat green around them */
+    background: none;
+    cursor: zoom-in;
+    /* no descender gap under the image */
+    line-height: 0;
+    transition: border-color .18s ease;
+  }
+  .shot:hover,
+  .shot:focus-visible { border-color: rgba(242, 255, 247, .45); }
+
+  .shot__img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+</style>

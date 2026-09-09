@@ -1,0 +1,341 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   TEXTURED BANDS
+   Hero and occasional bands carry turbulence over green; everything else
+   sits on flat green. Cuts are hard — sections butt together, no fades.
+   No JavaScript: the textures are static background-images.
+
+   Imported once by src/layouts/Base.astro. Keep it global — putting these
+   rules in a component <style> block would scope them and duplicate the
+   data URIs into every page's CSS.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+:root {
+  color-scheme: dark;
+
+  /* ── palette ── */
+  --flat:      #243629;   /* plain green under all copy */
+  --ink:       #f2fff7;
+  --ink-body:  rgba(242, 255, 247, .85);
+  --ink-dim:   rgba(242, 255, 247, .6);
+  /* Active-state accent. Magenta, lightened for this background: #8A1C7C
+     measures 1.55:1 on --flat (invisible — both are dark), #E68AD8 keeps the
+     hue at 5.50:1, clear of the 4.5 needed at 15px. */
+  --accent:    #E68AD8;
+  /* Selection wash. The accent at .45 rather than the flat colour: a solid
+     fill of a 5.5:1 accent behind light ink is a stripe of near-equal
+     brightness and the words disappear into it. Composited on --flat this
+     lands at rgb(123,92,120), which holds --ink at 5.5:1. Past about .55 it
+     crosses under 4.5 and the selected text stops clearing AA. */
+  --select:    rgba(230, 138, 216, .45);
+  /* the always-present rail the marker rides on */
+  --rule:      rgba(242, 255, 247, .16);
+
+  /* ── the green beneath the noise ── */
+  --base:      linear-gradient(160deg, #12452c 0%, #0b2a1c 100%);
+  --highlight: radial-gradient(120% 90% at 25% 15%, #1d6b41 0%, transparent 55%);
+
+  /* ── noise. baseFrequency 0.005 = big molten blobs (hero),
+         0.02 = fine mottle (bands). numOctaves 6 = full roughness.
+         Rasterized once per panel; ~40ms at 2560×1440. ── */
+  --noise-hero: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.005' numOctaves='6' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --noise-band: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.02' numOctaves='6' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  /* NEVER set `seed` to make two textures differ. Seed picks the lattice
+     the noise is built from, so two seeds are unrelated fields: same blob
+     size, every blob somewhere else. The root crossfade between two routes
+     using them dissolves one arrangement into a displaced copy of itself,
+     which reads as a mistake rather than as a transition.
+
+     baseFrequency is the variable that differs cleanly. It scales the
+     coordinate lookup, so at one seed a higher frequency is the SAME field
+     sampled at a smaller scale — the structure holds and refines rather
+     than moving. That identity (magnifying noise by k == dividing
+     baseFrequency by k) is also why a transform can sweep between two
+     frequencies with no re-rasterization, should this ever be animated
+     properly. Both of the values above are at the default seed; keep it
+     that way. */
+
+  --sans: ui-sans-serif, -apple-system, "Segoe UI", system-ui, sans-serif;
+  /* TeX Gyre Pagella. --font-pagella is defined by Astro's <Font> component
+     in the layout head, and already carries the metric-matched fallbacks
+     declared in astro.config.mjs. */
+  --serif: var(--font-pagella), Palatino, "Palatino Linotype", Georgia, serif;
+}
+
+* { box-sizing: border-box; }
+
+/* clip, NOT hidden. overflow-x:hidden makes html a scroll container,
+   which silently breaks position:sticky on every descendant. */
+html {
+  overflow-x: clip;
+  /* Kills the grey-blue block Chrome and Safari flash over a tapped element.
+     It is an inherited property, so declaring it once here covers every
+     control on the site. This is the tap flash only — :focus-visible rings
+     are untouched, so keyboard users keep their focus indicator. */
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Scroll lock for the full-screen overlays — the menu and the image viewer.
+   showModal() makes the page inert but does not reliably stop it scrolling on
+   mobile, and that scroll retracts the browser toolbar mid-animation, which
+   changes the viewport out from under the overlay. Both add and remove this
+   one class; it lives here rather than in either component because neither
+   owns <html>.
+
+   scrollbar-gutter rides on this rule rather than sitting on html. It used
+   to be global, holding the scrollbar's column open on every page whether or
+   not a scrollbar was in it — invisible where the page is flat green, but a
+   strip of --flat down the side of a full-bleed texture on any route that
+   does not scroll. Here it does the same job only while it is needed:
+   overflow:hidden takes the scrollbar away, and `stable` reserves a gutter
+   for a hidden scroll container too, so the page cannot widen by the
+   scrollbar's width mid-animation — the jump you could otherwise see behind
+   the image viewer while it is still fading in.
+
+   What this does not cover is locking a page that had no scrollbar to begin
+   with, where the gutter is now reserved that was not there before and the
+   page narrows by it. That is the menu on a short route on a classic-
+   scrollbar system, and the halves have covered the screen before it shows.
+
+   Classic scrollbars only. Where they overlay the content instead (macOS and
+   iOS by default) nothing is reserved either way, and nothing was shifting
+   there to begin with. */
+html.overlay-open {
+  overflow: hidden;
+  scrollbar-gutter: stable;
+}
+
+/* Selection stays on, in the accent rather than the browser's blue. Both
+   halves are declared: without an explicit colour the UA may swap the text
+   to its own, which would undo the contrast the wash was chosen for. */
+::selection {
+  background: var(--select);
+  color: var(--ink);
+}
+
+/* smooth jump for in-page anchors (e.g. the hero's "find out more") */
+@media (prefers-reduced-motion: no-preference) {
+  html { scroll-behavior: smooth; }
+}
+
+body {
+  margin: 0;
+  /* Flex column so a page with less content than the viewport still lands its
+     footer on the bottom edge instead of partway up a screen of flat green.
+     <main> in Base.astro is the item that takes up the slack; every other
+     child here is either out of flow (the header) or has no height (#top).
+
+     dvh, not vh: on mobile `100vh` measures the viewport with the browser
+     chrome retracted, so the footer would sit just under the fold — the same
+     trap the hero avoids. 100vh first as the fallback for old browsers. */
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--flat);
+  color: var(--ink);
+  font: 16px/1.7 var(--sans);
+}
+/* flex-grow rather than `flex: 1`: basis stays auto, so main is content-height
+   first and only absorbs what is left over. On the long pages there is nothing
+   left over and this changes nothing.
+
+   A column flex container as well, so a short page can hand the slack on to
+   its own section and centre in it — `height: 100%` would not do this job,
+   since main's height comes from body's min-height and is not the definite
+   value a percentage needs. A section opts in by taking flex-grow itself;
+   the long pages set none, so their children stay content-height and stacked
+   exactly as they were. */
+body > main {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── textured panels ──────────────────────────────────────────────────
+   The texture lives in ::before so markup stays clean — a band is just
+   <section class="band">. isolation:isolate keeps the z-index:-1 layer
+   inside its own section.                                             */
+.hero,
+.band {
+  position: relative;
+  isolation: isolate;
+}
+.hero::before,
+.band::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-repeat: no-repeat;
+}
+/* hero keeps the radial highlight — it should be the loudest panel */
+.hero::before { background-image: var(--noise-hero), var(--highlight), var(--base); }
+/* bands drop it: with the highlight their top and bottom edges differ by
+   13 luma and no single flat green meets both cleanly */
+.band::before { background-image: var(--noise-band), var(--base); }
+
+/* ── hero ── */
+.hero {
+  /* svh, not vh: on mobile `100vh` measures the viewport with browser chrome
+     retracted, so the hero would overflow and the hard cut would land below
+     the fold instead of on it. vh first as the fallback for old browsers. */
+  height: 100vh;
+  height: 100svh;
+  display: grid;
+  place-content: center;
+  text-align: center;
+  /* Narrower gutter on phones, to buy the larger title below the room it
+     needs to keep "Neurofeedback" on one line. */
+  padding: 40px clamp(22px, 6vw, 40px);
+}
+.hero h1 {
+  margin: 0;
+  /* Serif at display size. Weight 400, not 600 — Pagella ships 400 and 700
+     only, so 600 would snap to bold or be synthesized; at this size regular
+     already has plenty of presence and reads more editorial.
+     Tracking is far looser than the sans version was (-.015em vs -.045em):
+     serifs need the room, and tight tracking collides the terminals.
+
+     Only the floor moved for the phone sizes (36 -> 46px). It takes effect
+     below 622px, so every width above that is untouched and the curve stays
+     monotonic — raising it this way avoids a step at a breakpoint. */
+  font: 400 clamp(46px, 7.4vw, 84px)/1 var(--serif);
+  letter-spacing: -.015em;
+  text-wrap: balance;
+  text-shadow: 0 2px 50px rgba(0, 20, 10, .5);
+}
+
+/* Tagline — reads as an instruction, not a call to action: no underline, no
+   shadow, full-strength ink (opacity costs real contrast over a live
+   texture). Still an anchor, so clicking it works; the cursor is the only
+   affordance, which keeps it looking like a prompt rather than a button. */
+.hero__tagline {
+  display: inline-block;
+  margin: 30px 0 0;
+  font-family: var(--serif);
+  font-size: 17px;
+  letter-spacing: .01em;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+/* ── flat copy sections ── */
+.copy {
+  max-width: 660px;
+  margin: 0 auto;
+  padding: 14vh 32px;
+}
+.copy h2 {
+  font: 600 30px/1.25 var(--sans);
+  letter-spacing: -.02em;
+  margin: 0 0 20px;
+}
+.copy p { margin: 0 0 22px; color: var(--ink-body); }
+.copy p:last-child { margin-bottom: 0; }
+.copy code {
+  font: 13px/1.4 ui-monospace, "Cascadia Code", Consolas, monospace;
+  background: rgba(0, 0, 0, .25);
+  border: 1px solid rgba(120, 200, 155, .16);
+  border-radius: 4px;
+  padding: .15em .4em;
+}
+
+/* ── bands ───────────────────────────────────────────────────────────
+   Occasional textured sections, appearing about twice a page. A band
+   carries a heading, optionally one short paragraph, and optionally an
+   action. What it must NOT carry is long-form body copy — that belongs
+   in .copy on flat green, where there is no texture competing with it. */
+.band {
+  padding: 16vh 32px;
+  text-align: center;
+}
+/* Phones: 16vh top and bottom is nearly a third of the screen in padding
+   alone — and `vh` resolves against the large viewport here, so it is more
+   than it reads as. Capped instead, which keeps the band a panel you take in
+   at once rather than one you scroll through. */
+@media (max-width: 560px) {
+  .band { padding: clamp(52px, 9vh, 92px) 24px; }
+}
+.band__inner { max-width: 620px; margin: 0 auto; }
+.band h2 {
+  margin: 0 0 20px;
+  font: 400 clamp(30px, 4.4vw, 50px)/1.1 var(--serif);
+  letter-spacing: -.02em;
+  text-wrap: balance;
+  /* Measured: mean contrast over the 0.02 texture is 8.7:1, but ~0.34% of
+     pixels — the brightest noise flecks — drop to 2.08:1. The tight dark
+     shadow sits under the glyph edges and lifts those; the wide one is
+     ambient depth. */
+  text-shadow: 0 1px 3px rgba(0, 18, 9, .5), 0 2px 34px rgba(0, 20, 10, .45);
+}
+.band p {
+  margin: 0 0 34px;
+  font-family: var(--serif);
+  font-size: 18px;
+  line-height: 1.6;
+  color: var(--ink);
+  text-wrap: pretty;
+  text-shadow: 0 1px 3px rgba(0, 18, 9, .5);
+}
+.band p:last-child { margin-bottom: 0; }
+/* Square-cornered, unlike the header’s pill — a band action sits in the
+   page rather than in the chrome, so it follows the hard-cut language. */
+.band__btn {
+  display: inline-block;
+  padding: 13px 28px;
+  border-radius: 3px;
+  background: var(--ink);
+  color: #10301f;
+  font-family: var(--serif);
+  font-size: 16px;
+  text-decoration: none;
+  transition: background-color .18s ease, color .18s ease;
+}
+.band__btn:hover,
+.band__btn:focus-visible {
+  background: var(--accent);
+  color: #2b1226;
+}
+/* ── footer ── */
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 24px;
+  padding: 26px 32px;
+  font-family: var(--serif);
+  font-size: 14px;
+  color: var(--ink-body);
+}
+.footer a { color: inherit; text-decoration: none; }
+.footer a:hover, .footer a:focus-visible { color: var(--ink); }
+.footer__top { display: inline-flex; align-items: center; gap: 7px; }
+.footer__top svg { display: block; }
+/* Hold each phrase whole, so a bar too narrow for all three wraps as a row
+   rather than breaking the copyright across two lines. */
+.footer > * { white-space: nowrap; }
+/* Terms sits directly after the copyright, the pair together at the left and
+   back to top alone at the right. One auto margin does it: it swallows the
+   free space that space-between would otherwise open between the first two
+   items, leaving none between them. */
+.footer__terms { margin-right: auto; }
+/* Phones drop the auto margin, so space-between spreads all three and terms
+   falls between the other two. The tighter column gap is what buys the three
+   phrases room to stay on one line at typical handset widths. */
+@media (max-width: 560px) {
+  .footer { padding: 22px 20px; gap: 10px 14px; }
+  .footer__terms { margin-right: 0; }
+}
+
+/* ── view transitions ─────────────────────────────────────────────────
+   The default root crossfade is what we want: because feTurbulence is
+   deterministic, the hero texture is byte-identical on every page, so it
+   appears to hold still while the content changes.                     */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
