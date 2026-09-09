@@ -1,0 +1,68 @@
+---
+/* Deliberately minimal. Everything here is true of the codebase as it
+   stands: no analytics, no third-party scripts, no cookies set by this site,
+   fonts self-hosted through Astro's font pipeline rather than fetched from
+   Google. If any of that changes, this page has to change with it.
+
+   Scope is the WEBSITE only — the app and the Dashboard are not mentioned,
+   so nothing here should be read as covering EEG or clinical data. */
+import Base from '../layouts/Base.astro';
+
+/* Needs to be a real inbox: the page tells people to use it for deletion
+   requests. */
+const EMAIL = 'simcha@mindchord.net';
+---
+
+<Base
+  title="Mindchord · Terms and privacy"
+  description="What this site collects and what happens to it."
+>
+  <section class="copy terms">
+    <h1>Terms and privacy</h1>
+
+    <p>
+      The only information this site collects is what you type into the
+      contact form (your name, your email address, and your message), which
+      we use to reply to you and neither sell nor pass on to anyone else. The
+      site runs no analytics and no advertising and sets no cookies of its
+      own, and it is hosted by Netlify, who receive and store contact form
+      submissions and keep the routine server logs any host keeps. If you
+      would like to know what we hold about you, or would rather we deleted
+      it, email <a href={`mailto:${EMAIL}`}>{EMAIL}</a>.
+    </p>
+  </section>
+</Base>
+
+<style>
+  /* Flat green and the site's long-form treatment — .copy in global.css is
+     built for exactly this, a single column of body text with no texture
+     competing with it.
+
+     What .copy does not do is clear the header, because everywhere it has
+     been used so far there was a hero above it taking the overlap. 84px is
+     the bar's own height, read off its tokens: --bar-pad-y 22 twice plus
+     --brand-h 40. 69px below 560px, where those drop to 18 and 33. */
+  .terms { padding-top: calc(84px + clamp(24px, 5vh, 64px)); }
+
+  .terms h1 {
+    margin: 0 0 26px;
+    font: 400 clamp(30px, 4vw, 46px)/1.1 var(--serif);
+    letter-spacing: -.02em;
+    text-wrap: balance;
+  }
+  /* The home page's link treatment: body copy on flat green, reading as a
+     link without shouting. */
+  .terms a {
+    color: var(--ink);
+    text-decoration: underline;
+    text-decoration-color: rgba(242, 255, 247, .38);
+    text-underline-offset: 3px;
+    transition: text-decoration-color .18s ease;
+  }
+  .terms a:hover,
+  .terms a:focus-visible { text-decoration-color: var(--ink); }
+
+  @media (max-width: 560px) {
+    .terms { padding-top: calc(69px + clamp(20px, 4vh, 48px)); }
+  }
+</style>

@@ -10,9 +10,25 @@ import '../styles/global.css';
 interface Props {
   title: string;
   description?: string;
+  /** Path to a share image for this route, from the site root. Optional —
+      see the card note below for what happens without one. */
+  image?: string;
 }
 
-const { title, description = 'Mindchord' } = Astro.props;
+/* The site-wide share card — the top of the home page, cropped to the
+   1200x630 every unfurler wants. JPEG rather than PNG: it is a photograph of
+   noise, which PNG cannot compress (336KB against 67KB), and some scrapers
+   give up on a slow image rather than wait for it. */
+const SHARE_CARD = '/og.jpg';
+
+const { title, description = 'Mindchord', image = SHARE_CARD } = Astro.props;
+
+/* Open Graph needs ABSOLUTE urls — a scraper reading the markup has no page
+   context to resolve a relative one against, and most simply drop it.
+   Astro.site is the `site` in astro.config.mjs, so that is the one place the
+   origin is written down. */
+const canonical = new URL(Astro.url.pathname, Astro.site);
+const shareImage = new URL(image, Astro.site);
 ---
 
 <!doctype html>
@@ -20,10 +36,38 @@ const { title, description = 'Mindchord' } = Astro.props;
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    {/* The .ico is not decoration. Browsers ask for /favicon.ico directly
+        whenever no link tag answers first, and so do plenty of crawlers and
+        link unfurlers — which until now were being handed Astro's default
+        rocket, since the starter's file was still sitting there. It carries
+        16, 32 and 48 of the app mark, squared by padding rather than by
+        stretching a 342x326 source.
+
+        The PNG stays the high-resolution answer for anything that reads the
+        markup, and is deliberately the unprocessed source file — see the
+        note in Header.astro on the ICC profile. */}
+    <link rel="icon" href="/favicon.ico" />
     <link rel="icon" type="image/png" href={icon.src} />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="generator" content={Astro.generator} />
     <title>{title}</title>
     <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+
+    {/* Both vocabularies, because they are read by different scrapers: og:*
+        by most link unfurlers (Slack, WhatsApp, LinkedIn, iMessage), the
+        twitter:* pair for the card type and as X's preferred source. */}
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Mindchord" />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={shareImage} />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={shareImage} />
 
     {/* Emits the @font-face rules and metric-matched fallbacks for all four
         variants. Preload is narrowed to regular-normal — the only face the

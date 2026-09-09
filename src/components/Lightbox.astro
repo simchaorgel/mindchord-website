@@ -66,7 +66,11 @@
     --lb-bottom: 52px;
     --lb-gutter: 96px;     /* clears the arrows sitting either side */
     --lb-arrows-h: 0px;    /* they are beside the image, not under it */
-    --lb-arrow: 24px;
+    --lb-box: 40px;        /* the circle all three controls share */
+    --lb-icon: 24px;       /* the arrows' glyph */
+    --lb-close-icon: 20px; /* the X, drawn smaller inside the same circle */
+    --lb-ring: 2px;
+    --lb-edge: 10px;       /* their inset from the viewer's edge */
     --lb-fade: 150ms;
   }
 
@@ -136,21 +140,53 @@
     white-space: nowrap;
   }
 
+  /* One circle for all three controls, given its size directly rather than
+     grown out of padding. The X is drawn smaller than the arrows now, and a
+     padded box would have shrunk with it — which would cost both the ring
+     matching and the vertical line the X shares with the next arrow.
+
+     Round, and the only round things on the site apart from the header's
+     dashboard pill. That is the same argument: these sit on the viewer's
+     chrome rather than in the page, so they read as controls rather than as
+     part of what is being looked at.
+
+     The ring is the glyph's own colour at the glyph's own stroke width, so
+     ring and glyph read as one mark rather than a bright icon in a faint
+     hoop — but carried at 60%, which is --ink-dim's alpha. At full strength
+     it out-weighs the glyph it surrounds even at matching thickness, simply
+     because a closed circle is far more stroke than an X or a chevron.
+
+     Mixed toward transparent rather than named as a colour, so it stays tied
+     to currentColor: hover still carries the ring to the accent with no rule
+     of its own, and where color-mix is unsupported the declaration is dropped
+     and the solid currentColor in the shorthand above stands.
+
+     The X is 20 where the arrows are 24. Both svgs are drawn on a 24-unit
+     viewBox at stroke-width 2, so shrinking the box thins the stroke with it:
+     2.4 units at 20px comes back out at 2px, which is the ring. */
   .lb__step,
   .lb__close {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 6px;
-    border: 0;
-    border-radius: 3px;
+    width: var(--lb-box);
+    height: var(--lb-box);
+    padding: 0;
+    border: var(--lb-ring) solid currentColor;
+    border-color: color-mix(in srgb, currentColor 60%, transparent);
+    border-radius: 999px;
     background: none;
     color: var(--ink);
     cursor: pointer;
     line-height: 0;
     transition: color .18s ease;
   }
-  .lb__step svg { width: var(--lb-arrow); height: var(--lb-arrow); }
+  .lb__step svg { width: var(--lb-icon); height: var(--lb-icon); }
+  .lb__close svg {
+    width: var(--lb-close-icon);
+    height: var(--lb-close-icon);
+    stroke-width: 2.4;
+  }
   .lb__step:hover,
   .lb__step:focus-visible,
   .lb__close:hover,
@@ -159,7 +195,10 @@
   .lb__close {
     position: absolute;
     top: 14px;
-    right: 16px;
+    /* The same inset as the arrows, so the X stands on the same vertical
+       line as the next arrow below it. All three boxes are one width, so a
+       shared edge offset is enough to line their centres up. */
+    right: var(--lb-edge);
   }
 
   /* Either side of the image, riding the vertical centre. Absolute rather
@@ -170,8 +209,8 @@
     top: 50%;
     transform: translateY(-50%);
   }
-  .lb__step--prev { left: 10px; }
-  .lb__step--next { right: 10px; }
+  .lb__step--prev { left: var(--lb-edge); }
+  .lb__step--next { right: var(--lb-edge); }
 
   /* Phones put the arrows UNDER the image instead of beside it. A phone is
      portrait and the shots are landscape, so width is the scarce dimension
@@ -184,11 +223,18 @@
      and --lb-gutter collapses now that nothing sits beside the image. */
   @media (max-width: 560px) {
     .lb {
-      --lb-top: 50px;
+      /* The circle is 38px here and the X sits at top:10px, so it reaches 48
+         and the stage starts clear of it. */
+      --lb-top: 54px;
       --lb-bottom: 4px;
       --lb-gutter: 12px;
       --lb-arrows-h: 54px;
-      --lb-arrow: 22px;
+      --lb-box: 38px;
+      --lb-icon: 22px;
+      --lb-close-icon: 18px;
+      /* Only the X reads this here — the arrows are in the grid below the
+         image rather than absolutely placed. */
+      --lb-edge: 12px;
     }
     .lb[open] {
       display: grid;
@@ -204,7 +250,7 @@
     }
     .lb__step--prev { grid-column: 1; justify-self: end; margin-right: 14px; }
     .lb__step--next { grid-column: 2; justify-self: start; margin-left: 14px; }
-    .lb__close { top: 10px; right: 12px; }
+    .lb__close { top: 10px; }
   }
 </style>
 

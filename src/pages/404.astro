@@ -1,0 +1,103 @@
+---
+/* Served for any route that does not exist. Astro renders this in dev for an
+   unmatched path and emits 404.html on build, which Netlify picks up as the
+   site's not-found page with no configuration.
+
+   It is also where the two navigation targets that are not built yet land —
+   /dashboard from the header and /terms from the footer — so until those
+   exist this is the page that catches them. That is a reason to keep the
+   wording about the address rather than about the site being unfinished: it
+   has to read correctly for a mistyped URL too. */
+import Base from '../layouts/Base.astro';
+---
+
+<Base title="Mindchord · 404">
+  <section class="notfound">
+    <div class="notfound__inner">
+      <h1>Error 404</h1>
+      <p>Page not found</p>
+      {/* .band__btn is global, not the band's own — it is the site's page
+          action wherever one is needed, and global.css is where it lives. */}
+      <a class="band__btn" href="/">Back to home</a>
+    </div>
+  </section>
+</Base>
+
+<style>
+  /* Deliberately /contact/sent's panel, unchanged: same full-bleed hero
+     texture in a ::before, same centring, same clearance. A dead end should
+     look like the site rather than like something that fell over, and the
+     two pages are the same shape — a line, a sentence, one way onward. */
+  .notfound {
+    position: relative;
+    isolation: isolate;
+    flex-grow: 1;   /* takes the slack main is holding — see global.css */
+    display: grid;
+    /* safe is load-bearing: on a viewport too short for the copy, plain
+       centring overflows both ways and slides the heading up under the
+       header. safe falls back to start there and the top padding holds. */
+    align-content: center;
+    align-content: safe center;
+    /* Top floor is 104px against a bar 84px tall (--bar-pad-y 22 twice plus
+       --brand-h 40) — the header is position:absolute and overlays this the
+       way it overlays a hero, so this is clearance rather than layout.
+
+       Capped rather than a bare vh: on phones vh resolves against the large
+       viewport, so it is always more room than it reads as. */
+    padding: clamp(104px, 14vh, 168px) 32px clamp(56px, 10vh, 120px);
+    text-align: center;
+  }
+  .notfound::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background-image: var(--noise-hero), var(--highlight), var(--base);
+    background-repeat: no-repeat;
+    /* The panel is a footer shorter than the hero, but its texture must not
+       be. --highlight is a radial at 120% 90% at 25% 15%, and --base a 160deg
+       linear: both resolve against the box they are painted into, so a
+       shorter box lifts the bloom, shrinks it, and re-ramps the green — which
+       reads as the hero squashed into less room. The noise never needed it:
+       feTurbulence works in fixed user units, so a shorter box only crops it.
+
+       Pinning all three layers to 100svh hands them the hero's exact box.
+       They anchor top-left, so this panel shows the top of the identical
+       image and the footer covers what is left. vh first as the fallback. */
+    background-size: 100% 100vh;
+    background-size: 100% 100svh;
+  }
+
+  .notfound__inner {
+    width: 100%;
+    max-width: 440px;
+    margin: 0 auto;
+  }
+
+  /* The hero h1's shadow — the wide ambient one only. Over 0.005 noise the
+     blobs are far larger than a glyph, so there are no bright flecks inside
+     the letterforms for a tight shadow to lift. */
+  .notfound h1 {
+    margin: 0 0 18px;
+    font: 400 clamp(30px, 4vw, 46px)/1.1 var(--serif);
+    letter-spacing: -.02em;
+    text-wrap: balance;
+    text-shadow: 0 2px 50px rgba(0, 20, 10, .5);
+  }
+
+  /* Full-strength ink and a tight shadow, which is the band's treatment for
+     a short line on texture rather than the header's for nav-sized text —
+     at 18px the glyphs are heavy enough that lifting their edges reads as
+     contrast rather than as a smudge. */
+  .notfound p {
+    margin: 0 0 32px;
+    font: 400 18px/1.6 var(--serif);
+    color: var(--ink);
+    text-wrap: pretty;
+    text-shadow: 0 1px 3px rgba(0, 18, 9, .5);
+  }
+
+  @media (max-width: 560px) {
+    .notfound { padding: clamp(88px, 12vh, 132px) 20px clamp(48px, 9vh, 96px); }
+  }
+</style>

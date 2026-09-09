@@ -12,8 +12,12 @@ import shot3 from '../assets/app-screenshot-3.jpg';
 import shot4 from '../assets/app-screenshot-4.jpg';
 import shot5 from '../assets/app-screenshot-5.jpg';
 import shot6 from '../assets/app-screenshot-6.jpg';
-import dash1 from '../assets/dash-screenshot-1.jpg';
-import dash2 from '../assets/dash-screenshot-2.jpg';
+import dash1 from '../assets/dash-1.png';
+import dash2 from '../assets/dash-2.png';
+import dash3 from '../assets/dash-3.png';
+import dash4 from '../assets/dash-4.png';
+import dash5 from '../assets/dash-5.png';
+import dash6 from '../assets/dash-6.png';
 
 /* Single source of truth for the section list — both navs and the scroll
    spy derive from the DOM order this produces. */
@@ -25,52 +29,37 @@ const sections: Section[] = [
   { id: 'dashboard', label: 'Mindchord Dashboard' },
 ];
 
-/* Alt text says what each screen shows rather than that it is a screenshot —
-   the heading above them already establishes that. Between them they cover
-   the three feedback types named in "What is Mindchord?": preset video,
-   local video, and interactive visualisations. */
+/* Alt text names what each screen IS, in one short clause. Deliberately not
+   a description of everything on it: the grid is a contact sheet and the
+   viewer is where a screen gets read, so an alt that recites every label is
+   reading the picture aloud to someone who only wanted to know which picture
+   it is. "Screenshot" is left out too — the heading above already says so.
+
+   These are the strings the lightbox shows as well: it reuses the
+   thumbnail's alt rather than carrying a second copy, so there is one place
+   to change any of them. */
 const shots: Shot[] = [
-  {
-    src: shot1,
-    alt: 'The Mindchord sign-in screen: a watercolour lake and mountains behind a card asking for an email address, with a Send code button.',
-  },
-  {
-    src: shot2,
-    alt: 'A session running, with a slow teal cloud filling the window as feedback and a bar below reading 7 mins left, beside pause and stop controls.',
-  },
-  {
-    src: shot3,
-    alt: 'Video feedback during calibration: aerial footage of a glacier above a braided river valley, the bar below counting down Calibrating 26s.',
-  },
-  {
-    src: shot4,
-    alt: 'An interactive visualisation: magenta and violet ribbons rippling across a black field, the bar below reading Calibrating 29s.',
-  },
-  {
-    src: shot5,
-    alt: 'An interactive visualisation: a magenta geometric web radiating from a bright centre point, with 8 mins left on the bar below.',
-  },
-  {
-    src: shot6,
-    alt: 'The Live EEG Plots screen: raw microvolt traces for the TP9, AF7, AF8, TP10 and AUX channels above a band powers chart for delta, theta, alpha, beta and gamma, with a connected Muse headset named in the corner.',
-  },
+  { src: shot1, alt: 'The sign-in screen, asking for an email address to send a code to.' },
+  { src: shot2, alt: 'A session running, with a slow teal cloud as feedback and the time left below.' },
+  { src: shot3, alt: 'Video feedback during calibration: aerial footage of a glacier and river valley.' },
+  { src: shot4, alt: 'An interactive visualisation: magenta and violet ribbons across a black field.' },
+  { src: shot5, alt: 'An interactive visualisation: a magenta web radiating from a bright centre.' },
+  { src: shot6, alt: 'The Live EEG Plots screen: raw channel traces above a band powers chart.' },
 ];
 
 const dashShots: Shot[] = [
-  {
-    src: dash1,
-    alt: 'A client in the Mindchord Dashboard, showing the protocols assigned to them. Each lists its frequency bands with reward or punish thresholds, the channels it reads, its duration, and how many sessions have been completed against it.',
-  },
-  {
-    src: dash2,
-    alt: 'The sessions table for the same client: one row per completed session with its date, duration, percentage of time spent above threshold, and best streak, paged ten at a time out of seventy-nine.',
-  },
+  { src: dash1, alt: 'The provider dashboard: a sessions chart above a list of clients needing attention.' },
+  { src: dash2, alt: 'The organisation page: headline client, clinician and session counts above a growth chart.' },
+  { src: dash3, alt: "A client's page, listing each protocol assigned to them with its bands and channels." },
+  { src: dash4, alt: 'The protocol editor, on the step where frequency bands are set to reward or inhibit.' },
+  { src: dash5, alt: 'The dialog for issuing a client an offline licence, with the machine it is tied to.' },
+  { src: dash6, alt: "A client's completed sessions, each with its duration, time above threshold and best streak." },
 ];
 
 ---
 
 <Base title="Mindchord" description="Neurofeedback at home.">
-  <Hero title="Neurofeedback at home." tagline="find out more ↓" taglineHref="#more" />
+  <Hero title="Neurofeedback at home." tagline="find out more ↓" taglineHref="#about" />
 
   <div class="about" id="more">
     <h2 class="about__heading">About</h2>

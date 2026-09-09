@@ -1,0 +1,6 @@
+# Everything is public; the only thing worth saying here is where the
+# sitemap is. @astrojs/sitemap writes the index at build.
+User-agent: *
+Allow: /
+
+Sitemap: https://mindchord.net/sitemap-index.xml

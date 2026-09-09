@@ -1,8 +1,15 @@
 ---
 import icon from '../assets/favicon.png';
 
+/* The dashboard is a separate app on its own subdomain, not a route here.
+   Written down once because it is rendered TWICE — the pill in the bar and
+   the pill inside the modal — and those are shown at different widths, so a
+   change to one and not the other is invisible until someone opens the site
+   on a phone. That is exactly how it went wrong before. */
+const DASHBOARD = 'https://dash.mindchord.net';
+
 const links = [
-  { href: '/about', label: 'About' },
+  { href: '/#about', label: 'About' },
   { href: '/get-started', label: 'Get started' },
   { href: '/contact', label: 'Contact Us' },
 ];
@@ -13,12 +20,15 @@ const links = [
 const menuLinks = [{ href: '/', label: 'Home' }, ...links];
 
 /* Trailing-slash-tolerant compare. With Astro's default `format: 'directory'`
-   build, /about is emitted as /about/index.html and Astro.url.pathname comes
-   back as `/about/` — which never equals the `/about` in the list above. So
-   the current-page state rendered in dev, where the path has no trailing
-   slash, and then silently vanished from every production build. Normalise
-   both sides; `|| '/'` keeps the home path from collapsing to an empty
-   string, which would make no route ever match it. */
+   build, /contact is emitted as /contact/index.html and Astro.url.pathname
+   comes back as `/contact/` — which never equals the `/contact` in the list
+   above. So the current-page state rendered in dev, where the path has no
+   trailing slash, and then silently vanished from every production build.
+   Normalise both sides; `|| '/'` keeps the home path from collapsing to an
+   empty string, which would make no route ever match it.
+
+   Nothing here strips a hash, deliberately: an entry pointing at a section
+   rather than a route is never the current page. */
 const trim = (path: string) => path.replace(/\/+$/, '') || '/';
 const here = trim(Astro.url.pathname);
 const isCurrent = (href: string) => trim(href) === here;
@@ -53,7 +63,7 @@ const isCurrent = (href: string) => trim(href) === here;
   </div>
 
   <nav class="right" aria-label="Dashboard">
-    <a href="/dashboard">Mindchord Dashboard</a>
+    <a href={DASHBOARD}>Mindchord Dashboard</a>
   </nav>
 
   <button
@@ -85,7 +95,7 @@ const isCurrent = (href: string) => trim(href) === here;
           {label}
         </a>
       ))}
-      <a class="menu__dash" href="/dashboard">Mindchord Dashboard</a>
+      <a class="menu__dash" href={DASHBOARD}>Mindchord Dashboard</a>
     </nav>
   </dialog>
 </header>

@@ -1,9 +1,17 @@
 ---
 import Base from '../layouts/Base.astro';
 import icon from '../assets/favicon.png';
+
+/* The installer, on R2, and the version it is — kept together because they
+   have already disagreed once: the page advertised v1.1.2 while the file on
+   the other end was 1.1.0. Change one and the other has to follow. */
+const DOWNLOAD =
+  'https://pub-de203417a4164a319459d3e18a141c9b.r2.dev/Mindchord-Setup-1.1.0.exe';
+const VERSION = 'v1.1.0';
+const PLATFORM = 'Windows 10 / 11';
 ---
 
-<Base title="Get started — Mindchord" description="Get started with Mindchord.">
+<Base title="Mindchord · Get started" description="Get started with Mindchord.">
   <section class="start">
     <div class="start__grid">
       <div class="start__copy">
@@ -31,16 +39,22 @@ import icon from '../assets/favicon.png';
         <h2 class="start__title">Download Mindchord</h2>
 
         <p class="start__meta">
-          <span>v1.1.2</span>
+          <span>{VERSION}</span>
           <span class="start__sep" aria-hidden="true">·</span>
-          <span>Windows 10 / 11</span>
+          <span>{PLATFORM}</span>
         </p>
 
-        {/* A <button>, not an <a>, because there is no artifact to point at
-            yet — an anchor without an href is not focusable and not a control.
-            Swap it for <a class="start__btn" href="..." download> once there
-            is a file; the styling is written to suit either. */}
-        <button class="start__btn" type="button">Download for Windows</button>
+        {/* A real link now that there is a file — the styling was written to
+            suit either, so nothing changed but the element.
+
+            No `download` attribute. It only takes effect same-origin and is
+            ignored on a cross-origin URL, which this is; the browser saves
+            the .exe off the response headers instead. Leaving the attribute
+            on would be a no-op that reads as load-bearing.
+
+            ClientRouter ignores it too — it only transitions same-origin
+            navigations — so this needs no opt-out of its own. */}
+        <a class="start__btn" href={DOWNLOAD}>Download for Windows</a>
 
         <p class="start__notice">Only beta-testers can sign in</p>
       </div>
@@ -49,8 +63,8 @@ import icon from '../assets/favicon.png';
 </Base>
 
 <style>
-  /* Flat green, no hero — the first route on the site that opens straight onto
-     --flat. That makes it also the first that has to clear the header itself:
+  /* Flat green, no hero — the one route on the site that opens straight onto
+     --flat. That makes it also the one that has to clear the header itself:
      the bar is position:absolute, and everywhere else a full-bleed .hero sits
      underneath it taking the overlap.
 
@@ -89,7 +103,12 @@ import icon from '../assets/favicon.png';
   }
 
   /* Matches the About heading on the home page: serif at 400, since Pagella
-     ships 400 and 700 only and a heavier weight would be synthesized. */
+     ships 400 and 700 only and a heavier weight would be synthesized.
+
+     No text-shadow, because there is no texture under it. That shadow exists
+     to lift glyph edges off the brightest noise flecks; on a flat ground it
+     only adds a third tone between the ink and the green — the smudge the
+     header's note warns about. */
   .start__copy h1 {
     margin: 0 0 24px;
     font: 400 clamp(30px, 4vw, 46px)/1.1 var(--serif);
@@ -98,7 +117,11 @@ import icon from '../assets/favicon.png';
   }
   /* Serif body, at the size the bands already use for it — 18/1.6 rather than
      the sans 16/1.7, because Pagella needs the extra size to hold its weight
-     against the same measure. */
+     against the same measure.
+
+     --ink-body rather than the full-strength --ink a band would use: dimming
+     is an opacity cost paid straight out of contrast, which is unaffordable
+     over a live texture and perfectly affordable over flat green. */
   .start__copy p {
     margin: 0;
     font: 400 18px/1.6 var(--serif);
@@ -107,28 +130,24 @@ import icon from '../assets/favicon.png';
   }
 
   /* ── the download box ─────────────────────────────────────────────────
-     A pale panel inside a textured frame. The frame is a transparent border
-     with the band recipe painted under it: --noise-band over --base, clipped
-     to the border box, while the fill is clipped to the padding box. One
-     element, and the browser derives the inner corner from border-radius
-     minus border-width rather than us guessing at a second radius that would
-     drift every time the frame thickness changed.
+     A plain pale panel on flat green. No border, which is the argument the
+     contact form's fields already make: --ink on --flat is a step of about
+     12.5:1, so the panel is completely defined by its own edge, and a
+     hairline on top of that is a second boundary saying the same thing.
 
-     Both noise values are :root variables, so referencing them from a scoped
-     style costs a var() and does not copy the data URI into this page's CSS —
-     which is what the rule in global.css is protecting.
+     6px is the corner this box already had. The frame was up to 12px of
+     transparent border inside an 18px radius, so the only corner ever drawn
+     was the inner one at 18 minus 12 — keeping it means dropping the frame
+     changes the frame and nothing else. It is also much nearer the site's
+     hard-cut language than 18 would be with nothing left to soften.
 
-     The band noise (0.02, fine mottle) rather than the hero's (0.005, big
-     blobs): the frame is ~12px, far narrower than one hero blob, so that
-     texture would read as a plain gradient edging rather than as texture.
-
-     The fill is --ink with #10301f on it — the exact pair the band button and
-     the header pill already use, measured 13.94:1. It has to be this pale
-     rather than a lighter green: the icon is an app tile with its own
-     mid-sage ground (~#4b5d50), and on anything near that it stops reading
-     as a tile and leaves the waveform floating. On --ink it sits at 6.85:1. */
+     The fill is --ink with #10301f on it — the exact pair the band button,
+     the header pill and the contact form already use, measured 13.94:1. It
+     has to be this pale rather than a lighter green: the icon is an app tile
+     with its own mid-sage ground (~#4b5d50), and on anything near that it
+     stops reading as a tile and leaves the waveform floating. On --ink it
+     sits at 6.85:1. */
   .start__box {
-    --frame: clamp(8px, 1vw, 12px);
     /* Dimmed ink for the secondary lines. .7 rather than the .6 the dark
        theme uses for --ink-dim: composited on --ink this lands at #546e60 and
        holds 5.41:1, where .6 would give 3.99 and fail the 13px notice. */
@@ -138,17 +157,9 @@ import icon from '../assets/favicon.png';
     align-content: center;
     min-height: clamp(300px, 44vh, 420px);
     padding: 40px 32px;
-    border: var(--frame) solid transparent;
-    /* Inner corner comes out at 18 minus the frame: 6px at the desktop
-       thickness, 10px at the phone floor. */
-    border-radius: 18px;
-    background-image:
-      linear-gradient(var(--ink), var(--ink)),
-      var(--noise-band),
-      var(--base);
-    background-clip: padding-box, border-box, border-box;
-    background-origin: border-box;
-    background-repeat: no-repeat;
+    border: 0;
+    border-radius: 6px;
+    background: var(--ink);
     color: #10301f;
     text-align: center;
   }
