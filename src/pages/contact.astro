@@ -93,7 +93,24 @@ import Base from '../layouts/Base.astro';
           aria-label="Message"
           required></textarea>
 
-        <button class="form__btn" type="submit">Send message</button>
+        {/* Two labels stacked in one clipped box. A rejected submission
+            slides the message up into the button's place and slides it back
+            out when it expires, so the form reports itself in the one place
+            you are already looking rather than growing notices beside the
+            fields.
+
+            aria-hidden keeps the button's accessible name as "Send message"
+            whatever is showing — the announcement for assistive tech is the
+            focus move onto the offending field, which is what the browser's
+            own validation does.
+
+            Each message has to stay short enough for one line: the travel is
+            one button height, so a message that wraps makes the box taller
+            than the distance the label moves and the label never clears. */}
+        <button class="form__btn" type="submit">
+          <span class="form__btn-label">Send message</span>
+          <span class="form__btn-msg" aria-hidden="true"></span>
+        </button>
       </form>
     </div>
   </section>
@@ -248,6 +265,34 @@ import Base from '../layouts/Base.astro';
     outline-offset: 2px;
   }
 
+  /* ── autofill ─────────────────────────────────────────────────────────
+     Chrome paints an autofilled field pale blue — rgb(232, 240, 254), from a
+     UA rule marked !important — so background-color cannot take it back. An
+     inset box-shadow can: inner shadows paint above the background and below
+     the text, so an opaque one larger than the field covers the blue without
+     being a background at all, and it follows the 3px radius for free. The
+     spread has to clear half the widest field, which is the 440px column.
+
+     -webkit-text-fill-color is the other half, since Chrome sets the
+     autofilled text's colour the same way; caret-color goes with it, or the
+     caret keeps following a `color` that is no longer what is drawn. All
+     three are the pair this form already uses everywhere: #10301f on --ink.
+
+     Two separate rules rather than one comma-joined list, deliberately. An
+     unknown selector invalidates the WHOLE list it sits in, so pairing the
+     standard :autofill with the -webkit- alias would drop both in any browser
+     that knows only one of them. Written apart, each stands or falls alone. */
+  .form__input:autofill {
+    -webkit-text-fill-color: #10301f;
+    caret-color: #10301f;
+    box-shadow: inset 0 0 0 1000px var(--ink);
+  }
+  .form__input:-webkit-autofill {
+    -webkit-text-fill-color: #10301f;
+    caret-color: #10301f;
+    box-shadow: inset 0 0 0 1000px var(--ink);
+  }
+
   .form__message {
     min-height: 220px;
     /* vertical only — horizontal resize drags it out past the column */
@@ -258,7 +303,15 @@ import Base from '../layouts/Base.astro';
      width, and on the form's own gap like everything else — the centred
      label and the hover are what separate it from the fields above. */
   .form__btn {
-    padding: 15px 28px;
+    display: grid;
+    /* The vertical padding sits on the spans below rather than here.
+       `overflow: hidden` clips to the PADDING box, so with 15px of it on the
+       button a label translated by its own 100% would come to rest inside
+       that padding and still be in full view. Carried by the spans it
+       travels with them, and one translateY(100%) puts a span exactly one
+       button height clear of the opening. */
+    padding: 0 28px;
+    overflow: hidden;
     border: 0;
     border-radius: 3px;
     background: var(--ink);
@@ -273,9 +326,121 @@ import Base from '../layouts/Base.astro';
     color: #2b1226;
   }
 
+  /* Both labels in the one cell, so the button is the height of a single
+     line and neither reserves room for the other. */
+  .form__btn > span {
+    grid-area: 1 / 1;
+    padding-block: 15px;
+  }
+  /* The message waits exactly one button height below the opening. */
+  .form__btn-msg { transform: translateY(100%); }
+
+  .form.is-invalid .form__btn-label { transform: translateY(-100%); }
+  .form.is-invalid .form__btn-msg   { transform: translateY(0); }
+
+  /* It moves rather than fades, on the site's curve — the image viewer is
+     the only sanctioned fade. Outside the guard the swap is a cut, which is
+     the right reduced-motion answer here: the message still appears and
+     still leaves, it just does not travel. */
+  @media (prefers-reduced-motion: no-preference) {
+    .form__btn > span {
+      transition: transform .26s cubic-bezier(.4, 0, .2, 1);
+    }
+  }
+
   /* The bar drops to 69px here (--bar-pad-y 18 twice, --brand-h 33), so the
      clearance floor follows it down. */
   @media (max-width: 560px) {
     .contact { padding: clamp(88px, 12vh, 132px) 20px clamp(48px, 9vh, 96px); }
   }
 </style>
+
+<script>
+  /* A rejected submission is reported in the button: the message takes the
+     label's place for a moment and then leaves again.
+
+     Delegated from document and bound once at module scope, so it survives
+     view transitions without re-registering — the pattern the menu and the
+     image viewer already use. Capture phase for the reason they give:
+     ClientRouter listens on document too, and anything registered from
+     <head> runs ahead of a later listener in the same phase. This form
+     carries data-astro-reload so the router leaves it alone regardless, but
+     capturing does not depend on that staying true. */
+  const HOLD = 1800;   /* how long the message stays up, ms */
+
+  let timer: number | undefined;
+
+  /* novalidate is set HERE rather than written into the markup, so that with
+     no JS the browser's own validation still runs and the form cannot post
+     empty fields to Netlify. It has to be reapplied on every arrival:
+     ClientRouter swaps in a fresh form element, and this module body runs
+     only the first time the route is reached. It suppresses the browser's
+     bubbles and nothing else — checkValidity() and :invalid are unaffected,
+     which is what the handler below reads. */
+  function setup() {
+    document
+      .querySelector<HTMLFormElement>('form.form')
+      ?.setAttribute('novalidate', '');
+  }
+  setup();
+  document.addEventListener('astro:page-load', setup);
+
+  /* Names the field rather than describing the form, so the message and the
+     focus ring are pointing at the same thing.
+
+     The label is the control's aria-label, which every field here already
+     carries — the placeholder is not a reliable accessible name and is gone
+     the moment anything is typed, which is the note on the fields above.
+     Lowercased, since it lands mid-sentence. The fallback to `name` keeps a
+     field that somehow lacks one from reading "Please add your undefined".
+
+     typeMismatch is only reachable on the email field as the form stands;
+     writing it as the label rather than the word keeps that from being a
+     thing to remember if another typed field is ever added.
+
+     Both stay short enough for one line at the narrowest the form gets —
+     see the note on the button. */
+  function messageFor(field: HTMLInputElement | HTMLTextAreaElement) {
+    const label = (field.getAttribute('aria-label') || field.name).toLowerCase();
+    if (field.validity.valueMissing) return `Please add your ${label}`;
+    if (field.validity.typeMismatch) return `Your ${label} is invalid`;
+    return 'Please check the form';
+  }
+
+  document.addEventListener(
+    'submit',
+    (event) => {
+      const form = event.target;
+      if (!(form instanceof HTMLFormElement)) return;
+      if (!form.classList.contains('form')) return;
+
+      /* Valid: leave it entirely alone. preventDefault happens only below,
+         so a real submission still goes out as the full page load Netlify
+         answers with its redirect. */
+      if (form.checkValidity()) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+
+      /* The first invalid control in DOM order — the one the browser would
+         have pointed at itself. The honeypot is neither required nor typed,
+         so it can never be this. */
+      const field = form.querySelector<HTMLInputElement | HTMLTextAreaElement>(':invalid');
+      if (!field) return;
+
+      const msg = form.querySelector('.form__btn-msg');
+      if (msg) msg.textContent = messageFor(field);
+      form.classList.add('is-invalid');
+
+      /* Moving focus is the announcement for assistive tech, and it is also
+         what says WHICH field: the accent ring lands on the offending one
+         while the button carries the reason. Native validation moves focus
+         the same way. */
+      field.focus();
+
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => form.classList.remove('is-invalid'), HOLD);
+    },
+    true,
+  );
+</script>
